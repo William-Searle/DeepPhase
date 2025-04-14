@@ -1,0 +1,16 @@
+#IncludeRegexLine: ^[ 	]*[#%][ 	]*(include|import)[ 	]*[<"]([^">]+)([">])
+
+#IncludeRegexScan: ^.*$
+
+#IncludeRegexComplain: ^$
+
+#IncludeRegexTransform: 
+
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.cpp
+cmath
+-
+PhaseTransition.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+
