@@ -2,7 +2,9 @@ file(REMOVE_RECURSE
   "CMakeFiles/deepphase.dir/src/PhaseTransition.cpp.o"
   "CMakeFiles/deepphase.dir/src/hydrodynamics.cpp.o"
   "CMakeFiles/deepphase.dir/src/main.cpp.o"
+  "CMakeFiles/deepphase.dir/src/maths_ops.cpp.o"
   "CMakeFiles/deepphase.dir/src/spectrum.cpp.o"
+  "CMakeFiles/deepphase.dir/src/tests.cpp.o"
   "deepphase"
   "deepphase.pdb"
 )

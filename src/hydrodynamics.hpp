@@ -1,6 +1,11 @@
 // hydrodynamics.hpp
 #pragma once
 
+/*
+TO DO:
+- define a class NucModel that stores nuc_type (exp or sim), bubble lifetime distribution function v(Ttilde), deflag/det/hybrid type
+*/
+
 #include <array>
 
 namespace Hydrodynamics {
@@ -39,4 +44,6 @@ double getwow(double vp, double vm);
  */
 std::array<double,3> dfdv(const std::array<double,3>& xiw, double v, double cssq);
 
-}
+// double prof_int_f(double chi);
+
+} // namespace Hydrodynamics

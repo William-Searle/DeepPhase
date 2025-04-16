@@ -7,10 +7,34 @@
 #IncludeRegexTransform: 
 
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+string
+-
 
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.cpp
-cmath
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
+vector
+-
+string
+-
+variant
+-
+algorithm
 -
 PhaseTransition.hpp
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+spectrum.tpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
+
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
+
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.cpp
+iostream
+-
+vector
+-
+cassert
+-
+spectrum.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
+spectrum.tpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
 

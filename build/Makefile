@@ -250,6 +250,33 @@ src/main.cpp.s:
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/main.cpp.s
 .PHONY : src/main.cpp.s
 
+src/maths_ops.o: src/maths_ops.cpp.o
+
+.PHONY : src/maths_ops.o
+
+# target to build an object file
+src/maths_ops.cpp.o:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/maths_ops.cpp.o
+.PHONY : src/maths_ops.cpp.o
+
+src/maths_ops.i: src/maths_ops.cpp.i
+
+.PHONY : src/maths_ops.i
+
+# target to preprocess a source file
+src/maths_ops.cpp.i:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/maths_ops.cpp.i
+.PHONY : src/maths_ops.cpp.i
+
+src/maths_ops.s: src/maths_ops.cpp.s
+
+.PHONY : src/maths_ops.s
+
+# target to generate assembly for a file
+src/maths_ops.cpp.s:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/maths_ops.cpp.s
+.PHONY : src/maths_ops.cpp.s
+
 src/spectrum.o: src/spectrum.cpp.o
 
 .PHONY : src/spectrum.o
@@ -277,6 +304,33 @@ src/spectrum.cpp.s:
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/spectrum.cpp.s
 .PHONY : src/spectrum.cpp.s
 
+src/tests.o: src/tests.cpp.o
+
+.PHONY : src/tests.o
+
+# target to build an object file
+src/tests.cpp.o:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/tests.cpp.o
+.PHONY : src/tests.cpp.o
+
+src/tests.i: src/tests.cpp.i
+
+.PHONY : src/tests.i
+
+# target to preprocess a source file
+src/tests.cpp.i:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/tests.cpp.i
+.PHONY : src/tests.cpp.i
+
+src/tests.s: src/tests.cpp.s
+
+.PHONY : src/tests.s
+
+# target to generate assembly for a file
+src/tests.cpp.s:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/tests.cpp.s
+.PHONY : src/tests.cpp.s
+
 # Help Target
 help:
 	@echo "The following are some of the valid targets for this Makefile:"
@@ -299,9 +353,15 @@ help:
 	@echo "... src/main.o"
 	@echo "... src/main.i"
 	@echo "... src/main.s"
+	@echo "... src/maths_ops.o"
+	@echo "... src/maths_ops.i"
+	@echo "... src/maths_ops.s"
 	@echo "... src/spectrum.o"
 	@echo "... src/spectrum.i"
 	@echo "... src/spectrum.s"
+	@echo "... src/tests.o"
+	@echo "... src/tests.i"
+	@echo "... src/tests.s"
 .PHONY : help
 
 

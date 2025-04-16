@@ -1,52 +1,33 @@
 // main.cpp
 #include <iostream>
-#include <array>
+#include <vector>
+#include <string>
 
+#include "tests.hpp"
 #include "constants.hpp"
 #include "PhaseTransition.hpp"
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
+#include "maths_ops.hpp"
 
 /*
 TO DO:
--separate into different test files to test each function so I can compare to the python output
--use libraries?
+- separate into different test files to test each function so I can compare to the python output
+- use libraries?
+- Input file where you can specify universe and pt constants
+- test spectrum functions (Ekin, variants of delta, GW spectrum) behaviour in limits they discuss in paper
+- define addition/subtraction/multiplication/division of vectors with vectors/scalars
 */
 
 int main() {
-    /* hydrodynamics test */
-    // const auto xi = 0.5;
-    // const auto v = 0.6;
-    // const auto w = 0.5;
-    // const auto T = 100.0;
-    // const auto cssq = 1./3.;
-    // const std::array<double,3> xiw = {xi,w,T};
-
-    // const auto df_dv = Hydrodynamics::dfdv(xiw, v, cssq);
-
-    // std::cout << "mu: " << Hydrodynamics::mu(1./2., 1./3.) << "\n"
-    //           << "getwow: " << Hydrodynamics::getwow(1./2., 1./3.) << "\n"
-    //           << "dfdv: ";
-    // for (const auto &val : df_dv) {
-    //     std::cout << val << " ";
+    // const std::vector<double> Ttilde = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.};
+    // const std::string nuc_type = "exp";
+    // const auto distro = Spectrum::lifetime_dist(Ttilde, nuc_type);
+    // for (int i = 1; i < Ttilde.size(); i++) {
+    //     std::cout << Ttilde[i] << ", " << distro[i] << "\n";
     // }
-    // std::cout << "\n";
-
-    // PhaseTransition classes test
-    const PhaseTransition::Universe u;
-    const PhaseTransition::PTParams params;
-    std::cout << "(T0,Ts,H0,Hs,g0,gs)=(" << u.get_T0() << ","
-                                         << u.get_Ts() << ","
-                                         << u.get_H0() << ","
-                                         << u.get_Hs() << ","
-                                         << u.get_g0() << ","
-                                         << u.get_gs() << ")"
-                                         << "\n";
-    std::cout << "(cpsq,cmsq,vw,alpha)=(" << params.get_cpsq() << ","
-                                          << params.get_cmsq() << ","
-                                          << params.get_vw() << ","
-                                          << params.get_alpha() << ")"
-                                          << "\n";
-
+    
+    test_PowerSpec();
+    
     return 0;
 }

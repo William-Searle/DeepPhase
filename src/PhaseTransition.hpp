@@ -1,21 +1,33 @@
 // PhaseTransition.hpp
 #pragma once
 
+#include <string>
+
+/*
+TO DO:
+- add option to input a Veff -> derive fluid dynamics from this?
+- change PTParams to single ctor with default arguments (see slide 23, wk 4)
+*/
+
 namespace PhaseTransition {
 
     class PTParams { // will probably need to update this later
       public:
         // ctors
         PTParams();
-        PTParams(double cpsq, double cmsq, double vw, double alpha);
+        PTParams(double cpsq, double cmsq, double vw, double alpha, double beta, std::string nuc_type);
 
         double get_cpsq() const { return cpsq_; } // speed of sound squared (symmetric phase)
         double get_cmsq() const { return cmsq_; } // speed of sound squared (broken phase)
         double get_vw() const { return vw_; } // wall velocity
         double get_alpha() const { return alpha_; } // strength parameter
+        double get_beta() const { return beta_; } // inverse PT duration
+        double get_Rs() const { return Rs_; } // characteristic length scale R_*
+        std::string get_nuc_type() const { return nuc_type_; } // bubble nucleation type
       
       private:
-          const double cpsq_, cmsq_, vw_, alpha_;
+          const double cpsq_, cmsq_, vw_, alpha_, beta_, Rs_;
+          const std::string nuc_type_;
     };
 
     class Universe {

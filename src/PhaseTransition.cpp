@@ -1,14 +1,26 @@
 // PhaseTransition.cpp
+#include <string>
+#include <cmath>
+
+#include "constants.hpp"
 #include "PhaseTransition.hpp"
+
+/*
+TO DO:
+- update default val for beta in PTParams
+- better way to define Rs in PTParams? (currently have to write definition twice - one for each constructor)
+*/
 
 namespace PhaseTransition {
 
 // PTParams
 PTParams::PTParams()
-    : cpsq_(1./3.), cmsq_(1./3.), vw_(0.7), alpha_(0.1) {}
+    : cpsq_(1. / 3.), cmsq_(1. / 3.), vw_(0.7), alpha_(0.1), beta_(1.0),
+      Rs_(std::pow(8 * PI, 1. / 3.) * vw_ / beta_), nuc_type_("exp") {}
 
-PTParams::PTParams(double cpsq, double cmsq, double vw, double alpha)
-    : cpsq_(cpsq), cmsq_(cmsq), vw_(vw), alpha_(alpha) {}
+PTParams::PTParams(double cpsq, double cmsq, double vw, double alpha, double beta, std::string nuc_type)
+    : cpsq_(cpsq), cmsq_(cmsq), vw_(vw), alpha_(alpha), beta_(beta), 
+      Rs_(std::pow(8*PI, 1./3.) * vw_ / beta_), nuc_type_(nuc_type) {}
 
 // Universe
 Universe::Universe()
