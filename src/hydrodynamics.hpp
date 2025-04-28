@@ -7,6 +7,7 @@ TO DO:
 */
 
 #include <array>
+#include <complex>
 
 namespace Hydrodynamics {
 
@@ -28,7 +29,19 @@ double mu(double xi, double v);
  *
  * @return wp/wm
  */
-double getwow(double vp, double vm);
+// double getwow(double vp, double vm);
+
+double lifetime_dist(double Ttilde, const std::string &nuc_type);
+
+/**
+ * @brief Calculates the bubble lifetime distribution for exponential/simultaneous nucleation
+ *
+ * @param Ttilde Ttilde = T \beta (normalised bubble lifetime vector)
+ * @param nuc_type Nucleation type (exponential 'exp' or simultaneous 'sim')
+ *
+ * @return Bubble lifetime distribution
+ */
+std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type);
 
 /**
  * @brief The hydrodynamical equations for self-similar solution
@@ -44,6 +57,24 @@ double getwow(double vp, double vm);
  */
 std::array<double,3> dfdv(const std::array<double,3>& xiw, double v, double cssq);
 
-// double prof_int_f(double chi);
+double v_prof(double chi);
+double w_prof(double chi);
+double la_prof(double chi);
+
+/**
+ * @brief Calculates the integrated profile function 'f' (eq 30 in Pol, Procacci, Caprini (2024))
+ *
+ * @param chi ..
+ *
+ * @return f
+ */
+double prof_int_f(double chi);
+
+double prof_int_f_der(double chi);
+double prof_int_l(double chi);
+
+std::complex<double> Apm(std::string pm, double chi, const double cs);
+
+double Ap_sq(double chi, const double csq);
 
 } // namespace Hydrodynamics

@@ -2,6 +2,7 @@
 #include <iostream>
 #include <vector>
 #include <string>
+#include <chrono>
 
 #include "tests.hpp"
 #include "constants.hpp"
@@ -26,8 +27,21 @@ int main() {
     // for (int i = 1; i < Ttilde.size(); i++) {
     //     std::cout << Ttilde[i] << ", " << distro[i] << "\n";
     // }
-    
-    test_PowerSpec();
-    
+    // const auto ti = std::chrono::high_resolution_clock::now();
+
+    // const PhaseTransition::PTParams params;
+    // const auto Ek = Spectrum::Ekin(0.5, params);
+
+    // std::cout << "Ekin: (" << Ek.k() << "," << Ek.P() << ")" << std::endl;
+
+    // const auto tf = std::chrono::high_resolution_clock::now();
+    // std::chrono::duration<double> duration = tf - ti;
+    // std::cout << "Timer: " << duration.count() << " s" << std::endl;
+    const auto x = linspace(1e-10, 1e10, 100);
+    for (double xx : x) {
+        const auto Apsq = Hydrodynamics::Ap_sq(xx, 1./3.);
+        std::cout << "(" << xx << "," << Apsq << ")" << "\n";
+    }
+
     return 0;
 }

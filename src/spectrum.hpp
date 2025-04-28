@@ -13,6 +13,7 @@ TO DO:
 - use template in PowerSpec ctor -> only need one ctor
 - destructor for PowerSpec to save memory somewhere?
 - update operator overload to use type traits (for int, unsigned int, etc. scalar)
+- PowerSpec class documentation
 */
 
 namespace Spectrum {
@@ -71,46 +72,36 @@ class PowerSpec {
 };
 #include "spectrum.tpp"
 
-/**
- * @brief Calculates the bubble lifetime distribution for exponential/simultaneous nucleation
- *
- * @param Ttilde Ttilde = T \beta (normalised bubble lifetime vector)
- * @param nuc_type Nucleation type (exponential 'exp' or simultaneous 'sim')
- *
- * @return Bubble lifetime distribution
- */
-std::vector<double> lifetime_dist(const std::vector<double> &Ttilde, const std::string &nuc_type);
+  /**
+   * @brief Calculates kinetic (velocity) power spectrum
+   *
+   * @param k Momentum
+   * @param beta Inverse PT duration
+   * @param Rs Characteristic length scale R_*
+   * @param nuc_type Bubble nucleation method (exp or sim)
+   *
+   * @return Kinetic power spectrum
+   */
+  PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
 
-/**
- * @brief Calculates kinetic (velocity) power spectrum
- *
- * @param k Momentum
- * @param beta Inverse PT duration
- * @param Rs Characteristic length scale R_*
- * @param nuc_type Bubble nucleation method (exp or sim)
- *
- * @return Kinetic power spectrum
- */
-// PowerSpec Ekin(double k, double beta, double Rs, std::string &nuc_type);
+  /**
+   * @brief Calculates kinetic (velocity) power spectrum
+   *
+   * @param k Momentum
+   * @param params Phase transition parameters
+   *
+   * @return Kinetic power spectrum
+   */
+  PowerSpec Ekin(double k, const PhaseTransition::PTParams &params);
 
-/**
- * @brief Calculates kinetic (velocity) power spectrum
- *
- * @param k Momentum
- * @param params Phase transition parameters
- *
- * @return Kinetic power spectrum
- */
-// PowerSpec Ekin(double k, const PhaseTransition::PTParams &params);
-
-/**
- * @brief Calculates normalised kinetic power spectrum from Ekin(k)
- *
- * @param Ekin kinetic power spectrum
- *
- * @return Normalised kinetic power spectrum
- */
-PowerSpec zetaKin(PowerSpec Ekin);
+  /**
+   * @brief Calculates normalised kinetic power spectrum from Ekin(k)
+   *
+   * @param Ekin kinetic power spectrum
+   *
+   * @return Normalised kinetic power spectrum
+   */
+  PowerSpec zetaKin(PowerSpec Ekin);
 
 /**
  * @brief Calculates prefactor for GW power spectrum $\Omega_{GW}$

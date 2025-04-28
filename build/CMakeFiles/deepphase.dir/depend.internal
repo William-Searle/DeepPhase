@@ -17,8 +17,19 @@ CMakeFiles/deepphase.dir/src/main.cpp.o
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.hpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/vector.tpp
 CMakeFiles/deepphase.dir/src/maths_ops.cpp.o
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/maths_ops.cpp
+CMakeFiles/deepphase.dir/src/physics.cpp.o
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/physics.cpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/physics.hpp
+CMakeFiles/deepphase.dir/src/profile.cpp.o
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/physics.hpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/profile.cpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.hpp
+CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.cpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.hpp
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/constants.hpp
@@ -27,8 +38,12 @@ CMakeFiles/deepphase.dir/src/spectrum.cpp.o
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.cpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/vector.tpp
 CMakeFiles/deepphase.dir/src/tests.cpp.o
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/maths_ops.hpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.hpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
  /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.cpp
+ /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/vector.tpp

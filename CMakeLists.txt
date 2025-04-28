@@ -11,6 +11,9 @@ add_executable(deepphase ${SOURCES})
 
 message(STATUS "Sources: ${SOURCES}")
 
+target_link_libraries(deepphase PRIVATE gsl gslcblas m)
+message(STATUS "Successfully linked to GSL")
+
 # setting warning compiler flags
 add_compile_options(-Wall -Wextra -Wpedantic)
 

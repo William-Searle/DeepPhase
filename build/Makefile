@@ -277,6 +277,87 @@ src/maths_ops.cpp.s:
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/maths_ops.cpp.s
 .PHONY : src/maths_ops.cpp.s
 
+src/physics.o: src/physics.cpp.o
+
+.PHONY : src/physics.o
+
+# target to build an object file
+src/physics.cpp.o:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/physics.cpp.o
+.PHONY : src/physics.cpp.o
+
+src/physics.i: src/physics.cpp.i
+
+.PHONY : src/physics.i
+
+# target to preprocess a source file
+src/physics.cpp.i:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/physics.cpp.i
+.PHONY : src/physics.cpp.i
+
+src/physics.s: src/physics.cpp.s
+
+.PHONY : src/physics.s
+
+# target to generate assembly for a file
+src/physics.cpp.s:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/physics.cpp.s
+.PHONY : src/physics.cpp.s
+
+src/profile.o: src/profile.cpp.o
+
+.PHONY : src/profile.o
+
+# target to build an object file
+src/profile.cpp.o:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/profile.cpp.o
+.PHONY : src/profile.cpp.o
+
+src/profile.i: src/profile.cpp.i
+
+.PHONY : src/profile.i
+
+# target to preprocess a source file
+src/profile.cpp.i:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/profile.cpp.i
+.PHONY : src/profile.cpp.i
+
+src/profile.s: src/profile.cpp.s
+
+.PHONY : src/profile.s
+
+# target to generate assembly for a file
+src/profile.cpp.s:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/profile.cpp.s
+.PHONY : src/profile.cpp.s
+
+src/rk4_solver.o: src/rk4_solver.cpp.o
+
+.PHONY : src/rk4_solver.o
+
+# target to build an object file
+src/rk4_solver.cpp.o:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o
+.PHONY : src/rk4_solver.cpp.o
+
+src/rk4_solver.i: src/rk4_solver.cpp.i
+
+.PHONY : src/rk4_solver.i
+
+# target to preprocess a source file
+src/rk4_solver.cpp.i:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.i
+.PHONY : src/rk4_solver.cpp.i
+
+src/rk4_solver.s: src/rk4_solver.cpp.s
+
+.PHONY : src/rk4_solver.s
+
+# target to generate assembly for a file
+src/rk4_solver.cpp.s:
+	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.s
+.PHONY : src/rk4_solver.cpp.s
+
 src/spectrum.o: src/spectrum.cpp.o
 
 .PHONY : src/spectrum.o
@@ -356,6 +437,15 @@ help:
 	@echo "... src/maths_ops.o"
 	@echo "... src/maths_ops.i"
 	@echo "... src/maths_ops.s"
+	@echo "... src/physics.o"
+	@echo "... src/physics.i"
+	@echo "... src/physics.s"
+	@echo "... src/profile.o"
+	@echo "... src/profile.i"
+	@echo "... src/profile.s"
+	@echo "... src/rk4_solver.o"
+	@echo "... src/rk4_solver.i"
+	@echo "... src/rk4_solver.s"
 	@echo "... src/spectrum.o"
 	@echo "... src/spectrum.i"
 	@echo "... src/spectrum.s"

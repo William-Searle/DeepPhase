@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <algorithm>
 #include <iostream>
+#include <boost/math/quadrature/gauss_kronrod.hpp>
 
 #include "maths_ops.hpp"
 #include "constants.hpp"
@@ -18,8 +19,7 @@ TO DO:
 - update prefac to allow for non-bag model
 - update prefac to do actual calculation of TGW, OmegaK_KK
 - remove instances of std::pow when possible - it is slow
-- write linspace equivalent func
-- write PowerSpec class
+- change throw exception for P() and k() so that it uses Pvec() and kvec() when wrong one is called
 - add vec class to multiply/divide vectors by a scalar and take powers of it or some other way of doing this cleanly
 */
 
@@ -157,71 +157,28 @@ PowerSpec& PowerSpec::operator*=(PowerSpec& spec) {
 
 /***************************/
 
-// move to hydrodynamics or profile?
-double lifetime_dist(double Ttilde, const std::string &nuc_type) {
+PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type) {
+    /*
+    TO DO: 
+    - compare power6 to power and std::pow
+    - use Ttilde * arg, where arg=k/beta computed outside of integrant when calling Ap_sq? might be slightly faster
+    */
+    auto integrand = [&](double Ttilde) {
+        // return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
+        return Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
+    };
 
-    std::function<double(double)> lifetime_func;
-
-    if (nuc_type == "exp") {
-        return std::exp(-Ttilde);
-    } else if (nuc_type == "sim") {
-        const auto exp_fac = -pow(Ttilde, 3) / 6.;
-        return 0.5 * pow(Ttilde, 2) * std::exp(exp_fac);
-    } else {
-        throw std::invalid_argument("Invalid nucleation type: " + nuc_type);
-    }
-}
-
-// calculate as vector here rather than calling function at integration step since it is expensive
-std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type)
-{
-    std::vector<double> dist;
-    dist.reserve(Ttilde.size()); // allocates fixed memory to dist
-
-    std::function<double(double)> lifetime_func;
-
-    if (nuc_type == "exp")
-    {
-        lifetime_func = [](double Tt)
-        {
-            return std::exp(-Tt);
-        };
-    }
-    else if (nuc_type == "sim")
-    {
-        lifetime_func = [](double Tt)
-        {
-            const auto exp_fac = -pow(Tt, 3) / 6.;
-            return 0.5 * pow(Tt, 2) * std::exp(exp_fac);
-        };
-    }
-    else
-    {
-        throw std::invalid_argument("Invalid nucleation type: " + nuc_type);
-    }
-
-    for (const auto &Tt : Ttilde)
-        dist.push_back(lifetime_func(Tt));
-    return dist;
-}
-
-// update when Ap_sq function finished
-// PowerSpec Ekin(double k, double beta, double Rs, std::string &nuc_type) {    
-//     auto integrand = [&](double Ttilde) {
-//         // return lifetime_dist(Ttilde, nuc_type) * std::pow(Ttilde, 6) * Ap_sq(Ttilde * k / beta);
-//         return lifetime_dist(Ttilde, nuc_type) * std::pow(Ttilde, 6);
-//     };
-
-//     boost::math::quadrature::tanh_sinh<double> integrator;
-//     double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-//     f *= std::pow(k / PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
+    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
+    double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
+    f *= std::pow(k / PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
     
-//     return PowerSpec(k, f);
-// }
+    return PowerSpec(k, f);
+}
 
-// PowerSpec Ekin(double k, const PhaseTransition::PTParams &params) {
-//     return Ekin(k, params.get_beta(), params.get_Rs(), params.get_nuc_type());
-// }
+PowerSpec Ekin(double k, const PhaseTransition::PTParams &params) {
+    // not sure if correct to use cmsq here (broken phase speed of sound sq)
+    return Ekin(k, params.cmsq(), params.beta(), params.Rs(), params.nuc_type());
+}
 
 PowerSpec zetaKin(PowerSpec Ekin) {
     return Ekin / Ekin.max();
@@ -239,7 +196,7 @@ double prefac(double csq, double T0, double H0, double g0, double gs) {
 }
 
 double prefac(double csq, const PhaseTransition::Universe &u) {
-    return prefac(csq, u.get_T0(), u.get_H0(), u.get_g0(), u.get_gs());
+    return prefac(csq, u.T0(), u.H0(), u.g0(), u.gs());
 }
 
 } // namespace Spectrum

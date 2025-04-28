@@ -16,8 +16,19 @@ CMakeFiles/deepphase.dir/src/main.cpp.o: ../src/maths_ops.hpp
 CMakeFiles/deepphase.dir/src/main.cpp.o: ../src/spectrum.hpp
 CMakeFiles/deepphase.dir/src/main.cpp.o: ../src/spectrum.tpp
 CMakeFiles/deepphase.dir/src/main.cpp.o: ../src/tests.hpp
+CMakeFiles/deepphase.dir/src/main.cpp.o: ../src/vector.tpp
 
 CMakeFiles/deepphase.dir/src/maths_ops.cpp.o: ../src/maths_ops.cpp
+
+CMakeFiles/deepphase.dir/src/physics.cpp.o: ../src/physics.cpp
+CMakeFiles/deepphase.dir/src/physics.cpp.o: ../src/physics.hpp
+
+CMakeFiles/deepphase.dir/src/profile.cpp.o: ../src/physics.hpp
+CMakeFiles/deepphase.dir/src/profile.cpp.o: ../src/profile.cpp
+CMakeFiles/deepphase.dir/src/profile.cpp.o: ../src/rk4_solver.hpp
+
+CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o: ../src/rk4_solver.cpp
+CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o: ../src/rk4_solver.hpp
 
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/PhaseTransition.hpp
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/constants.hpp
@@ -26,9 +37,13 @@ CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/maths_ops.hpp
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/spectrum.cpp
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/spectrum.hpp
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/spectrum.tpp
+CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/vector.tpp
 
 CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/PhaseTransition.hpp
+CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/maths_ops.hpp
+CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/rk4_solver.hpp
 CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/spectrum.hpp
 CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/spectrum.tpp
 CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/tests.cpp
+CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/vector.tpp
 
