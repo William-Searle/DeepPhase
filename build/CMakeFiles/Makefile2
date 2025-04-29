@@ -74,12 +74,12 @@ clean: CMakeFiles/deepphase.dir/clean
 CMakeFiles/deepphase.dir/all:
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/depend
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/build
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9,10 "Built target deepphase"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=1,2,3,4,5,6,7,8,9 "Built target deepphase"
 .PHONY : CMakeFiles/deepphase.dir/all
 
 # Build rule for subdir invocation for target.
 CMakeFiles/deepphase.dir/rule: cmake_check_build_system
-	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles 10
+	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles 9
 	$(MAKE) -f CMakeFiles/Makefile2 CMakeFiles/deepphase.dir/all
 	$(CMAKE_COMMAND) -E cmake_progress_start /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles 0
 .PHONY : CMakeFiles/deepphase.dir/rule

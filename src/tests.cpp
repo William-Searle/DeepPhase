@@ -7,7 +7,6 @@
 
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
-#include "rk4_solver.hpp"
 
 /*
 TO DO:

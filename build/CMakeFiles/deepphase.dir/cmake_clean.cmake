@@ -5,7 +5,6 @@ file(REMOVE_RECURSE
   "CMakeFiles/deepphase.dir/src/maths_ops.cpp.o"
   "CMakeFiles/deepphase.dir/src/physics.cpp.o"
   "CMakeFiles/deepphase.dir/src/profile.cpp.o"
-  "CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o"
   "CMakeFiles/deepphase.dir/src/spectrum.cpp.o"
   "CMakeFiles/deepphase.dir/src/tests.cpp.o"
   "deepphase"

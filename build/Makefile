@@ -331,33 +331,6 @@ src/profile.cpp.s:
 	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/profile.cpp.s
 .PHONY : src/profile.cpp.s
 
-src/rk4_solver.o: src/rk4_solver.cpp.o
-
-.PHONY : src/rk4_solver.o
-
-# target to build an object file
-src/rk4_solver.cpp.o:
-	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o
-.PHONY : src/rk4_solver.cpp.o
-
-src/rk4_solver.i: src/rk4_solver.cpp.i
-
-.PHONY : src/rk4_solver.i
-
-# target to preprocess a source file
-src/rk4_solver.cpp.i:
-	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.i
-.PHONY : src/rk4_solver.cpp.i
-
-src/rk4_solver.s: src/rk4_solver.cpp.s
-
-.PHONY : src/rk4_solver.s
-
-# target to generate assembly for a file
-src/rk4_solver.cpp.s:
-	$(MAKE) -f CMakeFiles/deepphase.dir/build.make CMakeFiles/deepphase.dir/src/rk4_solver.cpp.s
-.PHONY : src/rk4_solver.cpp.s
-
 src/spectrum.o: src/spectrum.cpp.o
 
 .PHONY : src/spectrum.o
@@ -443,9 +416,6 @@ help:
 	@echo "... src/profile.o"
 	@echo "... src/profile.i"
 	@echo "... src/profile.s"
-	@echo "... src/rk4_solver.o"
-	@echo "... src/rk4_solver.i"
-	@echo "... src/rk4_solver.s"
 	@echo "... src/spectrum.o"
 	@echo "... src/spectrum.i"
 	@echo "... src/spectrum.s"

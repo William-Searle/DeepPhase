@@ -135,22 +135,9 @@ CMakeFiles/deepphase.dir/src/profile.cpp.s: cmake_force
 	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/deepphase.dir/src/profile.cpp.s"
 	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/profile.cpp -o CMakeFiles/deepphase.dir/src/profile.cpp.s
 
-CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o: CMakeFiles/deepphase.dir/flags.make
-CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o: ../src/rk4_solver.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o"
-	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o -c /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.cpp
-
-CMakeFiles/deepphase.dir/src/rk4_solver.cpp.i: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Preprocessing CXX source to CMakeFiles/deepphase.dir/src/rk4_solver.cpp.i"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -E /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.cpp > CMakeFiles/deepphase.dir/src/rk4_solver.cpp.i
-
-CMakeFiles/deepphase.dir/src/rk4_solver.cpp.s: cmake_force
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green "Compiling CXX source to assembly CMakeFiles/deepphase.dir/src/rk4_solver.cpp.s"
-	/usr/bin/c++ $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -S /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/rk4_solver.cpp -o CMakeFiles/deepphase.dir/src/rk4_solver.cpp.s
-
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: CMakeFiles/deepphase.dir/flags.make
 CMakeFiles/deepphase.dir/src/spectrum.cpp.o: ../src/spectrum.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/deepphase.dir/src/spectrum.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_7) "Building CXX object CMakeFiles/deepphase.dir/src/spectrum.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/deepphase.dir/src/spectrum.cpp.o -c /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.cpp
 
 CMakeFiles/deepphase.dir/src/spectrum.cpp.i: cmake_force
@@ -163,7 +150,7 @@ CMakeFiles/deepphase.dir/src/spectrum.cpp.s: cmake_force
 
 CMakeFiles/deepphase.dir/src/tests.cpp.o: CMakeFiles/deepphase.dir/flags.make
 CMakeFiles/deepphase.dir/src/tests.cpp.o: ../src/tests.cpp
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Building CXX object CMakeFiles/deepphase.dir/src/tests.cpp.o"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_8) "Building CXX object CMakeFiles/deepphase.dir/src/tests.cpp.o"
 	/usr/bin/c++  $(CXX_DEFINES) $(CXX_INCLUDES) $(CXX_FLAGS) -o CMakeFiles/deepphase.dir/src/tests.cpp.o -c /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.cpp
 
 CMakeFiles/deepphase.dir/src/tests.cpp.i: cmake_force
@@ -182,7 +169,6 @@ deepphase_OBJECTS = \
 "CMakeFiles/deepphase.dir/src/maths_ops.cpp.o" \
 "CMakeFiles/deepphase.dir/src/physics.cpp.o" \
 "CMakeFiles/deepphase.dir/src/profile.cpp.o" \
-"CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o" \
 "CMakeFiles/deepphase.dir/src/spectrum.cpp.o" \
 "CMakeFiles/deepphase.dir/src/tests.cpp.o"
 
@@ -195,13 +181,12 @@ deepphase: CMakeFiles/deepphase.dir/src/main.cpp.o
 deepphase: CMakeFiles/deepphase.dir/src/maths_ops.cpp.o
 deepphase: CMakeFiles/deepphase.dir/src/physics.cpp.o
 deepphase: CMakeFiles/deepphase.dir/src/profile.cpp.o
-deepphase: CMakeFiles/deepphase.dir/src/rk4_solver.cpp.o
 deepphase: CMakeFiles/deepphase.dir/src/spectrum.cpp.o
 deepphase: CMakeFiles/deepphase.dir/src/tests.cpp.o
 deepphase: CMakeFiles/deepphase.dir/build.make
 deepphase: /usr/lib/x86_64-linux-gnu/libpython3.8.so
 deepphase: CMakeFiles/deepphase.dir/link.txt
-	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_10) "Linking CXX executable deepphase"
+	@$(CMAKE_COMMAND) -E cmake_echo_color --switch=$(COLOR) --green --bold --progress-dir=/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles --progress-num=$(CMAKE_PROGRESS_9) "Linking CXX executable deepphase"
 	$(CMAKE_COMMAND) -E cmake_link_script CMakeFiles/deepphase.dir/link.txt --verbose=$(VERBOSE)
 
 # Rule to build all files generated by this target.
