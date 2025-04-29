@@ -20,28 +20,6 @@ array
 complex
 -
 
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/main.cpp
-iostream
--
-vector
--
-string
--
-chrono
--
-tests.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.hpp
-constants.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/constants.hpp
-PhaseTransition.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
-hydrodynamics.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/hydrodynamics.hpp
-spectrum.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
-maths_ops.hpp
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/maths_ops.hpp
-
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/maths_ops.hpp
 vector
 -
@@ -55,6 +33,34 @@ initializer_list
 -
 vector.tpp
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/vector.tpp
+
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.cpp
+cmath
+-
+vector
+-
+string
+-
+functional
+-
+stdexcept
+-
+algorithm
+-
+iostream
+-
+boost/math/quadrature/gauss_kronrod.hpp
+-
+maths_ops.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/maths_ops.hpp
+constants.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/constants.hpp
+PhaseTransition.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/PhaseTransition.hpp
+hydrodynamics.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/hydrodynamics.hpp
+spectrum.hpp
+/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
 
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.hpp
 vector
@@ -71,10 +77,6 @@ spectrum.tpp
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
 
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/spectrum.tpp
-
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/tests.hpp
-vector
--
 
 /mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src/vector.tpp
 maths_ops.hpp

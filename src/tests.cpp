@@ -167,7 +167,6 @@ double st_dev(const std::vector<double>& times, double mean_time) {
     return std::sqrt(sum / times.size());
 }
 
-// Test function to compare speed
 // TO DO: make more robust - input x and exp and check if exp=6 to use power6
 void test_power(int num_runs) {
     double x = 2.0;  // Example input value
@@ -219,4 +218,4 @@ void test_power(int num_runs) {
     std::cout << "Custom power6 function - Mean time: " << mean_power6 << " seconds, SD: " << power6_sd << " seconds\n";
 }
 
-}
+} // namespace PowerTest

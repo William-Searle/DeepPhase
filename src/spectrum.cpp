@@ -161,7 +161,6 @@ PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &
     /*
     TO DO: 
     - compare power6 to power and std::pow
-    - use Ttilde * arg, where arg=k/beta computed outside of integrant when calling Ap_sq? might be slightly faster
     */
     auto integrand = [&](double Ttilde) {
         // return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
@@ -169,7 +168,8 @@ PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &
     };
 
     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
+    // double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
+    double f = integrator.integrate(integrand, 0.1, 0.2);
     f *= std::pow(k / PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
     
     return PowerSpec(k, f);

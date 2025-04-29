@@ -21,27 +21,22 @@ TO DO:
 */
 
 int main() {
-    // const std::vector<double> Ttilde = {0., 0.1, 0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.};
-    // const std::string nuc_type = "exp";
-    // const auto distro = Spectrum::lifetime_dist(Ttilde, nuc_type);
-    // for (int i = 1; i < Ttilde.size(); i++) {
-    //     std::cout << Ttilde[i] << ", " << distro[i] << "\n";
-    // }
-    // const auto ti = std::chrono::high_resolution_clock::now();
+    const auto ti = std::chrono::high_resolution_clock::now();
 
-    // const PhaseTransition::PTParams params;
-    // const auto Ek = Spectrum::Ekin(0.5, params);
+    
+    const PhaseTransition::PTParams params;
+    const double k = 0.1;
+    const auto Ek = Spectrum::Ekin(k, params);
 
-    // std::cout << "Ekin: (" << Ek.k() << "," << Ek.P() << ")" << std::endl;
+    std::cout << Ek.k() << "," << Ek.P() << std::endl;
 
-    // const auto tf = std::chrono::high_resolution_clock::now();
-    // std::chrono::duration<double> duration = tf - ti;
-    // std::cout << "Timer: " << duration.count() << " s" << std::endl;
-    const auto x = linspace(1e-10, 1e10, 100);
-    for (double xx : x) {
-        const auto Apsq = Hydrodynamics::Ap_sq(xx, 1./3.);
-        std::cout << "(" << xx << "," << Apsq << ")" << "\n";
-    }
+    // auto f = [](double x) { return Hydrodynamics::Ap_sq(x, 1./3.); };
+    // plot_func(f, 0.1, 1., 1000);
+
+
+    const auto tf = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = tf - ti;
+    std::cout << "Timer: " << duration.count() << " s" << std::endl;
 
     return 0;
 }

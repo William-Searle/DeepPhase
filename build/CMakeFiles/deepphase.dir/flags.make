@@ -6,5 +6,5 @@ CXX_FLAGS =   -std=gnu++17
 
 CXX_DEFINES = 
 
-CXX_INCLUDES = -I/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src 
+CXX_INCLUDES = -I/usr/include/python3.8 -I/home/flynn/.local/lib/python3.8/site-packages/numpy/core/include -I/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/src 
 
