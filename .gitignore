@@ -39,3 +39,7 @@
 
 # Visual Studio
 .vscode/
+
+# Python
+/.ipynb_checkpoints/
+*.ipynb
