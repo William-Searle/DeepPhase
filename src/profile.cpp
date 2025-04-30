@@ -10,6 +10,7 @@
 #include "profile.hpp"
 #include "physics.hpp"
 #include "matplotlibcpp.h"
+#include "maths_ops.hpp"
 
 namespace plt = matplotlibcpp;
 using namespace boost::numeric::odeint;
@@ -71,41 +72,41 @@ void solve_prof(state_type y0, double csq, int n) {
     return;
 }
 
-// void plot_velocity_profile(const std::string& filename) {
-//     std::ifstream file(filename);
-//     std::string line;
-//     std::vector<double> xi, v;
+void generate_streamplot_data(double csq, int xi_pts, int v_pts, const std::string& filename) {
+    std::ofstream file(filename);
+    file << "xi,v,dxidtau,dvdtau\n";
+    file << std::fixed << std::setprecision(8); // needed for compatibility with python streamplot
 
-//     // Skip header
-//     std::getline(file, line);
+    FluidProfile::FluidSystem fluid(csq);
 
-//     // Read values
-//     while (std::getline(file, line)) {
-//         std::stringstream ss(line);
-//         std::string tau_str, xi_str, v_str, w_str;
-//         std::getline(ss, tau_str, ',');
-//         std::getline(ss, xi_str, ',');
-//         std::getline(ss, v_str, ',');
-//         std::getline(ss, w_str, ',');
+    // Define the ranges for xi and v (avoid's singularity at xi=0)
+    const double xi_min = 0.01;
+    const double xi_max = 0.99;
+    const double v_min = 0.01;
+    const double v_max = 0.99;
 
-//         xi.push_back(std::stod(xi_str));
-//         v.push_back(std::stod(v_str));
-//     }
+    // create grid for streamplot
+    const auto xi_vals = linspace(xi_min, xi_max, xi_pts);
+    const auto v_vals = linspace(v_min, v_max, v_pts);
 
-//     // Plot as a vector field (xi vs v)
-//     std::vector<double> u(xi.size(), 0.0); // zero horizontal component
-//     std::vector<double> x = xi;
-//     std::vector<double> y(xi.size(), 0.0); // all arrows start at y=0
-//     std::vector<double> v_dir = v;         // vertical component
+    for (double xi : xi_vals) {
+        for (double v : v_vals) {
 
-//     plt::figure_size(800, 400);
-//     plt::quiver(x, y, u, v_dir, 10); // scale=10 can be adjusted
-//     plt::xlabel("xi");
-//     plt::ylabel("v");
-//     plt::title("Velocity profile v(xi)");
-//     plt::save("v_vs_xi.png");
-//     std::cout << "Saved plot to v_vs_xi.png\n";
-// }
+            // double dxi = std::numeric_limits<double>::quiet_NaN();
+            // double dv = std::numeric_limits<double>::quiet_NaN();
 
+            // Avoid division by zero
+            if (std::abs(1 - xi * v) < 1e-6) continue;
+
+            const auto dxi = fluid.dxi_dtau(xi, v, csq);
+            const auto dv = fluid.dv_dtau(xi, v, csq);
+
+            file << xi << "," << v << "," << dxi << "," << dv << "\n";
+        }
+    }
+
+    file.close();
+    std::cout << "Streamplot data saved to " << filename << "\n";
+}
 
 } // namespace FluidProfile

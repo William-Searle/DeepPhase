@@ -31,5 +31,11 @@
 *.out
 *.app
 
+# Build directory
+/build/
+
+# Data files
+*.csv
+
 # Visual Studio
 .vscode/

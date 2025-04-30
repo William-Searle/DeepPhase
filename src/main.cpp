@@ -34,10 +34,7 @@ int main() {
     // auto f = [](double x) { return Hydrodynamics::Ap_sq(x, 1./3.); };
     // plot_func(f, 0.1, 1., 1000);
 
-    const std::vector<double> y0 = {0.1, 0.1, 0.1};
-    FluidProfile::solve_prof(y0, 1./3.);
-    FluidProfile::plot_velocity_profile();
-
+    FluidProfile::generate_streamplot_data(1./3.);
 
     const auto tf = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = tf - ti;

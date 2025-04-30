@@ -13,14 +13,14 @@ class FluidSystem {
   public:
     FluidSystem(double csq) : csq_(csq) {}
 
+    double dxi_dtau(double xi, double v, double csq) const;
+    double dv_dtau(double xi, double v, double csq) const;
+    double dw_dtau(double xi, double v, double w, double csq) const;
+
     void operator()(const state_type &y, state_type &dydt, double /*tau*/) const;
 
   private:
     double csq_;
-
-    double dxi_dtau(double xi, double v, double csq) const;
-    double dv_dtau(double xi, double v, double csq) const;
-    double dw_dtau(double xi, double v, double w, double csq) const;
 };
 
 struct push_back_state {
@@ -33,6 +33,7 @@ struct push_back_state {
 };
 
 void solve_prof(state_type y0, double csq, int n=100);
-void plot_velocity_profile(const std::string& filename = "fluid_solution.csv");
+// void plot_velocity_profile(const std::string& filename = "fluid_solution.csv");
+void generate_streamplot_data(double csq, int xi_points = 30, int v_points = 30, const std::string& filename = "streamplot_data.csv");
 
 } // namespace FluidProfile
