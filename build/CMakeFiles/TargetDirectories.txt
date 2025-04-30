@@ -1,7 +1,0 @@
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/install/strip.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/install/local.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/install.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/list_install_components.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/rebuild_cache.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/edit_cache.dir
-/mnt/c/Users/Flynn/Documents/University/PhD/DeepPhase-cpp/build/CMakeFiles/deepphase.dir
