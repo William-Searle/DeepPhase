@@ -37,6 +37,11 @@ std::ostream& operator<<(std::ostream& os, const PTParams& p) {
     return os;
 }
 
+// same for vp and vm?
+double vUF(const double v) {
+    return (vw_ - v) / ( 1.0 - vw_ * v);
+}
+
 void PTParams::print() const {
     std::cout << *this;
 }

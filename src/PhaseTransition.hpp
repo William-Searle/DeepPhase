@@ -24,7 +24,11 @@ namespace PhaseTransition {
         double alpha() const { return alpha_; } // strength parameter
         double beta() const { return beta_; } // inverse PT duration
         double Rs() const { return Rs_; } // characteristic length scale R_*
+        double vp() const { return vp_; }; // fluid velocity (symmetric phase/outside wall)
+        double vm() const { return vm_; }; // fluid velocity (broken phase/inside wall)
         std::string nuc_type() const { return nuc_type_; } // bubble nucleation type
+
+        double vUF(const double v) const; // velocity in universe frame
 
         // print params
         void print() const;
