@@ -157,28 +157,26 @@ PowerSpec& PowerSpec::operator*=(PowerSpec& spec) {
 
 /***************************/
 
-PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type) {
-    /*
-    TO DO: 
-    - compare power6 to power and std::pow
-    */
-    auto integrand = [&](double Ttilde) {
-        // return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
-        return Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
-    };
+// update to pass fluid profile
+// PowerSpec Ekin(double k, const Hydrodynamics::FluidProfile& prof, double csq, double beta, double Rs, const std::string& nuc_type) {
+//     auto integrand = [&](double Ttilde) {
+//         // return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
+//         return Hydrodynamics::Ap_sq(Ttilde * k / beta, prof);
+//     };
 
-    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    // double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    double f = integrator.integrate(integrand, 0.1, 0.2);
-    f *= std::pow(k / PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
+//     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
+//     // double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
+//     double f = integrator.integrate(integrand, 0.1, 0.2);
+//     f *= std::pow(k / M_PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
     
-    return PowerSpec(k, f);
-}
+//     return PowerSpec(k, f);
+// }
 
-PowerSpec Ekin(double k, const PhaseTransition::PTParams &params) {
-    // not sure if correct to use cmsq here (broken phase speed of sound sq)
-    return Ekin(k, params.cmsq(), params.beta(), params.Rs(), params.nuc_type());
-}
+// update to pass fluid profile
+// PowerSpec Ekin(double k, const PhaseTransition::PTParams &params const Hydrodynamics::FluidProfile& prof) {
+//     // not sure if correct to use cmsq here (broken phase speed of sound sq)
+//     return Ekin(k, params.cmsq(), params.beta(), params.Rs(), params.nuc_type());
+// }
 
 PowerSpec zetaKin(PowerSpec Ekin) {
     return Ekin / Ekin.max();

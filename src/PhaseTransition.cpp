@@ -24,7 +24,7 @@ PTParams::PTParams(double cpsq, double cmsq, double vw, double alpha, double bet
       alpha_(alpha), 
       beta_(beta), 
       nuc_type_(nuc_type), 
-      Rs_(std::pow(8 * PI, 1. / 3.) * vw_ / beta_) {}
+      Rs_(std::pow(8 * M_PI, 1. / 3.) * vw_ / beta_) {}
 
 std::ostream& operator<<(std::ostream& os, const PTParams& p) {
     os << "cpsq = " << p.cpsq_ << "\n"

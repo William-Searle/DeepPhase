@@ -4,9 +4,14 @@
 #include <chrono>
 #include <gsl/gsl_integration.h>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
+#include <string>
 
+#include "profile.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
+#include "matplotlibcpp.h"
+
+namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -96,18 +101,38 @@ void test_vec() {
     return;
 }
 
-// void test_profile_solver() {
-//     RK4::State init{1.0, 0.0, 0.0}; // Initial condition: x=1, v=0, w=0
-//     double t0 = 0.0;
-//     double tf = 1.0;
-//     int n = 100;
+void test_FluidProfile() {
+    std::cout << "Running test_fluid_profile..." << std::endl;
 
-//     const auto prof = RK4::profile(RK4::State& init, double t0, double tf, int n);
-//     std::cout << "Final state:\n";
-//     std::cout << "xi = " << prof.xi << "\n";
-//     std::cout << "v = " << prof.v << "\n";
-//     std::cout << "w = " << prof.w << "\n";
-// }
+    Hydrodynamics::state_type y0 = {0.1, 0.1, 0.1};
+    double csq = 1.0 / 3.0;
+
+    Hydrodynamics::FluidProfile prof(y0, csq);
+
+    // Check initial state and csq
+    assert(prof.init_state() == y0);
+    assert(std::abs(prof.csq() - csq) < 1e-10);
+
+    // Generate streamplot data
+    try {
+        prof.generate_streamplot_data(10, 10, "test_streamplot.csv");
+    } catch (...) {
+        assert(false && "generate_streamplot_data threw an exception");
+    }
+
+    // Check that profile outputs have consistent size
+    auto xi = prof.xi_vals();
+    auto v_spline = prof.v_prof();
+    auto w_spline = prof.w_prof();
+    auto la_spline = prof.la_prof();
+
+    assert(!xi.empty());
+    // assert(v_spline.size() == xi.size());
+    // assert(w_spline.size() == xi.size());
+    // assert(la_spline.size() == xi.size());
+
+    std::cout << "test_FluidProfile passed." << std::endl;
+}
 
 double test_func(double x, void *params) {
     // integral over -inf to inf gives sqrt(pi) = 1.77245
@@ -144,6 +169,45 @@ void test_gsl_integration() { // might not need GSL, remove if not (unlink in cm
 
     // Free the GSL workspace
     gsl_integration_workspace_free(workspace);
+
+    return;
+}
+
+void test_interpolator(std::string type) {
+    // const auto x_vals = linspace(0.0, 1.0, 10);
+    const std::vector<double> x_vals = {0.0, 1.0, 2.0, 3.0};
+    const std::vector<double> y_vals = {0.0, 1.0, 4.0, 9.0};
+    // const std::vector<double> y_vals = {0.0, 5.6, 2.3, 7.6, 8.4, -1.3, 9.2, 15.8, 13.3, 10.7};
+    std::optional<CubicSpline<double>> interp_func;
+
+    std::string title;
+    
+    if (type == "cubic_spline") {
+        interp_func.emplace(x_vals, y_vals);
+        title = "Cubic Spline";
+    } else {
+        throw std::invalid_argument("Interpolator type must be 'cubic_spline'");
+    }
+
+    // generate interpolation points
+    std::vector<double> y_interp;
+    for (double x : x_vals) {
+        y_interp.push_back((*interp_func)(x));
+    }
+
+    // save fig
+    plt::figure_size(800, 600);
+    plt::plot(x_vals, y_interp, {{"label", "Spline"}});
+    plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
+
+    plt::legend();
+    plt::xlabel("x");
+    plt::ylabel("y");
+    plt::title(title + " Interpolation");
+    plt::grid(true);
+    plt::save("interpolator_test.png");
+
+    std::cout << title << " Interpolation test complete.\n";
 
     return;
 }

@@ -1,19 +1,22 @@
 #pragma once
 
 #include <vector>
+#include <string>
 #include <matplotlibcpp.h>
 
 void test_PowerSpec();
 
 void test_vec();
 
-void test_profile_solver();
+void test_FluidProfile();
 
 double test_func(double x, void* params);
 
 void test_boostmath();
 
 void test_gsl_integration();
+
+void test_interpolator(std::string type);
 
 namespace PowerTest {
 

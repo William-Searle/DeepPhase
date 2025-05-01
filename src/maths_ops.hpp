@@ -52,6 +52,20 @@ private:
 };
 #include "vector.tpp"
 
+template <typename T>
+class CubicSpline {
+  public:
+    CubicSpline();
+    CubicSpline(const std::vector<T>& x, const std::vector<T>& y);
+
+    T operator()(T xi) const;
+
+  private:
+    std::vector<T> x, y, h, a, b, c, d; // change these to have '_'?
+    bool initialized_; // false if created by dflt ctor
+};
+#include "CubicSpline.tpp"
+
 /**
  * @brief C++ version of numpy's linspace function
  *

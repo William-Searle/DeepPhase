@@ -24,17 +24,11 @@ TO DO:
 int main() {
     const auto ti = std::chrono::high_resolution_clock::now();
 
-    
-    // const PhaseTransition::PTParams params;
-    // const double k = 0.1;
-    // const auto Ek = Spectrum::Ekin(k, params);
+    // Hydrodynamics::state_type y0 = {0.1, 0.1, 0.1};
+    // const Hydrodynamics::FluidProfile prof(y0, 1./3.);
+    // prof.generate_streamplot_data();
 
-    // std::cout << Ek.k() << "," << Ek.P() << std::endl;
-
-    // auto f = [](double x) { return Hydrodynamics::Ap_sq(x, 1./3.); };
-    // plot_func(f, 0.1, 1., 1000);
-
-    FluidProfile::generate_streamplot_data(1./3.);
+    test_FluidProfile();
 
     const auto tf = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = tf - ti;

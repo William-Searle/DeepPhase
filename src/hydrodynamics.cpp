@@ -11,6 +11,7 @@ TO DO:
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <functional>
 
+#include "profile.hpp"
 #include "constants.hpp"
 
 namespace Hydrodynamics {
@@ -57,59 +58,23 @@ std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std:
     return dist;
 }
 
-// defines system of bubble profile DEs (not finished)
-std::array<double,3> dfdv(const std::array<double,3>& xiw, double v, double csq) {
-    if (xiw.size() != 3) {
-        throw std::invalid_argument("xiw must be an array of the form {xi, w, T}");
-    }
-    const auto& [xi, w, T] = xiw;
-    const auto dxidv  = (std::pow(mu(xi, v),2) / csq - 1) * (1 - v*xi) 
-                        * (xi/2) * (1/v) / (1-std::pow(v,2));             // velocity profile
-    const auto dwdv = (1 + 1/csq) * mu(xi, v) * w / (1 - std::pow(v,2)); // enthalpy profile
-    const auto dTdv = mu(xi,v) * T / (1 - std::pow(v,2));                 // temperature profile
-
-    // change this and xiw to vec?
-    // set up template function so output matches data type of xiw?
-    const std::array<double,3> derivs = {dxidv, dwdv, dTdv};
-
-    return derivs;
-}
-
-// use eigen to solve for velocity and enthalpy profiles
-// double v_w_prof(double xi) {
-//     return {v_prof, w_prof};
-// }
-
-double v_prof(double chi) {
-    // const auto vw = v_w_prof(chi);
-    // return vw[0];
-    return 1.0;
-}
-
-double w_prof(double chi) {
-    // const auto vw = v_w_prof(chi);
-    // return vw[1];
-    return 1.0;
-}
-
-double la_prof(double chi) { // lambda = (rho-rhobar)/wbar
-    return 1.0;
-}
-
 // not sure if needed
-double prof_int_f(double chi) { // calculate integral in eq 30
+double prof_int_f(double chi, FluidProfile& prof) { // calculate integral in eq 30
+    const auto v_prof = prof.v_prof();
+
     auto integrand = [&](double xi) {
         return v_prof(xi) * std::sin(chi * xi);
     };
 
     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
     double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    f *= 4.0 * PI / chi;
+    f *= 4.0 * M_PI / chi;
 
     return f;
 }
 
-double prof_int_f_der(double chi) {
+double prof_int_f_der(double chi, FluidProfile& prof) {
+    const auto v_prof = prof.v_prof();
     // could break up integrand into two integrals - effects efficiency?
     auto integrand = [&](double xi) {
         return v_prof(xi) * (xi * std::cos(chi * xi) - std::sin(chi * xi) / chi);
@@ -117,25 +82,27 @@ double prof_int_f_der(double chi) {
 
     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
     double f_der = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    f_der *= 4.0 * PI / chi;
+    f_der *= 4.0 * M_PI / chi;
 
     return f_der;
 }
 
-double prof_int_l(double chi) {
+double prof_int_l(double chi, FluidProfile& prof) {
+    const auto la_prof = prof.la_prof();
+
     auto integrand = [&](double xi) {
         return xi * la_prof(xi) * std::sin(chi * xi);
     };
 
     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
     double l = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    l *= 4.0 * PI / chi;
+    l *= 4.0 * M_PI / chi;
 
     return l;
 }
 
 // not sure if needed
-std::complex<double> Apm(std::string pm, double chi, const double cs) {
+std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof) {
     double sgn;
     if (pm == "+") {
         sgn = 1;
@@ -146,17 +113,18 @@ std::complex<double> Apm(std::string pm, double chi, const double cs) {
     }
 
     std::complex<double> i(0.0, 1.0); // define elsewhere?
-    const std::complex<double> AA = (-i/2.0) * (prof_int_f_der(chi) + sgn * i * cs * prof_int_l(chi));
+    const std::complex<double> AA = (-i/2.0) * (prof_int_f_der(chi, prof) + sgn * i * std::sqrt(prof.csq()) * prof_int_l(chi, prof));
 
     return AA;
 }
 
 // |A_+|^2
-double Ap_sq(double chi, const double csq) {
-    // pow(prof_int_f_der,2) calls the function twice, so this is more efficient
-    const auto prof_int_1 = prof_int_f_der(chi);
-    const auto prof_int_2 = prof_int_l(chi);
-    return 0.25 * (prof_int_1 * prof_int_1) - csq * (prof_int_2 * prof_int_2);
+// WARNING: need to be careful calling f and l integrals -> can cause domain errors since cubic spline has fixed domain (fix this here)
+double Ap_sq(double chi, FluidProfile& prof) {
+    // pow(prof_int_f_der(chi),2) calls the function twice, so this is more efficient
+    const auto prof_int_1 = prof_int_f_der(chi, prof);
+    const auto prof_int_2 = prof_int_l(chi, prof);
+    return 0.25 * (prof_int_1 * prof_int_1) - prof.csq() * (prof_int_2 * prof_int_2);
 }
 
 

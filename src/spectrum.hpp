@@ -82,7 +82,7 @@ class PowerSpec {
    *
    * @return Kinetic power spectrum
    */
-  PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
+  // PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
 
   /**
    * @brief Calculates kinetic (velocity) power spectrum
@@ -92,7 +92,7 @@ class PowerSpec {
    *
    * @return Kinetic power spectrum
    */
-  PowerSpec Ekin(double k, const PhaseTransition::PTParams &params);
+  // PowerSpec Ekin(double k, const PhaseTransition::PTParams &params);
 
   /**
    * @brief Calculates normalised kinetic power spectrum from Ekin(k)

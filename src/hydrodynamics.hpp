@@ -9,6 +9,8 @@ TO DO:
 #include <array>
 #include <complex>
 
+#include "profile.hpp"
+
 namespace Hydrodynamics {
 
 /**
@@ -20,16 +22,6 @@ namespace Hydrodynamics {
  * @return Lorentz factor between wall frame and Universe frame
  */
 double mu(double xi, double v);
-
-/**
- * @brief The ratio of enthalpy of broken phase to the enthalpy of symmetric phase.
- *
- * @param vp Fluid velocity just infront of wall in wall frame
- * @param vm Fluid velocity just behind of wall in wall frame
- *
- * @return wp/wm
- */
-// double getwow(double vp, double vm);
 
 double lifetime_dist(double Ttilde, const std::string &nuc_type);
 
@@ -44,37 +36,20 @@ double lifetime_dist(double Ttilde, const std::string &nuc_type);
 std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type);
 
 /**
- * @brief The hydrodynamical equations for self-similar solution
- *
- * @param xi Fluid velocity in wall frame
- * @param v Fluid velocity in the universe frame
- * @param w Fluid enthalpy (more detail!)
- * @param T Fluid temperature (more detail!)
- * @param xiw Vector containing xi, w, T
- * @param csq The square of the speed of sound (in the broken phase)
- *
- * @return dxidv, dwdv, dTdv
- */
-std::array<double,3> dfdv(const std::array<double,3>& xiw, double v, double cssq);
-
-double v_prof(double chi);
-double w_prof(double chi);
-double la_prof(double chi);
-
-/**
  * @brief Calculates the integrated profile function 'f' (eq 30 in Pol, Procacci, Caprini (2024))
  *
  * @param chi ..
  *
  * @return f
  */
-double prof_int_f(double chi);
+double prof_int_f(double chi, FluidProfile& prof);
 
-double prof_int_f_der(double chi);
-double prof_int_l(double chi);
+double prof_int_f_der(double chi, FluidProfile& prof);
 
-std::complex<double> Apm(std::string pm, double chi, const double cs);
+double prof_int_l(double chi, FluidProfile& prof);
 
-double Ap_sq(double chi, const double csq);
+std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof);
+
+double Ap_sq(double chi, FluidProfile& prof);
 
 } // namespace Hydrodynamics
