@@ -9,7 +9,6 @@
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 
 #include "maths_ops.hpp"
-#include "constants.hpp"
 #include "PhaseTransition.hpp"
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
@@ -20,7 +19,7 @@ TO DO:
 - update prefac to do actual calculation of TGW, OmegaK_KK
 - remove instances of std::pow when possible - it is slow
 - change throw exception for P() and k() so that it uses Pvec() and kvec() when wrong one is called
-- add vec class to multiply/divide vectors by a scalar and take powers of it or some other way of doing this cleanly
+- update Ekin to pass in Profile class (or maybe just PTParams?)
 */
 
 namespace Spectrum {

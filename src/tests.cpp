@@ -1,3 +1,4 @@
+// tests.cpp
 #include <iostream>
 #include <vector>
 #include <cassert>
@@ -6,6 +7,7 @@
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <string>
 
+#include "tests.hpp"
 #include "profile.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
@@ -15,8 +17,27 @@ namespace plt = matplotlibcpp;
 
 /*
 TO DO:
-- create separate executable for tests (i.e. have a second main function)
+- create separate executable for tests (or maybe just run all at the start of main?)
+- define size() for splines (or find other way to compare their size - probably easier)
+- might not need GSL test, remove if not (and unlink in cmake)
+- make more test_power robust - input x and exp and check if exp=6 to use power6
 */
+
+// Run all tests
+void test_all() {
+    std::cout << "Running all tests..." << "\n"
+              << "Running class tests:" << std::endl;
+    test_vec();
+    test_PowerSpec();
+    test_FluidProfile();
+
+    // finish later
+    // maybe output error if individual tests fail and then continue to the next test
+    // final output is either "all tests passed" or "the following tests failed: ..."
+
+    std::cout << "All tests passed!" << std::endl;
+    return;
+}
 
 // Class tests
 void test_PowerSpec() {
@@ -102,39 +123,106 @@ void test_vec() {
 }
 
 void test_FluidProfile() {
-    std::cout << "Running test_fluid_profile..." << std::endl;
+    using namespace Hydrodynamics;
+    using namespace PhaseTransition;
 
-    Hydrodynamics::state_type y0 = {0.1, 0.1, 0.1};
-    double csq = 1.0 / 3.0;
+    std::cout << "Running FluidProfile class test..." << std::endl;
 
-    Hydrodynamics::FluidProfile prof(y0, csq);
-
-    // Check initial state and csq
-    assert(prof.init_state() == y0);
-    assert(std::abs(prof.csq() - csq) < 1e-10);
+    // Define dummy phase transition parameters
+    PTParams params;
+    FluidProfile profile(params);
 
     // Generate streamplot data
     try {
-        prof.generate_streamplot_data(10, 10, "test_streamplot.csv");
+        profile.generate_streamplot_data(30, 30, "test_streamplot.csv");
     } catch (...) {
         assert(false && "generate_streamplot_data threw an exception");
     }
 
-    // Check that profile outputs have consistent size
-    auto xi = prof.xi_vals();
-    auto v_spline = prof.v_prof();
-    auto w_spline = prof.w_prof();
-    auto la_spline = prof.la_prof();
+    auto xi_vals = profile.xi_vals();
+    auto v_interp = profile.v_prof();
+    auto w_interp = profile.w_prof();
 
-    assert(!xi.empty());
-    // assert(v_spline.size() == xi.size());
-    // assert(w_spline.size() == xi.size());
-    // assert(la_spline.size() == xi.size());
+    std::vector<double> v_vals, w_vals;
+    for (double xi : xi_vals) {
+        v_vals.push_back(v_interp(xi));
+        w_vals.push_back(w_interp(xi));
+    }
 
-    std::cout << "test_FluidProfile passed." << std::endl;
+    // Simple check: values should be finite and in valid range
+    for (size_t i = 0; i < xi_vals.size(); ++i) {
+        assert(std::isfinite(v_vals[i]));
+        assert(std::isfinite(w_vals[i]));
+        // assert(v_vals[i] >= 0.0 && v_vals[i] <= 1.0);
+        // assert(w_vals[i] >= 0.0);  // domain-specific range?
+    }
+
+    // Plot the results
+    plt::figure_size(800, 600);
+    plt::plot(xi_vals, v_vals, {{"label", "v_prof"}});
+    plt::plot(xi_vals, w_vals, {{"label", "w_prof"}});
+    plt::xlabel("xi");
+    plt::ylabel("Profile values");
+    plt::title("FluidProfile v_prof and w_prof");
+    plt::legend();
+    plt::grid(true);
+    plt::save("fluid_profile_test.png");
+
+    std::cout << "FluidProfile test passed and figure saved to 'fluid_profile_test.png'.\n";
 }
 
-double test_func(double x, void *params) {
+// update to test other interpolators? or separate one for each used?
+// update to test weirder functions (or input a function to test interpolator?)
+void test_interpolator() {
+    // Known function: f(x) = x^3
+    auto f = [](double x) { return x * x * x; };
+
+    // Sample points
+    std::vector<double> x_vals = linspace(-2.0, 2.0, 50);
+    std::vector<double> y_vals;
+    for (double x : x_vals)
+        y_vals.push_back(f(x));
+
+    // Build spline
+    CubicSpline<double> spline(x_vals, y_vals);
+
+    // Interpolate densely for plot
+    std::vector<double> x_dense, y_interp;
+    for (double x = -2.0; x <= 2.0; x += 0.01) {
+        x_dense.push_back(x);
+        y_interp.push_back(spline(x));
+    }
+
+    // Test interpolation accuracy at a few points
+    std::vector<double> test_points = {-1.5, -0.5, 0.5, 1.5};
+    double tol = 1e-4;
+    for (double xi : test_points) {
+        double yi_exact = f(xi);
+        double yi_interp = spline(xi);
+        double error = std::abs(yi_interp - yi_exact);
+        std::cout << "x = " << xi
+                  << ", exact = " << yi_exact
+                  << ", spline = " << yi_interp
+                  << ", error = " << error << '\n';
+        assert(error < tol && "CubicSpline interpolation error too large!");
+    }
+
+    // Plot and save figure
+    plt::figure_size(800, 600);
+    plt::plot(x_dense, y_interp, {{"label", "Spline"}});
+    plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
+    plt::xlabel("x");
+    plt::ylabel("y");
+    plt::title("CubicSpline Interpolation of f(x) = x^3");
+    plt::legend();
+    plt::grid(true);
+    plt::save("interpolator_test.png");
+
+    std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
+}
+
+// Integration tests
+double test_func_gsl(double x, void *params) {
     // integral over -inf to inf gives sqrt(pi) = 1.77245
     return std::exp(-x * x);
 }
@@ -157,7 +245,7 @@ void test_gsl_integration() { // might not need GSL, remove if not (unlink in cm
 
     // Wrap the function in a gsl_function struct
     gsl_function gsl_func;
-    gsl_func.function = &test_func;  // Assign the function pointer
+    gsl_func.function = &test_func_gsl;  // Assign the function pointer
     gsl_func.params = nullptr;       // Pass any additional parameters (none in this case)
 
     // Perform the integration using the GSL integration function
@@ -173,46 +261,8 @@ void test_gsl_integration() { // might not need GSL, remove if not (unlink in cm
     return;
 }
 
-void test_interpolator(std::string type) {
-    // const auto x_vals = linspace(0.0, 1.0, 10);
-    const std::vector<double> x_vals = {0.0, 1.0, 2.0, 3.0};
-    const std::vector<double> y_vals = {0.0, 1.0, 4.0, 9.0};
-    // const std::vector<double> y_vals = {0.0, 5.6, 2.3, 7.6, 8.4, -1.3, 9.2, 15.8, 13.3, 10.7};
-    std::optional<CubicSpline<double>> interp_func;
-
-    std::string title;
-    
-    if (type == "cubic_spline") {
-        interp_func.emplace(x_vals, y_vals);
-        title = "Cubic Spline";
-    } else {
-        throw std::invalid_argument("Interpolator type must be 'cubic_spline'");
-    }
-
-    // generate interpolation points
-    std::vector<double> y_interp;
-    for (double x : x_vals) {
-        y_interp.push_back((*interp_func)(x));
-    }
-
-    // save fig
-    plt::figure_size(800, 600);
-    plt::plot(x_vals, y_interp, {{"label", "Spline"}});
-    plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
-
-    plt::legend();
-    plt::xlabel("x");
-    plt::ylabel("y");
-    plt::title(title + " Interpolation");
-    plt::grid(true);
-    plt::save("interpolator_test.png");
-
-    std::cout << title << " Interpolation test complete.\n";
-
-    return;
-}
-
-namespace PowerTest { // test for different versions of the power function
+// tests for different versions of the power function
+namespace PowerTest { 
 
 double mean(const std::vector<double>& times) {
     double sum = 0.0;
@@ -230,7 +280,6 @@ double st_dev(const std::vector<double>& times, double mean_time) {
     return std::sqrt(sum / times.size());
 }
 
-// TO DO: make more robust - input x and exp and check if exp=6 to use power6
 void test_power(int num_runs) {
     double x = 2.0;  // Example input value
     int exp = 6;     // Example exponent for power()

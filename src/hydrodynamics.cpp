@@ -3,16 +3,15 @@
 /*
 TO DO:
 - change short functions to inline functions and move to header
+- check for domain errors when calling cublic spline in Ap_sq()
 */
 
 #include <cmath>
-#include <array>
 #include <complex>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <functional>
 
 #include "profile.hpp"
-#include "constants.hpp"
 
 namespace Hydrodynamics {
 

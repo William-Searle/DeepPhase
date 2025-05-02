@@ -1,33 +1,90 @@
+// tests.hpp
+
+/**
+ * @file tests.hpp
+ * @brief Contains test functions and plotting utilities for various components of the codebase.
+*/
+
 #pragma once
 
 #include <vector>
 #include <string>
 #include <matplotlibcpp.h>
 
+/// @brief Runs all tests
+void test_all();
+
+/// @brief Tests functionality of the PowerSpec class.
 void test_PowerSpec();
 
+/// @brief Tests arithmetic and operations on the vec<T> class.
 void test_vec();
 
+/// @brief Tests the FluidProfile class for correct behavior and integration.
 void test_FluidProfile();
 
-double test_func(double x, void* params);
+/**
+ * @brief Example test function to integrate with GSL library.
+ * 
+ * @param x Input value.
+ * @param params Pointer to parameters needed for the function.
+ * 
+ * @return Computed value.
+*/
+double test_func_gsl(double x, void* params);
 
+/// @brief Tests numerical integration using Boost.Math.
 void test_boostmath();
 
+/// @brief Tests numerical integration using GSL.
 void test_gsl_integration();
 
-void test_interpolator(std::string type);
+/**
+ * @brief Tests the 1D interpolator with a specified type.
+ * 
+ * @param type Type of interpolator to test (e.g., "linear", "cubic").
+*/
+void test_interpolator();
 
+/// @brief Namespace for performance testing alternatives to std::pow
 namespace PowerTest {
 
+/**
+ * @brief Computes the mean of a list of time durations.
+ * 
+ * @param times Vector of measured time values.
+ * @return Mean of the time values.
+ */
 double mean(const std::vector<double>& times);
+
+/**
+ * @brief Computes the standard deviation of time measurements.
+ * 
+ * @param times Vector of measured time values.
+ * @param mean_time Mean of the time values.
+ * @return Standard deviation of the time values.
+ */
 double st_dev(const std::vector<double>& times, double mean_time);
+
+/**
+ * @brief Run a performance test on PowerSpec and report timing statistics.
+ * 
+ * @param num_runs Number of iterations for benchmarking (default 1000).
+ */
 void test_power(int num_runs = 1000);
 
 } // namespace PowerTest
 
-// only takes in function of 1 variable at this stage
-template<typename Func>
+/**
+ * @brief Plots a user-defined function over a given interval.
+ * 
+ * @tparam Func Type of the callable object.
+ * @param f Function to plot.
+ * @param xmin Minimum x-value of the plot.
+ * @param xmax Maximum x-value of the plot.
+ * @param points Number of sample points (default: 100).
+ */
+template<typename Func> // only takes in function of 1 variable at this stage
 void plot_func(Func f, double xmin, double xmax, int points=100) {
     namespace plt = matplotlibcpp;
     
@@ -46,7 +103,10 @@ void plot_func(Func f, double xmin, double xmax, int points=100) {
     plt::save("plot.png");
 }
 
-// takes input file and plots it
-// void plot_pts() {
-
-// }
+// move this to a more appropriate file
+/**
+ * @brief Reads a file containing point data and generates a plot.
+ * 
+ * @param filename Path to the data file (CSV or plain text).
+ */
+void plot_pts(std::string& filename);

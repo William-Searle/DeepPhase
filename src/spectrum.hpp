@@ -18,6 +18,13 @@ TO DO:
 
 namespace Spectrum {
 
+/**
+ * @class PowerSpec
+ * @brief Represents a power spectrum, either as a scalar or a vector function of momentum.
+ *
+ * The PowerSpec class handles scalar and vector power spectra and provides arithmetic
+ * operations and access to physical properties such as the momentum vector and maximum spectrum value.
+ */
 class PowerSpec {
   public:
     using Spectrum = std::pair<double, double>;

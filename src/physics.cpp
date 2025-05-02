@@ -1,6 +1,6 @@
 // physics.cpp
-
 #include <cmath>
+
 #include "physics.hpp"
 
 namespace Physics {

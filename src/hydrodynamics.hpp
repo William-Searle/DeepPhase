@@ -3,7 +3,7 @@
 
 /*
 TO DO:
-- define a class NucModel that stores nuc_type (exp or sim), bubble lifetime distribution function v(Ttilde), deflag/det/hybrid type
+- 
 */
 
 #include <array>
@@ -14,42 +14,84 @@ TO DO:
 namespace Hydrodynamics {
 
 /**
- * @brief Lorentz factor between wall frame and Universe frame
+ * @brief Computes the Lorentz factor between the wall frame and the universe frame.
  *
- * @param xi Fluid velocity in wall frame
- * @param v Fluid velocity in universe frame
- *
- * @return Lorentz factor between wall frame and Universe frame
+ * @param xi Fluid velocity in the wall frame.
+ * @param v Fluid velocity in the universe frame.
+ * 
+ * @return Lorentz factor (mu).
  */
 double mu(double xi, double v);
 
+/**
+ * @brief Computes the bubble lifetime distribution at the normalized time Ttilde.
+ *
+ * @param Ttilde Normalized time (T * β).
+ * @param nuc_type Nucleation type: "exp" for exponential or "sim" for simultaneous.
+ *
+ * @return Lifetime distribution.
+ */
 double lifetime_dist(double Ttilde, const std::string &nuc_type);
 
 /**
- * @brief Calculates the bubble lifetime distribution for exponential/simultaneous nucleation
+ * @brief Computes the bubble lifetime distribution over a vector of normalized times Ttilde.
  *
- * @param Ttilde Ttilde = T \beta (normalised bubble lifetime vector)
- * @param nuc_type Nucleation type (exponential 'exp' or simultaneous 'sim')
- *
- * @return Bubble lifetime distribution
+ * @param Ttilde Normalized time (T * β).
+ * @param nuc_type Nucleation type: "exp" for exponential or "sim" for simultaneous.
+ * 
+ * @return Lifetime distribution.
  */
 std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type);
 
 /**
- * @brief Calculates the integrated profile function 'f' (eq 30 in Pol, Procacci, Caprini (2024))
+ * @brief Computes the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
  *
- * @param chi ..
- *
- * @return f
+ * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
+ * @param prof FluidProfile object used for interpolation and evaluation.
+ * 
+ * @return Value of the integrated profile function f.
  */
 double prof_int_f(double chi, FluidProfile& prof);
 
+/**
+ * @brief Computes the first derivative of the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
+ *
+ * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
+ * @param prof FluidProfile object used for interpolation and evaluation.
+ * 
+ * @return Value of the integrated profile function f.
+ */
 double prof_int_f_der(double chi, FluidProfile& prof);
 
+/**
+ * @brief Computes the integrated profile function l(χ) defined in Eq. (31) of Pol, Procacci, Caprini (2024).
+ *
+ * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
+ * @param prof FluidProfile object used for interpolation and evaluation.
+ * 
+ * @return Value of the integrated profile function l.
+ */
 double prof_int_l(double chi, FluidProfile& prof);
 
+/**
+ * @brief Computes the complex amplitude A₊ or A₋ defined in Eq. (29) of Pol, Procacci, Caprini (2024).
+ *
+ * @param pm String indicating plus or minus branch ("+" or "-").
+ * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
+ * @param prof FluidProfile object.
+ * 
+ * @return Complex amplitude A₊ or A₋.
+ */
 std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof);
 
+/**
+ * @brief Computes |A₊(χ)|²
+ *
+ * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
+ * @param prof Fluid profile object.
+ * 
+ * @return Squared modulus |A₊(χ)|².
+ */
 double Ap_sq(double chi, FluidProfile& prof);
 
 } // namespace Hydrodynamics

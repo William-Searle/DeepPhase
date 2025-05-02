@@ -8,6 +8,7 @@
 #include <fstream>
 
 #include "profile.hpp"
+#include "PhaseTransition.hpp"
 #include "hydrodynamics.hpp"
 #include "physics.hpp"
 #include "matplotlibcpp.h"
@@ -16,9 +17,11 @@
 /*
 TO DO:
 - define lambda in profile() (currently has placeholder so integration routine can be tested)
-- fix streamplot for w profile
 - update generate_streamplot_data() to include points of interest (fixed pts, detonation/deflag/hybrid regions)
+- fix calc of w profile in generate_streamplot_data()
 - how to choose times to integrate over in solve_prof()? endpoints of integration hardcoded currently
+- how to call csq? directly from PTParams or create local copy in Profile class?
+- in profile, need to check for okay initial conditions otherwise v_prof etc could be divergent/solution doesn't exist
 */
 
 namespace plt = matplotlibcpp;
@@ -60,12 +63,25 @@ void push_back_state::operator()(const state_type &y, double t) const {
 
 /***** FluidProfile class *****/
 // Define ctor
-FluidProfile::FluidProfile(state_type& y0, double csq)
-    : y0_(y0),
-      csq_(csq),
+FluidProfile::FluidProfile(PhaseTransition::PTParams& params)
+    : y0_(),
+      csq_( params.cmsq() ), // bad to do this? just call params.cmsq() when needed instead?
       xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {
+        // define initial state vector
+        const auto dlt = 0.01;
+        const auto xi0 = params.vw() + dlt;
+        y0_.push_back(xi0);
+
+        const auto vp = params.vpm()[0];
+        const auto v0 = params.vUF(vp);
+        y0_.push_back(v0);
+
+        const auto wp = params.wpm()[0];
+        const auto w0 = 0.1; // PLACEHOLDER
+        y0_.push_back(w0);
+
         // define xi_vals, v_prof, w_prof here
         const auto prof_interp = profile();
         v_prof_ = prof_interp[0];
@@ -133,6 +149,11 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
 std::vector<state_type> FluidProfile::solve_prof(int n) const {
     FluidSystem fluid(csq_);
     auto y0 = y0_; // integrator needs non-const initial state
+    
+    std::cout << "y0 vals:\n";
+    for (double vals : y0) {
+        std::cout << vals << "\n";
+    }
 
     std::vector<state_type> states;
     std::vector<double> times;
@@ -155,6 +176,10 @@ std::vector<CubicSpline<double>> FluidProfile::profile() {
         xi_vals.push_back(prof[i][0]);
         v_vals.push_back(prof[i][1]);
         w_vals.push_back(prof[i][2]);
+
+        if (isnan(xi_vals[i])) {
+            throw std::invalid_argument("Profile: NaN x-value detected.");
+        }
     }
 
     // define lambda here, placeholder for now!!

@@ -28,16 +28,6 @@ std::vector<double> linspace(double start, double end, std::size_t num) {
     return result;
 }
 
-void print_vector(const std::vector<double> &vec) {
-    std::cout << "[";
-    for (size_t i = 0; i < vec.size(); ++i) {
-        std::cout << vec[i];
-        if (i != vec.size() - 1)
-            std::cout << ", ";
-    }
-    std::cout << "]\n";
-}
-
 // faster than std::pow
 double power(double x, int exp) {
     if (exp == 0) return 1.0;  // x^0 = 1

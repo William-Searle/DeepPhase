@@ -4,21 +4,22 @@
 #include <string>
 #include <chrono>
 
-#include "tests.hpp"
-#include "constants.hpp"
-#include "PhaseTransition.hpp"
+// modify include list when testing of program finished - currently includes everything
 #include "hydrodynamics.hpp"
+#include "PhaseTransition.hpp"
 #include "spectrum.hpp"
-#include "maths_ops.hpp"
 #include "profile.hpp"
+#include "physics.hpp"
+#include "maths_ops.hpp"
+#include "constants.hpp"
+#include "tests.hpp"
 
 /*
 TO DO:
-- separate into different test files to test each function so I can compare to the python output
 - use libraries?
 - Input file where you can specify universe and pt constants
+- Write clock
 - test spectrum functions (Ekin, variants of delta, GW spectrum) behaviour in limits they discuss in paper
-- define addition/subtraction/multiplication/division of vectors with vectors/scalars
 */
 
 int main() {
