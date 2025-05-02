@@ -65,7 +65,8 @@ void push_back_state::operator()(const state_type &y, double t) const {
 // Define ctor
 FluidProfile::FluidProfile(PhaseTransition::PTParams& params)
     : y0_(),
-      csq_( params.cmsq() ), // bad to do this? just call params.cmsq() when needed instead?
+      params_(params)
+      csq_(params.cmsq()), // bad to do this? just call params.cmsq() when needed instead?
       xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {

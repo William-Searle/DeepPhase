@@ -79,36 +79,48 @@ class PowerSpec {
 };
 #include "spectrum.tpp"
 
-  /**
-   * @brief Calculates kinetic (velocity) power spectrum
-   *
-   * @param k Momentum
-   * @param beta Inverse PT duration
-   * @param Rs Characteristic length scale R_*
-   * @param nuc_type Bubble nucleation method (exp or sim)
-   *
-   * @return Kinetic power spectrum
-   */
-  // PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
+/**
+ * @brief Calculates kinetic (velocity) power spectrum
+ *
+ * @param dtau $\delta \tau_{fin}$
+ * @param k Momentum
+ * @param p
+ * @param pt
+ *
+ * @return Kinetic power spectrum
+ */
+double dlt(double dtau, double k, double p, double pt);
 
-  /**
-   * @brief Calculates kinetic (velocity) power spectrum
-   *
-   * @param k Momentum
-   * @param params Phase transition parameters
-   *
-   * @return Kinetic power spectrum
-   */
-  // PowerSpec Ekin(double k, const PhaseTransition::PTParams &params);
+/**
+ * @brief Calculates kinetic (velocity) power spectrum
+ *
+ * @param k Momentum
+ * @param beta Inverse PT duration
+ * @param Rs Characteristic length scale R_*
+ * @param nuc_type Bubble nucleation method (exp or sim)
+ *
+ * @return Kinetic power spectrum
+ */
+PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
 
-  /**
-   * @brief Calculates normalised kinetic power spectrum from Ekin(k)
-   *
-   * @param Ekin kinetic power spectrum
-   *
-   * @return Normalised kinetic power spectrum
-   */
-  PowerSpec zetaKin(PowerSpec Ekin);
+/**
+ * @brief Calculates kinetic (velocity) power spectrum
+ *
+ * @param k Momentum
+ * @param params Phase transition parameters
+ *
+ * @return Kinetic power spectrum
+ */
+PowerSpec Ekin(double k, Hydrodynamics::FluidProfile& prof);
+
+/**
+ * @brief Calculates normalised kinetic power spectrum from Ekin(k)
+ *
+ * @param Ekin kinetic power spectrum
+ *
+ * @return Normalised kinetic power spectrum
+ */
+PowerSpec zetaKin(PowerSpec Ekin);
 
 /**
  * @brief Calculates prefactor for GW power spectrum $\Omega_{GW}$

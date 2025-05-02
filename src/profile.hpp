@@ -13,6 +13,7 @@ TO DO:
 - move generate_stream_plot() elsewhere? independent of initial conditions so the same for all instances of FluidProfile
 - add some safety thing for private vales and prof in FluidProfile to stop them from changing (helper static function to precompute in initialiser list)
 - make initial state (y0) const after calling FluidProfile ctor somehow?
+- make copy of PTParams parameters in FluidProfile class
 */
 
 namespace Hydrodynamics {
@@ -77,6 +78,7 @@ class FluidProfile {
 
   private:
     const double csq_;
+    const PhaseTransition::PTParams params_;
     state_type y0_; // WARNING: Not const
     std::vector<double> xi_vals_, v_vals_, w_vals_, la_vals_;
     CubicSpline<double> v_prof_, w_prof_, la_prof_;

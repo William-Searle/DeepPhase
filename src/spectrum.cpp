@@ -153,29 +153,43 @@ PowerSpec& PowerSpec::operator*=(PowerSpec& spec) {
     *this = *this * spec;
     return *this;
 }
-
 /***************************/
 
-// update to pass fluid profile
-// PowerSpec Ekin(double k, const Hydrodynamics::FluidProfile& prof, double csq, double beta, double Rs, const std::string& nuc_type) {
-//     auto integrand = [&](double Ttilde) {
-//         // return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
-//         return Hydrodynamics::Ap_sq(Ttilde * k / beta, prof);
+// tau_fin and tau_s could be passed in by params?
+// double dlt(double tau_fin, double tau_s, double k, double p, double pt) {
+//     auto integrand = [&](double tau_m, double k, double p, double pt) {
+//         return ff(tau_m, p) * ff(tau_m, pt) * std::cos(k * tau_m)
 //     };
 
-//     boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-//     // double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-//     double f = integrator.integrate(integrand, 0.1, 0.2);
-//     f *= std::pow(k / M_PI, 2) / (2 * std::pow(beta, 6) * std::pow(Rs, 3));
     
-//     return PowerSpec(k, f);
 // }
 
-// update to pass fluid profile
-// PowerSpec Ekin(double k, const PhaseTransition::PTParams &params const Hydrodynamics::FluidProfile& prof) {
-//     // not sure if correct to use cmsq here (broken phase speed of sound sq)
-//     return Ekin(k, params.cmsq(), params.beta(), params.Rs(), params.nuc_type());
-// }
+double ff(double tau_m, double k, double cs) {
+    return std::cos(k * cs * tau_m); // for SSM -> NEED TO UPDATE THIS
+}
+
+double dtau_fin(double tau_fin, double tau_s) {
+    return tau_fin - tau_s;
+}
+
+// get rid of std::pow
+PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type) {
+    // Integrand of Ekin
+    auto integrand = [&](double Ttilde) {
+        return Hydrodynamics::lifetime_dist(Ttilde, nuc_type) * power6(Ttilde) * Hydrodynamics::Ap_sq(Ttilde * k / beta, csq);
+    };
+
+    // Integration routine
+    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
+    double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
+    f *= std::pow(k / M_PI, 2) / (2.0 * power6(beta) * std::pow(Rs, 3));
+    
+    return PowerSpec(k, f);
+}
+
+PowerSpec Ekin(double k, Hydrodynamics::FluidProfile& prof) {
+    Ekin(k, prof.params().csq(), prof.params().beta(), prof.params().Rs(), prof.params().nuc_type())
+}
 
 PowerSpec zetaKin(PowerSpec Ekin) {
     return Ekin / Ekin.max();
