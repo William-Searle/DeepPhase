@@ -33,15 +33,15 @@ namespace Hydrodynamics { // calculate bubble profile
 
 /*************************** Fluid profile ODE **********************************/
 double FluidSystem::dxi_dtau(double xi, double v) const {
-    return xi * ((xi-v)*(xi-v) - csq_ * (1-xi*v)*(1-xi*v));
+    return xi * ((xi-v)*(xi-v) - params_.csq() * (1-xi*v)*(1-xi*v));
 }
 
 double FluidSystem::dv_dtau(double xi, double v) const {
-    return 2.0 * v * csq_ * (1-v*v) * (1 - xi*v);
+    return 2.0 * v * params_.csq() * (1-v*v) * (1 - xi*v);
 }
 
 double FluidSystem::dw_dtau(double xi, double v, double w) const {
-    return w * (1 + 1/csq_) * Physics::gammaSq(v) * mu(xi, v) * dv_dtau(xi, v);
+    return w * (1 + 1/params_.csq()) * Physics::gammaSq(v) * mu(xi, v) * dv_dtau(xi, v);
 }
 /*******************************************************************************/
 
@@ -74,23 +74,23 @@ void push_back_state::operator()(const state_type &y, double t) const {
 
 /***** FluidProfile class *****/
 // Define ctor
-FluidProfile::FluidProfile(PhaseTransition::PTParams& params)
+FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
     : y0_(),
-      csq_( params.cmsq() ), // bad to do this? just call params.cmsq() when needed instead?
+      params_(params),
       xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {
         // define initial state vector (xi0, v0, w0) = (vw+dlt, v+, w+)
         // (starts integration just outside of wall)
         const auto dlt = 0.01;
-        const auto xi0 = params.vw() + dlt;
+        const auto xi0 = params_.vw() + dlt;
         y0_.push_back(xi0);
 
-        const auto vp = params.vpm()[0];
-        const auto v0 = params.vUF(vp);
+        const auto vp = params_.vpm()[0];
+        const auto v0 = params_.vUF(vp);
         y0_.push_back(v0);
 
-        const auto wp = params.wpm()[0];
+        const auto wp = params_.wpm()[0];
         const auto w0 = 0.1; // PLACEHOLDER
         y0_.push_back(w0);
 
@@ -139,7 +139,7 @@ void FluidProfile::plot(const std::string& filename) const {
     plt::ylim(0.0, 1.0);
     plt::grid(true);
 
-    // suptitle("(vw, alpha) = " + );
+    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alpha = " + to_string_with_precision(params_.alpha()));
     plt::save(filename);
 
     return;
@@ -152,7 +152,7 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
     file << "xi,v,w,dxidtau,dvdtau,dwdtau\n";
     file << std::fixed << std::setprecision(8); // needed for compatibility with python streamplot
 
-    FluidSystem fluid(csq_);
+    FluidSystem fluid(params_);
 
     // Define grid ranges (avoid's singularity at xi=0)
     const double xi_min = 0.01;
@@ -189,7 +189,7 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
 
 // Private functions
 std::vector<state_type> FluidProfile::solve_profile(int n) const {
-    FluidSystem fluid(csq_);
+    FluidSystem fluid(params_);
     auto y = y0_; // integrator needs non-const initial state
     
     std::cout << "(xi0,w0,w0)=(";

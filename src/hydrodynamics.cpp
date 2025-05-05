@@ -112,7 +112,7 @@ std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof) {
     }
 
     std::complex<double> i(0.0, 1.0); // define elsewhere?
-    const std::complex<double> AA = (-i/2.0) * (prof_int_f_der(chi, prof) + sgn * i * std::sqrt(prof.csq()) * prof_int_l(chi, prof));
+    const std::complex<double> AA = (-i/2.0) * (prof_int_f_der(chi, prof) + sgn * i * std::sqrt(prof.params().csq()) * prof_int_l(chi, prof));
 
     return AA;
 }
@@ -123,7 +123,7 @@ double Ap_sq(double chi, FluidProfile& prof) {
     // pow(prof_int_f_der(chi),2) calls the function twice, so this is more efficient
     const auto prof_int_1 = prof_int_f_der(chi, prof);
     const auto prof_int_2 = prof_int_l(chi, prof);
-    return 0.25 * (prof_int_1 * prof_int_1) - prof.csq() * (prof_int_2 * prof_int_2);
+    return 0.25 * (prof_int_1 * prof_int_1) - prof.params().csq() * (prof_int_2 * prof_int_2);
 }
 
 

@@ -32,6 +32,7 @@ class PTParams { // will probably need to update this later
 
     double cpsq() const { return cpsq_; } // speed of sound squared (symmetric phase)
     double cmsq() const { return cmsq_; } // speed of sound squared (broken phase)
+    double csq() const { return cmsq_; } // keep this?
     double vw() const { return vw_; } // wall velocity
     double alpha() const { return alpha_; } // strength parameter
     double beta() const { return beta_; } // inverse PT duration

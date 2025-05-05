@@ -25,7 +25,7 @@ using state_type = std::vector<double>;
  */
 class FluidSystem {
   public:
-    FluidSystem(double csq) : csq_(csq) {}
+    FluidSystem(const PhaseTransition::PTParams& params) : params_(params) {}
 
     double dxi_dtau(double xi, double v) const;
     double dv_dtau(double xi, double v) const;
@@ -41,7 +41,7 @@ class FluidSystem {
     void operator()(const state_type &y, state_type &dydt, double /*tau*/) const;
 
   private:
-    double csq_;
+    PhaseTransition::PTParams params_;
 };
 
 /// @brief Observer to store integration states and times during ODE solving.
@@ -61,10 +61,10 @@ struct push_back_state {
  */
 class FluidProfile {
   public:
-    FluidProfile(PhaseTransition::PTParams& params); // ctor
+    FluidProfile(const PhaseTransition::PTParams& params); // ctor
 
     state_type init_state() const { return y0_; }; // Initial state vector {xi0, v0, w0}
-    double csq() const { return csq_; }; // Speed of sound in the fluid
+    PhaseTransition::PTParams params() const { return params_; }; // PT parameters
     std::vector<double> xi_vals() const { return xi_vals_; }; // Vector of xi=r/t
 
     // Interpolation functions for profile
@@ -77,7 +77,7 @@ class FluidProfile {
     void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
 
   private:
-    const double csq_;
+    const PhaseTransition::PTParams params_;
     state_type y0_; // WARNING: Not const
     std::vector<double> xi_vals_, v_vals_, w_vals_, la_vals_;
     CubicSpline<double> v_prof_, w_prof_, la_prof_;

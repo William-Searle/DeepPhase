@@ -123,3 +123,5 @@ double power(double x, int exp);
  * @return double Result of x^6.
  */
 double power6(double x);
+
+std::string to_string_with_precision(double value, int precision = 2);

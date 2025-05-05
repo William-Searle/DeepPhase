@@ -44,3 +44,9 @@ double power6(double x) {
     double x4 = x2 * x2;
     return x4 * x2;
 }
+
+std::string to_string_with_precision(double value, int precision) {
+    std::ostringstream out;
+    out << std::fixed << std::setprecision(precision) << value;
+    return out.str();
+}
