@@ -90,7 +90,6 @@ class CubicSpline {
     bool initialized_ = false;
 
     bool is_strictly_monotonic(const std::vector<T>& x) const; // Check monotonicity
-    std::vector<T> make_increasing(std::vector<T>& x) const;
 };
 #include "CubicSpline.tpp"
 

@@ -73,6 +73,7 @@ class FluidProfile {
     CubicSpline<double> la_prof() const { return la_prof_; };
 
     void write() const; // not finished
+    void plot(const std::string& filename = "bubble_prof.csv") const; // Plots interpolating functions (v and w)
     void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
 
   private:

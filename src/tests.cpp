@@ -159,15 +159,8 @@ void test_FluidProfile() {
     }
 
     // Plot the results
-    plt::figure_size(800, 600);
-    plt::plot(xi_vals, v_vals, {{"label", "v_prof"}});
-    plt::plot(xi_vals, w_vals, {{"label", "w_prof"}});
-    plt::xlabel("xi");
-    plt::ylabel("Profile values");
-    plt::title("FluidProfile v_prof and w_prof");
-    plt::legend();
-    plt::grid(true);
-    plt::save("fluid_profile_test.png");
+    const std::string filename = "fluid_profile_test.png";
+    profile.plot(filename);
 
     std::cout << "FluidProfile test passed and figure saved to 'fluid_profile_test.png'.\n";
 }

@@ -22,6 +22,8 @@ TO DO:
 - how to choose times to integrate over in solve_prof()? endpoints of integration hardcoded currently
 - how to call csq? directly from PTParams or create local copy in Profile class?
 - in profile, need to check for okay initial conditions otherwise v_prof etc could be divergent/solution doesn't exist
+- make timesteps dynamic if it has to stop integrating prematurely in profile_solver() (so enough integration points)
+    - if it stops prematurely, find tau_max and redo the integration? this is simplest but longest solution
 */
 
 namespace plt = matplotlibcpp;
@@ -78,7 +80,8 @@ FluidProfile::FluidProfile(PhaseTransition::PTParams& params)
       xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {
-        // define initial state vector
+        // define initial state vector (xi0, v0, w0) = (vw+dlt, v+, w+)
+        // (starts integration just outside of wall)
         const auto dlt = 0.01;
         const auto xi0 = params.vw() + dlt;
         y0_.push_back(xi0);
@@ -91,7 +94,8 @@ FluidProfile::FluidProfile(PhaseTransition::PTParams& params)
         const auto w0 = 0.1; // PLACEHOLDER
         y0_.push_back(w0);
 
-        // define xi_vals, v_prof, w_prof here
+        // define bubble profile interpolating functions
+        // individual vals stored using profile()
         const auto prof_interp = profile();
         v_prof_ = prof_interp[0];
         w_prof_ = prof_interp[1];
@@ -108,6 +112,35 @@ void FluidProfile::write() const {
     }
     file.close();
     std::cout << "Saved to fluid_solution.csv\n";
+
+    return;
+}
+
+void FluidProfile::plot(const std::string& filename) const {
+    namespace plt = matplotlibcpp;
+
+    plt::figure_size(1600, 600);
+
+    // First plot (top half)
+    plt::subplot2grid(1, 2, 0, 0);
+    plt::plot(xi_vals_, v_vals_);
+    plt::xlabel("xi");
+    plt::ylabel("v(xi)");
+    plt::xlim(0.0, 1.0);
+    plt::ylim(0.0, 1.0);
+    plt::grid(true);
+
+    // Second plot (bottom half)
+    plt::subplot2grid(1, 2, 0, 1);
+    plt::plot(xi_vals_, w_vals_);
+    plt::xlabel("xi");
+    plt::ylabel("w(xi)");
+    plt::xlim(0.0, 1.0);
+    plt::ylim(0.0, 1.0);
+    plt::grid(true);
+
+    // suptitle("(vw, alpha) = " + );
+    plt::save(filename);
 
     return;
 }

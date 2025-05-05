@@ -25,9 +25,10 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
     bool is_increasing = x[0] < x[1];
     auto x_copy = x;
     auto y_copy = y;
+
     if (!is_increasing) {
-        make_increasing(x_copy);
-        make_increasing(y_copy);
+        std::reverse(x_copy.begin(), x_copy.end());
+        std::reverse(y_copy.begin(), y_copy.end());
     }
 
     x_ = x_copy;
@@ -106,11 +107,4 @@ bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
     }
 
     return increasing || decreasing;
-}
-
-template <typename T>
-std::vector<T> CubicSpline<T>::make_increasing(std::vector<T>& x) const {
-    std::vector<T> x_copy = x;
-    std::reverse(x_copy.begin(), x_copy.end());
-    return x_copy;
 }
