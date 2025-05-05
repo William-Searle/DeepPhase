@@ -16,7 +16,7 @@ namespace PhaseTransition {
 
 // PTParams
 PTParams::PTParams()
-    : PTParams(1./3., 1./3., 0.7, 0.1, 1.0, "exp") {}
+    : PTParams(1./3., 1./3., 0.5, 0.1, 1.0, "exp") {}
 
 PTParams::PTParams(double cpsq, double cmsq, double vw, double alpha, double beta, std::string nuc_type)
     : cpsq_(cpsq), 

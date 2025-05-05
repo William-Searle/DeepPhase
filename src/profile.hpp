@@ -90,7 +90,7 @@ class FluidProfile {
      * 
      * @return Vector of state vectors representing the profile.
      */
-    std::vector<state_type> solve_prof(int n=100) const;
+    std::vector<state_type> solve_profile(int n=100) const;
 
     /**
      * @brief Constructs cubic splines for the hydrodynamic profiles.

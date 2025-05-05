@@ -21,6 +21,7 @@ TO DO:
 - define size() for splines (or find other way to compare their size - probably easier)
 - might not need GSL test, remove if not (and unlink in cmake)
 - make more test_power robust - input x and exp and check if exp=6 to use power6
+- update test_FluidProfile to test it for deflag, hybrid and detonation (i.e. repeat same tests for different PTParams input vals)
 */
 
 // Run all tests
@@ -129,7 +130,7 @@ void test_FluidProfile() {
     std::cout << "Running FluidProfile class test..." << std::endl;
 
     // Define dummy phase transition parameters
-    PTParams params;
+    PTParams params(1./3., 1./3., 0.5, 0.1, 1.0, "exp");
     FluidProfile profile(params);
 
     // Generate streamplot data

@@ -15,19 +15,25 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
 
     const size_t n = x.size();
 
-    // Check for strictly increasing x
-    for (size_t i = 1; i < n; ++i) {
-        if (x[i] <= x[i - 1]) {
-            throw std::invalid_argument("x-values must be strictly increasing.");
-        } else if (isnan(x[i])) {
-            throw std::invalid_argument("NaN x-value detected.");
-        }
+    // might not be the best way to implement strictly increasing - do in solve_profile() instead?
+    // Checks monotonicity
+    if (!is_strictly_monotonic(x)) {
+        throw std::invalid_argument("x-values must be strictly increasing or decreasing");
     }
 
-    x_ = x;
-    y_ = y;
+    // Cubic spline needs x strictly increasing
+    bool is_increasing = x[0] < x[1];
+    auto x_copy = x;
+    auto y_copy = y;
+    if (!is_increasing) {
+        make_increasing(x_copy);
+        make_increasing(y_copy);
+    }
+
+    x_ = x_copy;
+    y_ = y_copy;
     h_.resize(n - 1);
-    a_ = y;
+    a_ = y_copy;
     c_.resize(n);
 
     // Step 1: Compute h[i]
@@ -83,4 +89,28 @@ T CubicSpline<T>::operator()(T xi) const {
 
     T dx = xi - x_[i];
     return a_[i] + b_[i] * dx + c_[i] * dx * dx + d_[i] * dx * dx * dx;
+}
+
+template <typename T>
+bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
+    if (x.size() < 2) return true; // Trivially monotonic
+
+    bool increasing = true;
+    bool decreasing = true;
+
+    for (size_t i = 1; i < x.size(); ++i) {
+        if (isnan(x[i]))
+            throw std::invalid_argument("NaN x-value detected.");
+        if (x[i] <= x[i - 1]) increasing = false;
+        if (x[i] >= x[i - 1]) decreasing = false;
+    }
+
+    return increasing || decreasing;
+}
+
+template <typename T>
+std::vector<T> CubicSpline<T>::make_increasing(std::vector<T>& x) const {
+    std::vector<T> x_copy = x;
+    std::reverse(x_copy.begin(), x_copy.end());
+    return x_copy;
 }

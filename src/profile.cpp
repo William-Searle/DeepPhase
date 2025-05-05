@@ -56,6 +56,15 @@ void FluidSystem::operator()(const state_type &y, state_type &dydt, double /*tau
 }
 
 void push_back_state::operator()(const state_type &y, double t) const {
+    // for testing
+    std::cout << "t=" << t << ",\t" << "y=(";
+    for (auto yy : y) {
+        std::cout << yy << ",";
+    }
+    std::cout << ")\n";
+
+    if (y[0] < 0.0 || y[0] >= 1.0)
+        throw std::invalid_argument("Domain error in fluid profile solver: 0 <= xi < 1");
     states.push_back(y);
     times.push_back(t);
     return;
@@ -146,14 +155,15 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
 }
 
 // Private functions
-std::vector<state_type> FluidProfile::solve_prof(int n) const {
+std::vector<state_type> FluidProfile::solve_profile(int n) const {
     FluidSystem fluid(csq_);
-    auto y0 = y0_; // integrator needs non-const initial state
+    auto y = y0_; // integrator needs non-const initial state
     
-    std::cout << "y0 vals:\n";
-    for (double vals : y0) {
-        std::cout << vals << "\n";
+    std::cout << "(xi0,w0,w0)=(";
+    for (double vals : y) {
+        std::cout << vals << ",";
     }
+    std::cout << ")\n";
 
     std::vector<state_type> states;
     std::vector<double> times;
@@ -162,14 +172,38 @@ std::vector<state_type> FluidProfile::solve_prof(int n) const {
     const auto tf = 5.0;
     const auto dt = (tf - ti) / n;
 
-    integrate_const(runge_kutta4<state_type>(), fluid, y0, ti, tf, dt, push_back_state(states, times));
+    // integrate_const(runge_kutta4<state_type>(), fluid, y0, ti, tf, dt, push_back_state(states, times));
 
-    return states;
+    runge_kutta4<state_type> stepper; // integration type
+    int count = 1; // counts integration steps
+
+    for (auto t = ti; t < tf; t += dt) {
+        // std::cout << "t=" << t << ",\t" << "y=(" << y[0] << "," << y[1] << "," << y[2] << ")\n";
+
+        states.push_back(y);
+        times.push_back(t);
+
+        const auto y_prev = y;
+        stepper.do_step(fluid, y, t, dt);
+
+        if (y[0] > 1.0 || y[0] < 0.0) {
+            std::cout << "Stopping integration prematurely (n=" << count << "/" << n << ") at tau=" << t << ", xi=" << y_prev[0] << ". Further integration will yield domain error (xi < 0 or xi > 1)" << std::endl;
+            break;
+        }
+        count++;
+    }
+
+    
+
+    return states; // need output of times anywhere?
 }
 
 std::vector<CubicSpline<double>> FluidProfile::profile() {
-    const auto prof = solve_prof();
+    const auto prof = solve_profile();
     std::vector<double> xi_vals, v_vals, w_vals, la_vals;
+
+    std::ofstream file("test_solver.csv");
+    file << "xi,v,w\n";
 
     // fill vectors for xi, v, w
     for (size_t i = 0; i < prof.size(); i++) {
@@ -177,10 +211,9 @@ std::vector<CubicSpline<double>> FluidProfile::profile() {
         v_vals.push_back(prof[i][1]);
         w_vals.push_back(prof[i][2]);
 
-        if (isnan(xi_vals[i])) {
-            throw std::invalid_argument("Profile: NaN x-value detected.");
-        }
+        file << xi_vals[i] << "," << v_vals[i] << "," << w_vals[i] << "\n";
     }
+    file.close();
 
     // define lambda here, placeholder for now!!
     // make separate function to calc lambda?
