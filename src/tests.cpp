@@ -130,7 +130,7 @@ void test_FluidProfile() {
     std::cout << "Running FluidProfile class test..." << std::endl;
 
     // Define dummy phase transition parameters
-    PTParams params(1./3., 1./3., 0.5, 0.1, 1.0, "exp");
+    PTParams params;
     FluidProfile profile(params);
 
     // Generate streamplot data

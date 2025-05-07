@@ -28,17 +28,20 @@ class PTParams { // will probably need to update this later
   public:
     // ctors
     PTParams();
-    PTParams(double cpsq, double cmsq, double vw, double alpha, double beta, std::string nuc_type);
+    PTParams(double vw, double alpha, double beta, std::string model, std::string nuc_type);
 
     double cpsq() const { return cpsq_; } // speed of sound squared (symmetric phase)
     double cmsq() const { return cmsq_; } // speed of sound squared (broken phase)
-    double csq() const { return cmsq_; } // keep this?
+    double csq() const { return cmsq_; } // keep this? - applies to bag model only
     double vw() const { return vw_; } // wall velocity
+    double vcj() const { return vcj_; } // Chapman-Jouget speed
     double alpha() const { return alpha_; } // strength parameter
     double beta() const { return beta_; } // inverse PT duration
     double Rs() const { return Rs_; } // characteristic length scale R_*
 
     std::string nuc_type() const { return nuc_type_; } // bubble nucleation type
+    std::string wall_type() const { return wall_type_; } // deflagration, hybrid, or detonation
+    std::string model() const { return model_; } // equation of state model
 
     double vUF(const double v) const; // converts v,w,e to universe frame
 
@@ -50,8 +53,13 @@ class PTParams { // will probably need to update this later
     friend std::ostream& operator<<(std::ostream& os, const PTParams& p);
   
   private:
-      const double cpsq_, cmsq_, vw_, alpha_, beta_, Rs_;
+      const double vw_, alpha_, beta_, Rs_;
+      double cpsq_, cmsq_, vcj_;
       const std::string nuc_type_;
+      std::string wall_type_, model_; // make copy of model that is const?
+
+      std::vector<double> model_params(const std::string& model) const; // computes model parameters
+      std::vector<double> bag_params() const;
 };
 
 /**

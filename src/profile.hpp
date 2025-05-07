@@ -76,10 +76,13 @@ class FluidProfile {
     void plot(const std::string& filename = "bubble_prof.csv") const; // Plots interpolating functions (v and w)
     void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
 
+    double v_shock(double xi) const; // v profile shock wave
+    double w_shock(double xi) const; // w profile shock wave
+
   private:
     const PhaseTransition::PTParams params_;
     state_type y0_; // WARNING: Not const
-    std::vector<double> xi_vals_, v_vals_, w_vals_, la_vals_;
+    std::vector<double> xi_vals_, v_vals_, w_vals_;
     CubicSpline<double> v_prof_, w_prof_, la_prof_;
     // NOTE: removed 'const' for vals and prof so they can be defined in the ctor body
 
@@ -99,6 +102,8 @@ class FluidProfile {
      * @return Vector of cubic splines {v, w, lambda}.
      */
     std::vector<CubicSpline<double>> profile();
+
+    CubicSpline<double> calc_lambda() const;
 };
 
 } // namespace Hydrodynamics

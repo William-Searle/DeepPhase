@@ -25,11 +25,9 @@ TO DO:
 int main() {
     const auto ti = std::chrono::high_resolution_clock::now();
 
-    // Hydrodynamics::state_type y0 = {0.1, 0.1, 0.1};
-    // const Hydrodynamics::FluidProfile prof(y0, 1./3.);
-    // prof.generate_streamplot_data();
-
-    test_FluidProfile();
+    // test_FluidProfile();
+    PhaseTransition::PTParams params;
+    std::cout << "vpm=" << params.vpm()[0] << "," << params.vpm()[1] << std::endl;
 
     const auto tf = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = tf - ti;

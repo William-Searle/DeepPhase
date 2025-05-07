@@ -75,6 +75,23 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
 }
 
 template <typename T>
+bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
+    if (x.size() < 2) return true; // Trivially monotonic
+
+    bool increasing = true;
+    bool decreasing = true;
+
+    for (size_t i = 1; i < x.size(); ++i) {
+        if (isnan(x[i]))
+            throw std::invalid_argument("NaN x-value detected.");
+        if (x[i] <= x[i - 1]) increasing = false;
+        if (x[i] >= x[i - 1]) decreasing = false;
+    }
+
+    return increasing || decreasing;
+}
+
+template <typename T>
 T CubicSpline<T>::operator()(T xi) const {
     if (!initialized_) {
         throw std::runtime_error("CubicSpline has not been initialized.");
@@ -92,19 +109,44 @@ T CubicSpline<T>::operator()(T xi) const {
     return a_[i] + b_[i] * dx + c_[i] * dx * dx + d_[i] * dx * dx * dx;
 }
 
+// scalar operations
 template <typename T>
-bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
-    if (x.size() < 2) return true; // Trivially monotonic
+CubicSpline<T> CubicSpline<T>::operator+(T scalar) const { // spline + scalar
+    std::vector<T> y_new = y_;
+    for (T& val : y_new) val += scalar;
+    return CubicSpline<T>(x_, y_new);
+}
 
-    bool increasing = true;
-    bool decreasing = true;
+template <typename T>
+CubicSpline<T> CubicSpline<T>::operator-(T scalar) const { // spline - scalar
+    return *this + (-scalar);
+}
 
-    for (size_t i = 1; i < x.size(); ++i) {
-        if (isnan(x[i]))
-            throw std::invalid_argument("NaN x-value detected.");
-        if (x[i] <= x[i - 1]) increasing = false;
-        if (x[i] >= x[i - 1]) decreasing = false;
-    }
+template <typename T>
+CubicSpline<T> CubicSpline<T>::operator*(T scalar) const { // spline * scalar
+    std::vector<T> y_new = y_;
+    for (T& val : y_new) val *= scalar;
+    return CubicSpline<T>(x_, y_new);
+}
 
-    return increasing || decreasing;
+template <typename T>
+CubicSpline<T> CubicSpline<T>::operator/(T scalar) const { // spline / scalar
+    if (scalar == T(0)) throw std::invalid_argument("Division by zero.");
+    return *this * (T(1) / scalar);
+}
+
+// scalar operations (from left)
+template <typename T>
+CubicSpline<T> operator+(T scalar, const CubicSpline<T>& spline) { // scalar + spline
+    return spline + scalar;
+}
+
+template <typename T>
+CubicSpline<T> operator-(T scalar, const CubicSpline<T>& spline) { // scalar - spline
+    return spline * T(-1) + scalar;
+}
+
+template <typename T>
+CubicSpline<T> operator*(T scalar, const CubicSpline<T>& spline) { // scalar * spline
+    return spline * scalar;
 }

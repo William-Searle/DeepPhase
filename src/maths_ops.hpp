@@ -82,6 +82,22 @@ class CubicSpline {
 
     T operator()(T xi) const;  // Evaluate spline at point xi
 
+    // Scalar operations from the right
+    CubicSpline<T> operator+(T scalar) const;
+    CubicSpline<T> operator-(T scalar) const;
+    CubicSpline<T> operator*(T scalar) const;
+    CubicSpline<T> operator/(T scalar) const;
+
+    // Scalar operations from the left
+    template <typename U>
+    friend CubicSpline<U> operator+(U scalar, const CubicSpline<U>& spline);
+
+    template <typename U>
+    friend CubicSpline<U> operator-(U scalar, const CubicSpline<U>& spline);
+
+    template <typename U>
+    friend CubicSpline<U> operator*(U scalar, const CubicSpline<U>& spline);
+
   private:
     std::vector<T> x_, y_;          // Input data
     std::vector<T> h_;              // Interval widths

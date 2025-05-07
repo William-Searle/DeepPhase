@@ -24,6 +24,9 @@ TO DO:
 - in profile, need to check for okay initial conditions otherwise v_prof etc could be divergent/solution doesn't exist
 - make timesteps dynamic if it has to stop integrating prematurely in profile_solver() (so enough integration points)
     - if it stops prematurely, find tau_max and redo the integration? this is simplest but longest solution
+- could get rid of boost integration and do the same thing generate_streamplot() does
+    - i.e. start with y0 and step forwards by calculating derivatives
+    - much simpler, i know it works properly (maybe takes longer, not sure?)
 */
 
 namespace plt = matplotlibcpp;
@@ -77,10 +80,11 @@ void push_back_state::operator()(const state_type &y, double t) const {
 FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
     : y0_(),
       params_(params),
-      xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
+      xi_vals_(), v_vals_(), w_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {
         // define initial state vector (xi0, v0, w0) = (vw+dlt, v+, w+)
+        // is this just for bag model?
         // (starts integration just outside of wall)
         const auto dlt = 0.01;
         const auto xi0 = params_.vw() + dlt;
@@ -99,7 +103,7 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
         const auto prof_interp = profile();
         v_prof_ = prof_interp[0];
         w_prof_ = prof_interp[1];
-        la_prof_ = prof_interp[2];
+        la_prof_ = calc_lambda();
     }
 
 // Public functions
@@ -187,6 +191,16 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
     return;
 }
 
+// vsh(xi) = (3 xi^2 - 1) / (2 xi) for Bag
+double FluidProfile::v_shock(double xi) const {
+    return (xi * xi - csq) / ((1.0 - csq) * xi);
+}
+
+// wsh(xi) = (9 xi - 1) / (3 (1 - xi^2)) for Bag
+double FluidProfile::w_shock(double xi) const {
+    return (xi - csq * csq) / (csq * (1.0 - xi * xi));
+}
+
 // Private functions
 std::vector<state_type> FluidProfile::solve_profile(int n) const {
     FluidSystem fluid(params_);
@@ -233,7 +247,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) const {
 
 std::vector<CubicSpline<double>> FluidProfile::profile() {
     const auto prof = solve_profile();
-    std::vector<double> xi_vals, v_vals, w_vals, la_vals;
+    std::vector<double> xi_vals, v_vals, w_vals;
 
     std::ofstream file("test_solver.csv");
     file << "xi,v,w\n";
@@ -248,30 +262,30 @@ std::vector<CubicSpline<double>> FluidProfile::profile() {
     }
     file.close();
 
-    // define lambda here, placeholder for now!!
-    // make separate function to calc lambda?
-    // interp for both la and w or define la_prof directly from w_prof?
-    la_vals = v_vals;
-
     // store xi, v, w values in class
     // not sure if this is the best implementation
     xi_vals_ = xi_vals;
     v_vals_ = v_vals;
     w_vals_ = w_vals;
-    la_vals_ = la_vals;
 
     // define interpolating functions
     CubicSpline<double> v_prof(xi_vals, v_vals);
     CubicSpline<double> w_prof(xi_vals, w_vals);
-    CubicSpline<double> la_prof(xi_vals, la_vals);
 
     // vector of interpolating functions
     std::vector<CubicSpline<double>> prof_interp;
     prof_interp.push_back(v_prof);
     prof_interp.push_back(w_prof);
-    prof_interp.push_back(la_prof);
 
-    return prof_interp; // {v(xi), w(xi), la(xi)}
+    return prof_interp; // {v(xi), w(xi)}
+}
+
+CubicSpline<double> FluidProfile::calc_lambda() const {
+    if (params_.model() == "bag") {
+        return (3.0 / 4.0) * (w_prof_ - 1.0);
+    } else {
+        throw std::invalid_argument("In lambda(xi): only bag model implemented so far");
+    }
 }
 /******************************/
 
