@@ -25,9 +25,8 @@ TO DO:
 int main() {
     const auto ti = std::chrono::high_resolution_clock::now();
 
-    // test_FluidProfile();
-    PhaseTransition::PTParams params;
-    std::cout << "vpm=" << params.vpm()[0] << "," << params.vpm()[1] << std::endl;
+    test_FluidProfile();
+    
 
     const auto tf = std::chrono::high_resolution_clock::now();
     std::chrono::duration<double> duration = tf - ti;

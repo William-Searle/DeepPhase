@@ -16,18 +16,32 @@
 
 /*
 TO DO:
-- define lambda in profile() (currently has placeholder so integration routine can be tested)
 - update generate_streamplot_data() to include points of interest (fixed pts, detonation/deflag/hybrid regions)
 - fix calc of w profile in generate_streamplot_data()
 - how to choose times to integrate over in solve_prof()? endpoints of integration hardcoded currently
 - how to call csq? directly from PTParams or create local copy in Profile class?
 - in profile, need to check for okay initial conditions otherwise v_prof etc could be divergent/solution doesn't exist
-- make timesteps dynamic if it has to stop integrating prematurely in profile_solver() (so enough integration points)
-    - if it stops prematurely, find tau_max and redo the integration? this is simplest but longest solution
-- could get rid of boost integration and do the same thing generate_streamplot() does
-    - i.e. start with y0 and step forwards by calculating derivatives
-    - much simpler, i know it works properly (maybe takes longer, not sure?)
+    - make timesteps dynamic if it has to stop integrating prematurely in profile_solver() (so enough integration points)
+        - if it stops prematurely, find tau_max and redo the integration? this is simplest but longest solution
+    - could get rid of boost integration and do the same thing generate_streamplot() does
+        - i.e. start with y0 and step forwards by calculating derivatives
+        - much simpler, i know it works properly (maybe takes longer, not sure?)
+    - could also just specify dt rather than number of steps
+- modify plot() so you can individually plot v,w,la too (i.e. separate plot functions)
+- write checks that make sure xi_vals_, v_vals_ all the same length (in read and when calculating it using solver)
+- check xi, v, w, la values should be finite and in valid range
+- make xi,w,w,la vals and profiles constant after calling ctor somehow?
+- move y0 definintion in ctor into a function
+- might be a mistake in lambda profile calc - value for xi<vw different to xiao's code (otherwise okay)
 */
+
+// finite size stuff
+// for (size_t i = 0; i < xi_vals.size(); ++i) {
+//     assert(std::isfinite(v_vals[i]));
+//     assert(std::isfinite(w_vals[i]));
+//     // assert(v_vals[i] >= 0.0 && v_vals[i] <= 1.0);
+//     // assert(w_vals[i] >= 0.0);  // domain-specific range?
+// }
 
 namespace plt = matplotlibcpp;
 using namespace boost::numeric::odeint;
@@ -80,6 +94,7 @@ void push_back_state::operator()(const state_type &y, double t) const {
 FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
     : y0_(),
       params_(params),
+      csq_(params_.csq()),
       xi_vals_(), v_vals_(), w_vals_(),
       v_prof_(), w_prof_(), la_prof_() 
     {
@@ -99,23 +114,20 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
         y0_.push_back(w0);
 
         // define bubble profile interpolating functions
-        // individual vals stored using profile()
-        const auto prof_interp = profile();
-        v_prof_ = prof_interp[0];
-        w_prof_ = prof_interp[1];
-        la_prof_ = calc_lambda();
+        profile();
     }
 
 // Public functions
-void FluidProfile::write() const {
-    std::cout << "Writing fluid profile to disk...\n";
-    std::ofstream file("fluid_solution.csv");
-    file << "xi,v,w\n";
+void FluidProfile::write(const std::string& filename) const {
+    std::cout << "Writing fluid profile to disk... ";
+    std::ofstream file(filename);
+    file << "xi,v,w,la\n";
+    // which one to use?? prof used in calculations, so maybe this?
     for (size_t i = 0; i < xi_vals_.size(); ++i) {
-        file << xi_vals_[i] << "," << v_vals_[i] << "," << w_vals_[i] << "\n";
+        file << xi_vals_[i] << "," << v_vals_[i] << "," << w_vals_[i] << "," << la_vals_[i] << "\n";
     }
     file.close();
-    std::cout << "Saved to fluid_solution.csv\n";
+    std::cout << "Saved to " << filename << "!\n";
 
     return;
 }
@@ -123,10 +135,10 @@ void FluidProfile::write() const {
 void FluidProfile::plot(const std::string& filename) const {
     namespace plt = matplotlibcpp;
 
-    plt::figure_size(1600, 600);
+    plt::figure_size(2400, 600);
 
-    // First plot (top half)
-    plt::subplot2grid(1, 2, 0, 0);
+    // v(xi)
+    plt::subplot2grid(1, 3, 0, 0);
     plt::plot(xi_vals_, v_vals_);
     plt::xlabel("xi");
     plt::ylabel("v(xi)");
@@ -134,17 +146,29 @@ void FluidProfile::plot(const std::string& filename) const {
     plt::ylim(0.0, 1.0);
     plt::grid(true);
 
-    // Second plot (bottom half)
-    plt::subplot2grid(1, 2, 0, 1);
+    // w(xi)
+    plt::subplot2grid(1, 3, 0, 1);
     plt::plot(xi_vals_, w_vals_);
     plt::xlabel("xi");
     plt::ylabel("w(xi)");
     plt::xlim(0.0, 1.0);
-    plt::ylim(0.0, 1.0);
+    // plt::ylim(0.0, 1.0);
+    plt::grid(true);
+
+    // la(xi)
+    plt::subplot2grid(1, 3, 0, 2);
+    plt::plot(xi_vals_, la_vals_, {{"linestyle", "-"}, {"color", "red"}});
+    plt::plot(xi_vals_, la_vals_test_, {{"linestyle", "--"}, {"color", "blue"}});
+    plt::xlabel("xi");
+    plt::ylabel("la(xi)");
+    plt::xlim(0.0, 1.0);
+    // plt::ylim(0.0, 1.0);
     plt::grid(true);
 
     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alpha = " + to_string_with_precision(params_.alpha()));
     plt::save(filename);
+
+    std::cout << "Bubble profile plot saved to '" << filename << "'." << std::endl;
 
     return;
 }
@@ -193,15 +217,47 @@ void FluidProfile::generate_streamplot_data(int xi_pts, int y_pts, const std::st
 
 // vsh(xi) = (3 xi^2 - 1) / (2 xi) for Bag
 double FluidProfile::v_shock(double xi) const {
-    return (xi * xi - csq) / ((1.0 - csq) * xi);
+    return (xi * xi - csq_) / ((1.0 - csq_) * xi);
 }
 
 // wsh(xi) = (9 xi - 1) / (3 (1 - xi^2)) for Bag
 double FluidProfile::w_shock(double xi) const {
-    return (xi - csq * csq) / (csq * (1.0 - xi * xi));
+    return (xi - csq_ * csq_) / (csq_ * (1.0 - xi * xi));
 }
 
 // Private functions
+std::vector<state_type> FluidProfile::read(const std::string& filename) const {
+    std::ifstream file(filename);
+    if (!file) {
+        throw std::runtime_error("Could not open file " + filename);
+    }
+
+    std::string line;
+    std::getline(file, line); // Skip header
+
+    state_type xi_vals, v_vals, w_vals, la_vals;
+
+    while (std::getline(file, line)) {
+        std::istringstream ss(line);
+        std::array<double, 4> values;
+        std::string token;
+
+        for (auto& val : values) {
+            if (!std::getline(ss, token, ',')) {
+                throw std::runtime_error("Malformed line in " + filename + ": " + line);
+            }
+            val = std::stod(token);
+        }
+
+        xi_vals.push_back(values[0]);
+        v_vals.push_back(values[1]);
+        w_vals.push_back(values[2]);
+        la_vals.push_back(values[3]);
+    }
+
+    return {xi_vals, v_vals, w_vals, la_vals};
+}
+
 std::vector<state_type> FluidProfile::solve_profile(int n) const {
     FluidSystem fluid(params_);
     auto y = y0_; // integrator needs non-const initial state
@@ -245,42 +301,67 @@ std::vector<state_type> FluidProfile::solve_profile(int n) const {
     return states; // need output of times anywhere?
 }
 
-std::vector<CubicSpline<double>> FluidProfile::profile() {
-    const auto prof = solve_profile();
-    std::vector<double> xi_vals, v_vals, w_vals;
+void FluidProfile::profile(bool read_prof) { // stores solve_profile vals
+    state_type v_vals, w_vals, la_vals, la_vals_test;
+    if (read_prof) { // read fluid profile from file
+        const std::vector<state_type> data = read("input_profile.csv");
+        xi_vals_ = data[0];
+        v_vals = data[1]; // only store interpolating func values
+        w_vals = data[2];
+        la_vals = data[3];
 
-    std::ofstream file("test_solver.csv");
-    file << "xi,v,w\n";
-
-    // fill vectors for xi, v, w
-    for (size_t i = 0; i < prof.size(); i++) {
-        xi_vals.push_back(prof[i][0]);
-        v_vals.push_back(prof[i][1]);
-        w_vals.push_back(prof[i][2]);
-
-        file << xi_vals[i] << "," << v_vals[i] << "," << w_vals[i] << "\n";
+        la_vals_test = calc_lambda_vals(w_vals);
+    } else { // calculate fluid profile using ODE solver
+        std::cout << "Warning: Profile solver not finished! Use pre-calculated bubble profile instead." << std::endl;
+        
+        const auto prof = solve_profile();
+        for (size_t i = 0; i < prof.size(); i++) {
+            xi_vals_.push_back(prof[i][0]);
+            v_vals.push_back(prof[i][1]); // only store interpolating func values
+            w_vals.push_back(prof[i][2]);
+        }
+        la_vals = calc_lambda_vals(w_vals);
     }
-    file.close();
-
-    // store xi, v, w values in class
-    // not sure if this is the best implementation
-    xi_vals_ = xi_vals;
-    v_vals_ = v_vals;
-    w_vals_ = w_vals;
 
     // define interpolating functions
-    CubicSpline<double> v_prof(xi_vals, v_vals);
-    CubicSpline<double> w_prof(xi_vals, w_vals);
+    if (v_prof_.is_initialised() || w_prof_.is_initialised() || la_prof_.is_initialised()) {
+        std::cerr << "Warning: Overwriting existing interpolating functions in FluidProfile.\n";
+    }
+    v_prof_ = CubicSpline<double>(xi_vals_, v_vals);
+    w_prof_= CubicSpline<double>(xi_vals_, w_vals);
+    la_prof_ = CubicSpline<double>(xi_vals_, la_vals);
+    la_prof_test_ = CubicSpline<double>(xi_vals_, la_vals_test);
 
-    // vector of interpolating functions
-    std::vector<CubicSpline<double>> prof_interp;
-    prof_interp.push_back(v_prof);
-    prof_interp.push_back(w_prof);
-
-    return prof_interp; // {v(xi), w(xi)}
+    // store interpolated profile vals
+    if (!v_vals_.empty() || !w_vals_.empty() || !la_vals_.empty()) {
+        std::cerr << "Warning: Overwriting existing profile values in FluidProfile.\n";
+        v_vals_.clear();
+        w_vals_.clear();
+        la_vals_.clear();
+    }
+    for (const auto xi : xi_vals_) {
+        v_vals_.push_back(v_prof_(xi));
+        w_vals_.push_back(w_prof_(xi));
+        la_vals_.push_back(la_prof_(xi));
+        la_vals_test_.push_back(la_prof_test_(xi));
+    }
+    return;
 }
 
-CubicSpline<double> FluidProfile::calc_lambda() const {
+state_type FluidProfile::calc_lambda_vals(state_type w_vals) const { // change for when state_type = vec<double>
+    if (params_.model() == "bag") {
+        state_type result;
+        for (const auto w : w_vals) {
+            result.push_back((3.0 / 4.0) * (w - 1.0));
+        }
+        return result;
+    } else {
+        throw std::invalid_argument("In lambda(xi): only bag model implemented so far");
+    }
+}
+
+// unused
+interp_type FluidProfile::calc_lambda_prof() const {
     if (params_.model() == "bag") {
         return (3.0 / 4.0) * (w_prof_ - 1.0);
     } else {

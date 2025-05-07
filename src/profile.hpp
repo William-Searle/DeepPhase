@@ -18,6 +18,8 @@ TO DO:
 namespace Hydrodynamics {
 
 using state_type = std::vector<double>;
+// using state_type = vec<double>;
+using interp_type = CubicSpline<double>;
 
 /**
  * @class FluidSystem
@@ -63,27 +65,34 @@ class FluidProfile {
   public:
     FluidProfile(const PhaseTransition::PTParams& params); // ctor
 
-    state_type init_state() const { return y0_; }; // Initial state vector {xi0, v0, w0}
     PhaseTransition::PTParams params() const { return params_; }; // PT parameters
-    std::vector<double> xi_vals() const { return xi_vals_; }; // Vector of xi=r/t
-
+    std::vector<double> init_state() const { return y0_; }; // Initial state vector {xi0, v0, w0}
+    
+    state_type xi_vals() const { return xi_vals_; }; // Vector of xi=r/t
+    
     // Interpolation functions for profile
-    CubicSpline<double> v_prof() const { return v_prof_; };
-    CubicSpline<double> w_prof() const { return w_prof_; }; // not used, but might be good to keep for future
-    CubicSpline<double> la_prof() const { return la_prof_; };
+    state_type v_vals() const { return v_vals_; };
+    interp_type v_prof() const { return v_prof_; };
 
-    void write() const; // not finished
-    void plot(const std::string& filename = "bubble_prof.csv") const; // Plots interpolating functions (v and w)
-    void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
+    interp_type w_prof() const { return w_prof_; }; // not used, but might be good to keep for future
+    state_type w_vals() const { return w_vals_; };
+
+    interp_type la_prof() const { return la_prof_; };
+    state_type la_vals() const { return la_vals_; };
 
     double v_shock(double xi) const; // v profile shock wave
     double w_shock(double xi) const; // w profile shock wave
 
+    void write(const std::string& filename = "bubble_prof.csv") const; // write bubble profile to disk
+    void plot(const std::string& filename = "bubble_prof.png") const; // Plots bubble profiles
+    void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
+
   private:
     const PhaseTransition::PTParams params_;
-    state_type y0_; // WARNING: Not const
-    std::vector<double> xi_vals_, v_vals_, w_vals_;
-    CubicSpline<double> v_prof_, w_prof_, la_prof_;
+    const double csq_;
+    std::vector<double> y0_;
+    state_type xi_vals_, v_vals_, w_vals_, la_vals_, la_vals_test_; // WARNING: Not const
+    interp_type v_prof_, w_prof_, la_prof_, la_prof_test_;
     // NOTE: removed 'const' for vals and prof so they can be defined in the ctor body
 
     // put number of integration points in input file? seems bad to hardcode
@@ -101,9 +110,12 @@ class FluidProfile {
      * 
      * @return Vector of cubic splines {v, w, lambda}.
      */
-    std::vector<CubicSpline<double>> profile();
+    void profile(bool read_prof = true);
 
-    CubicSpline<double> calc_lambda() const;
+    std::vector<state_type> read(const std::string& filename) const; // read bubble profile from disk
+
+    state_type calc_lambda_vals(state_type w_vals) const;
+    interp_type calc_lambda_prof() const;
 };
 
 } // namespace Hydrodynamics

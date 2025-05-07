@@ -5,7 +5,13 @@
 #include <stdexcept>
 
 template <typename T>
-CubicSpline<T>::CubicSpline() : initialized_(false) {}
+CubicSpline<T>::CubicSpline() : initialised_(false) {}
+
+// might not be the best implementation for passing custom vector type
+template <typename T>
+CubicSpline<T>::CubicSpline(const vec<T>& x, const vec<T>& y) {
+    CubicSpline(x, y);
+}
 
 template <typename T>
 CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
@@ -71,7 +77,7 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
         d_[j] = (c_[j + 1] - c_[j]) / (3 * h_[j]);
     }
 
-    initialized_ = true;
+    initialised_ = true;
 }
 
 template <typename T>
@@ -93,8 +99,8 @@ bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
 
 template <typename T>
 T CubicSpline<T>::operator()(T xi) const {
-    if (!initialized_) {
-        throw std::runtime_error("CubicSpline has not been initialized.");
+    if (!initialised_) {
+        throw std::runtime_error("CubicSpline has not been initialised.");
     }
 
     // Extrapolate flat for out-of-bounds input

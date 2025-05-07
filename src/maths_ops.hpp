@@ -20,6 +20,7 @@
 TO DO:
 - write logspace function (logarithmic version of linspace)
 - change cublicspline private vars to include '_' at end for consistency
+- add build() for spline so if you initialise it without defining it, it just ocmputes the coefficients rather than having to call ctor again
 */
 
 /**
@@ -79,6 +80,9 @@ class CubicSpline {
   public:
     CubicSpline();  // Default constructor
     CubicSpline(const std::vector<T>& x, const std::vector<T>& y);  // Construct and compute spline
+    CubicSpline(const vec<T>& x, const vec<T>& y); // for custom vector type
+
+    bool is_initialised() const {return initialised_; } // check if spline is initialised
 
     T operator()(T xi) const;  // Evaluate spline at point xi
 
@@ -103,7 +107,7 @@ class CubicSpline {
     std::vector<T> h_;              // Interval widths
     std::vector<T> a_, b_, c_, d_;  // Spline coefficients
 
-    bool initialized_ = false;
+    bool initialised_ = false;
 
     bool is_strictly_monotonic(const std::vector<T>& x) const; // Check monotonicity
 };
