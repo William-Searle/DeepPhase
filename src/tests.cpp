@@ -124,13 +124,14 @@ void test_vec() {
     return;
 }
 
-void test_FluidProfile() {
+void test_FluidProfile() { // not finished
+    // check read profile (from xiao's code) and solve ODE solutions are consistent
+    // plot profiles
     using namespace Hydrodynamics;
     using namespace PhaseTransition;
 
     std::cout << "Running FluidProfile class test..." << std::endl;
 
-    // Define dummy phase transition parameters
     PTParams params;
     FluidProfile profile(params);
 

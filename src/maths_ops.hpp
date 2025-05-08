@@ -82,7 +82,9 @@ class CubicSpline {
     CubicSpline(const std::vector<T>& x, const std::vector<T>& y);  // Construct and compute spline
     CubicSpline(const vec<T>& x, const vec<T>& y); // for custom vector type
 
+    void build(const std::vector<T>& x, const std::vector<T>& y); // Build splines
     bool is_initialised() const {return initialised_; } // check if spline is initialised
+    void check_convergence() const; // check convergence
 
     T operator()(T xi) const;  // Evaluate spline at point xi
 
@@ -107,6 +109,7 @@ class CubicSpline {
     std::vector<T> h_;              // Interval widths
     std::vector<T> a_, b_, c_, d_;  // Spline coefficients
 
+    const T tol_ = static_cast<T>(1e-4); // convergence tolerance
     bool initialised_ = false;
 
     bool is_strictly_monotonic(const std::vector<T>& x) const; // Check monotonicity

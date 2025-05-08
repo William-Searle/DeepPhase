@@ -27,12 +27,13 @@ TO DO:
         - i.e. start with y0 and step forwards by calculating derivatives
         - much simpler, i know it works properly (maybe takes longer, not sure?)
     - could also just specify dt rather than number of steps
+    - change to integrate over specific range of xi (similar to xiao's code)
 - modify plot() so you can individually plot v,w,la too (i.e. separate plot functions)
-- write checks that make sure xi_vals_, v_vals_ all the same length (in read and when calculating it using solver)
 - check xi, v, w, la values should be finite and in valid range
 - make xi,w,w,la vals and profiles constant after calling ctor somehow?
 - move y0 definintion in ctor into a function
 - might be a mistake in lambda profile calc - value for xi<vw different to xiao's code (otherwise okay)
+- add 'dev mode' option for profile() where it checks lambda calculation is correct and if read profile matches ode solver profile
 */
 
 // finite size stuff
@@ -302,15 +303,20 @@ std::vector<state_type> FluidProfile::solve_profile(int n) const {
 }
 
 void FluidProfile::profile(bool read_prof) { // stores solve_profile vals
-    state_type v_vals, w_vals, la_vals, la_vals_test;
+    if (!xi_vals_.empty()) {
+        std::cerr << "Warning: xi=r/t vector not empty. Clearing values for bubble profile calculation." << std::endl;
+        xi_vals_.clear();
+    }
+
+    state_type v_vals, w_vals, la_vals;
+
     if (read_prof) { // read fluid profile from file
+        // WARNING: doesn't compare vw, alpha used in input file to params_
         const std::vector<state_type> data = read("input_profile.csv");
         xi_vals_ = data[0];
         v_vals = data[1]; // only store interpolating func values
         w_vals = data[2];
         la_vals = data[3];
-
-        la_vals_test = calc_lambda_vals(w_vals);
     } else { // calculate fluid profile using ODE solver
         std::cout << "Warning: Profile solver not finished! Use pre-calculated bubble profile instead." << std::endl;
         
@@ -323,28 +329,31 @@ void FluidProfile::profile(bool read_prof) { // stores solve_profile vals
         la_vals = calc_lambda_vals(w_vals);
     }
 
-    // define interpolating functions
+    // build interpolating functions
     if (v_prof_.is_initialised() || w_prof_.is_initialised() || la_prof_.is_initialised()) {
-        std::cerr << "Warning: Overwriting existing interpolating functions in FluidProfile.\n";
+        std::cerr << "Warning: Overwriting existing interpolating functions in FluidProfile." << std::endl;
     }
-    v_prof_ = CubicSpline<double>(xi_vals_, v_vals);
-    w_prof_= CubicSpline<double>(xi_vals_, w_vals);
-    la_prof_ = CubicSpline<double>(xi_vals_, la_vals);
-    la_prof_test_ = CubicSpline<double>(xi_vals_, la_vals_test);
+    v_prof_.build(xi_vals_, v_vals);
+    w_prof_.build(xi_vals_, w_vals);
+    la_prof_.build(xi_vals_, la_vals);
+    // v_prof_ = CubicSpline<double>(xi_vals_, v_vals);
+    // w_prof_ = CubicSpline<double>(xi_vals_, w_vals);
+    // la_prof_ = CubicSpline<double>(xi_vals_, la_vals);
 
     // store interpolated profile vals
     if (!v_vals_.empty() || !w_vals_.empty() || !la_vals_.empty()) {
-        std::cerr << "Warning: Overwriting existing profile values in FluidProfile.\n";
+        std::cerr << "Warning: Overwriting existing profile values in FluidProfile." << std::endl;
         v_vals_.clear();
         w_vals_.clear();
         la_vals_.clear();
     }
+
     for (const auto xi : xi_vals_) {
         v_vals_.push_back(v_prof_(xi));
         w_vals_.push_back(w_prof_(xi));
         la_vals_.push_back(la_prof_(xi));
-        la_vals_test_.push_back(la_prof_test_(xi));
     }
+
     return;
 }
 

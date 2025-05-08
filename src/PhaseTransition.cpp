@@ -12,7 +12,7 @@
 TO DO:
 - update default vals for beta, wp, wm in PTParams
 - check if UF_trans is the same for vp and vm
-- only inputs to PTParams should be model, alpha and vw i think
+- only inputs to PTParams should be model, alpha, vw and nucleation type i think
 */
 
 namespace PhaseTransition {

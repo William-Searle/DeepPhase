@@ -15,8 +15,13 @@ CubicSpline<T>::CubicSpline(const vec<T>& x, const vec<T>& y) {
 
 template <typename T>
 CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
+    build(x, y);
+}
+
+template <typename T>
+void CubicSpline<T>::build(const std::vector<T>& x, const std::vector<T>& y) {
     if (x.size() != y.size() || x.size() < 2) {
-        throw std::invalid_argument("x and y must be the same size and contain at least two points.");
+        throw std::invalid_argument("CubicSpline: x and y must be the same size and contain at least two points.");
     }
 
     const size_t n = x.size();
@@ -24,7 +29,7 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
     // might not be the best way to implement strictly increasing - do in solve_profile() instead?
     // Checks monotonicity
     if (!is_strictly_monotonic(x)) {
-        throw std::invalid_argument("x-values must be strictly increasing or decreasing");
+        throw std::invalid_argument("CubicSpline: x-values must be strictly increasing or decreasing");
     }
 
     // Cubic spline needs x strictly increasing
@@ -78,6 +83,11 @@ CubicSpline<T>::CubicSpline(const std::vector<T>& x, const std::vector<T>& y) {
     }
 
     initialised_ = true;
+
+    check_convergence();
+    std::cout << "CubicSpline has been initialised and built." << std::endl;
+
+    return;
 }
 
 template <typename T>
@@ -89,12 +99,37 @@ bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
 
     for (size_t i = 1; i < x.size(); ++i) {
         if (isnan(x[i]))
-            throw std::invalid_argument("NaN x-value detected.");
+            throw std::invalid_argument("CubicSpline: NaN x-value detected.");
         if (x[i] <= x[i - 1]) increasing = false;
         if (x[i] >= x[i - 1]) decreasing = false;
     }
 
     return increasing || decreasing;
+}
+
+template <typename T>
+void CubicSpline<T>::check_convergence() const {
+    bool test_passed = true;
+
+    for (std::size_t i = 0; i < x_.size(); ++i) {
+        T interp = (*this)(x_[i]);
+        T error = std::abs(interp - y_[i]);
+
+        if (error > tol_) {
+            test_passed = false;
+            std::cerr << "CubicSpline convergence warning at x = " << x_[i]
+                      << ": interpolated = " << interp
+                      << ", expected = " << y_[i]
+                      << ", error = " << error << '\n';
+            // exit on failed convergence?
+            // initialised_ = false;
+        }
+    }
+
+    if (test_passed)
+        std::cout << "CubicSpline convergence test passed (tol=" << tol_ << ")!" <<std::endl;
+    
+    return;
 }
 
 template <typename T>
