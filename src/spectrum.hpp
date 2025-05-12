@@ -14,6 +14,8 @@ TO DO:
 - destructor for PowerSpec to save memory somewhere?
 - update operator overload to use type traits (for int, unsigned int, etc. scalar)
 - PowerSpec class documentation
+- PowerSpec dflt ctor create it's own instance of params and profile so i don't have to keep calling it
+- store k_vals adn P_vals in PowerSpec rather than calling with k(), P()? might be quicker
 */
 
 namespace Spectrum {
@@ -42,6 +44,7 @@ class PowerSpec {
 
     double max() const; // Max value of power spectrum
     bool is_scalar() const; // Move to private after testing?
+    void write(const std::string& filename) const;
 
     // Scalar arithmetic
     // Note: += changes an object in the class, but + creates a new object, 

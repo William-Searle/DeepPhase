@@ -85,7 +85,7 @@ void CubicSpline<T>::build(const std::vector<T>& x, const std::vector<T>& y) {
     initialised_ = true;
 
     check_convergence();
-    std::cout << "CubicSpline has been initialised and built." << std::endl;
+    // std::cout << "CubicSpline has been initialised and built." << std::endl;
 
     return;
 }
@@ -127,7 +127,7 @@ void CubicSpline<T>::check_convergence() const {
     }
 
     if (test_passed)
-        std::cout << "CubicSpline convergence test passed (tol=" << tol_ << ")!" <<std::endl;
+        // std::cout << "CubicSpline convergence test passed (tol=" << tol_ << ")!" <<std::endl;
     
     return;
 }

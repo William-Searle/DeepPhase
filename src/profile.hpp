@@ -14,6 +14,7 @@ TO DO:
 - add some safety thing for private vales and prof in FluidProfile to stop them from changing (helper static function to precompute in initialiser list)
 - make initial state (y0) const after calling FluidProfile ctor somehow?
 - make copy of PTParams parameters in FluidProfile class
+- add dflt ctor for FluidProfile that just uses dflt ctor for PTParams
 */
 
 namespace Hydrodynamics {

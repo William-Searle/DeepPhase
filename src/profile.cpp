@@ -34,6 +34,7 @@ TO DO:
 - move y0 definintion in ctor into a function
 - might be a mistake in lambda profile calc - value for xi<vw different to xiao's code (otherwise okay)
 - add 'dev mode' option for profile() where it checks lambda calculation is correct and if read profile matches ode solver profile
+- profile splines don't always need to be built, only when plotting them. Get rid of build spline in ctor?
 */
 
 // finite size stuff
@@ -336,9 +337,6 @@ void FluidProfile::profile(bool read_prof) { // stores solve_profile vals
     v_prof_.build(xi_vals_, v_vals);
     w_prof_.build(xi_vals_, w_vals);
     la_prof_.build(xi_vals_, la_vals);
-    // v_prof_ = CubicSpline<double>(xi_vals_, v_vals);
-    // w_prof_ = CubicSpline<double>(xi_vals_, w_vals);
-    // la_prof_ = CubicSpline<double>(xi_vals_, la_vals);
 
     // store interpolated profile vals
     if (!v_vals_.empty() || !w_vals_.empty() || !la_vals_.empty()) {

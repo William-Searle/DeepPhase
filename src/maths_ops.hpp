@@ -127,6 +127,8 @@ class CubicSpline {
  */
 std::vector<double> linspace(double start, double end, std::size_t num);
 
+std::vector<double> logspace(double start, double stop, std::size_t num);
+
 /**
  * @brief Computes x raised to an integer exponent.
  * 
@@ -148,3 +150,5 @@ double power(double x, int exp);
 double power6(double x);
 
 std::string to_string_with_precision(double value, int precision = 2);
+
+double simpson_integrate(const std::vector<double>& x, const std::vector<double>& y);

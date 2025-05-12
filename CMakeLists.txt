@@ -3,6 +3,7 @@ project(ISSMGW)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
+set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
 
 # Find GSL
 find_package(GSL REQUIRED)
@@ -28,11 +29,15 @@ add_executable(deepphase ${SOURCES})
 
 message(STATUS "Sources: ${SOURCES}")
 
+# profiler - add dev version so it doesn't always run
+find_library(PROFILER_LIB profiler)
+
 target_link_libraries(deepphase PRIVATE 
     gsl 
     gslcblas 
     m
     ${Python3_LIBRARIES}
+    ${PROFILER_LIB}
 )
 message(STATUS "Successfully linked to dependent libraries")
 

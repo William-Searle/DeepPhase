@@ -46,6 +46,10 @@ void test_gsl_integration();
 */
 void test_interpolator();
 
+void test_prof_ints(bool plot=true);
+void test_Apsq(bool plot=true);
+void test_Apsq2(bool plot=true);
+
 /// @brief Namespace for performance testing alternatives to std::pow
 namespace PowerTest {
 

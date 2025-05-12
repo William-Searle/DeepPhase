@@ -9,6 +9,7 @@
 
 #include "tests.hpp"
 #include "profile.hpp"
+#include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
 #include "matplotlibcpp.h"
@@ -239,6 +240,54 @@ void test_gsl_integration() { // might not need GSL, remove if not (unlink in cm
     // Free the GSL workspace
     gsl_integration_workspace_free(workspace);
 
+    return;
+}
+
+void test_prof_ints(bool plot) { // test profile integrals f' and l
+    PhaseTransition::PTParams params;
+    Hydrodynamics::FluidProfile profile(params);
+
+    const auto chi_vals = linspace(0.0, 100.0, 200);
+    const auto [fd_vals, l_vals] = prof_ints_fl(chi_vals, profile);
+
+    if (plot) {
+        plt::figure_size(1600, 600);
+
+        // f'(chi)
+        plt::subplot2grid(1, 2, 0, 0);
+        plt::plot(chi_vals, fd_vals);
+        plt::xlabel("chi");
+        plt::ylabel("f'(chi)");
+        plt::grid(true);
+
+        // l(chi)
+        plt::subplot2grid(1, 2, 0, 1);
+        plt::plot(chi_vals, l_vals);
+        plt::xlabel("chi");
+        plt::ylabel("l(chi)");
+        plt::grid(true);
+
+        plt::save("fd_l_profile.png");
+    }
+    return;
+}
+
+void test_Apsq(bool plot) { // test Ap_sq
+    PhaseTransition::PTParams params;
+    Hydrodynamics::FluidProfile profile(params);
+
+    // const auto chi_vals = logspace(0.1, 10, 1000);
+    const auto chi_vals = linspace(0.0, 100.0, 200);
+    const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, profile);
+
+    if (plot) {
+        plt::figure_size(800, 600);
+        plt::plot(chi_vals, Apsq);
+        plt::xlabel("chi");
+        plt::ylabel("Ap_sq(chi)");
+        plt::grid(true);
+        plt::save("Ap_sq_profile.png");
+    }
     return;
 }
 
