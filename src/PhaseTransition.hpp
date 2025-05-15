@@ -38,6 +38,8 @@ class PTParams { // will probably need to update this later
     double alpha() const { return alpha_; } // strength parameter
     double beta() const { return beta_; } // inverse PT duration
     double Rs() const { return Rs_; } // characteristic length scale R_*
+    double tau_s() const { return tau_s_; } // start time of PT
+    double tau_fin() const { return tau_fin_; } // end time of PT
 
     std::string nuc_type() const { return nuc_type_; } // bubble nucleation type
     std::string wall_type() const { return wall_type_; } // deflagration, hybrid, or detonation
@@ -53,7 +55,7 @@ class PTParams { // will probably need to update this later
     friend std::ostream& operator<<(std::ostream& os, const PTParams& p);
   
   private:
-      const double vw_, alpha_, beta_, Rs_;
+      const double vw_, alpha_, beta_, Rs_, tau_s_, tau_fin_;
       double cpsq_, cmsq_, vcj_;
       const std::string nuc_type_;
       std::string wall_type_, model_; // make copy of model that is const?

@@ -4,6 +4,10 @@ project(ISSMGW)
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2")
+# set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS}")
+
+# omp parallelisation
+find_package(OpenMP REQUIRED)
 
 # Find GSL
 find_package(GSL REQUIRED)
@@ -33,6 +37,7 @@ message(STATUS "Sources: ${SOURCES}")
 find_library(PROFILER_LIB profiler)
 
 target_link_libraries(deepphase PRIVATE 
+    OpenMP::OpenMP_CXX
     gsl 
     gslcblas 
     m

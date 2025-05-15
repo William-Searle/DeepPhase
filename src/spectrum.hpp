@@ -82,17 +82,13 @@ class PowerSpec {
 };
 #include "spectrum.tpp"
 
-/**
- * @brief Calculates kinetic (velocity) power spectrum
- *
- * @param dtau $\delta \tau_{fin}$
- * @param k Momentum
- * @param p
- * @param pt
- *
- * @return Kinetic power spectrum
- */
-double dlt(double dtau, double k, double p, double pt);
+double ptilde(double k, double p, double z);
+
+double ff(double tau_m, double k, double cs);
+double dtau_fin(double tau_fin, double tau_s);
+
+std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
+std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
 
 /**
  * @brief Calculates kinetic (velocity) power spectrum
@@ -104,7 +100,7 @@ double dlt(double dtau, double k, double p, double pt);
  *
  * @return Kinetic power spectrum
  */
-PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &nuc_type);
+PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string& nuc_type);
 
 /**
  * @brief Calculates kinetic (velocity) power spectrum
@@ -114,17 +110,20 @@ PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string &
  *
  * @return Kinetic power spectrum
  */
-PowerSpec Ekin(double k, Hydrodynamics::FluidProfile& prof);
+PowerSpec Ekin(double k, const Hydrodynamics::FluidProfile& prof);
+PowerSpec Ekin(const std::vector<double>& k_vec, const Hydrodynamics::FluidProfile& prof);
 
-/**
+/*
  * @brief Calculates normalised kinetic power spectrum from Ekin(k)
  *
  * @param Ekin kinetic power spectrum
  *
  * @return Normalised kinetic power spectrum
  */
-PowerSpec zetaKin(PowerSpec Ekin);
+PowerSpec zetaKin(const PowerSpec& Ekin);
+PowerSpec zetaKin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof);
 
+PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTParams& params);
 /**
  * @brief Calculates prefactor for GW power spectrum $\Omega_{GW}$
  *

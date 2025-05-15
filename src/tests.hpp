@@ -48,7 +48,12 @@ void test_interpolator();
 
 void test_prof_ints(bool plot=true);
 void test_Apsq(bool plot=true);
-void test_Apsq2(bool plot=true);
+
+void test_Ekin(bool plot=true);
+
+void test_GWSpec(bool plot=true);
+
+void test_simpson_integrate();
 
 /// @brief Namespace for performance testing alternatives to std::pow
 namespace PowerTest {

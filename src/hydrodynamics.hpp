@@ -31,7 +31,7 @@ double mu(double xi, double v);
  *
  * @return Lifetime distribution.
  */
-double lifetime_dist(double Ttilde, const std::string &nuc_type);
+double lifetime_dist(double Ttilde, const std::string& nuc_type);
 
 /**
  * @brief Computes the bubble lifetime distribution over a vector of normalized times Ttilde.
@@ -41,9 +41,9 @@ double lifetime_dist(double Ttilde, const std::string &nuc_type);
  * 
  * @return Lifetime distribution.
  */
-std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type);
+std::vector<double> lifetime_dist2(const std::vector<double>& Ttilde, const std::string& nuc_type);
 
-std::function<double(double)> lifetime_dist_func(const std::string &nuc_type);
+std::function<double(double)> lifetime_dist_func(const std::string& nuc_type);
 
 /**
  * @brief Computes the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
@@ -53,7 +53,7 @@ std::function<double(double)> lifetime_dist_func(const std::string &nuc_type);
  * 
  * @return Value of the integrated profile function f.
  */
-double prof_int_f(double chi, FluidProfile& prof);
+double prof_int_f(double chi, const FluidProfile& prof);
 
 /**
  * @brief Computes the first derivative of the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
@@ -63,9 +63,9 @@ double prof_int_f(double chi, FluidProfile& prof);
  * 
  * @return Value of the integrated profile function f.
  */
-double prof_int_f_der(double chi, FluidProfile& prof);
+double prof_int_f_der(double chi, const FluidProfile& prof);
 
-std::vector<double> prof_int_f_der(std::vector<double> chi_vals, FluidProfile& prof);
+std::vector<double> prof_int_f_der(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 /**
  * @brief Computes the integrated profile function l(χ) defined in Eq. (31) of Pol, Procacci, Caprini (2024).
@@ -75,9 +75,9 @@ std::vector<double> prof_int_f_der(std::vector<double> chi_vals, FluidProfile& p
  * 
  * @return Value of the integrated profile function l.
  */
-double prof_int_l(double chi, FluidProfile& prof);
+double prof_int_l(double chi, const FluidProfile& prof);
 
-std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(std::vector<double> chi_vals, FluidProfile& prof);
+std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 /**
  * @brief Computes the complex amplitude A₊ or A₋ defined in Eq. (29) of Pol, Procacci, Caprini (2024).
@@ -88,7 +88,7 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(std::vector<dou
  * 
  * @return Complex amplitude A₊ or A₋.
  */
-std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof);
+std::complex<double> Apm(std::string& pm, double chi, const FluidProfile& prof);
 
 /**
  * @brief Computes |A₊(χ)|²
@@ -98,7 +98,7 @@ std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof);
  * 
  * @return Squared modulus |A₊(χ)|².
  */
-double Ap_sq(double chi, FluidProfile& prof);
-std::vector<double> Ap_sq(std::vector<double> chi_vals, FluidProfile& prof);
+double Ap_sq(double chi, const FluidProfile& prof);
+std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 } // namespace Hydrodynamics

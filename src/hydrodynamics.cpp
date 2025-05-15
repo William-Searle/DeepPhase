@@ -26,7 +26,7 @@ double mu(double xi, double v) {
     return (xi - v) / (1.0 - xi * v);
 }
 
-double lifetime_dist(double Ttilde, const std::string &nuc_type) {
+double lifetime_dist(double Ttilde, const std::string& nuc_type) {
 
     std::function<double(double)> lifetime_func;
 
@@ -40,7 +40,7 @@ double lifetime_dist(double Ttilde, const std::string &nuc_type) {
     }
 }
 
-std::function<double(double)> lifetime_dist_func(const std::string &nuc_type) {
+std::function<double(double)> lifetime_dist_func(const std::string& nuc_type) {
     // Return a lambda function that computes the lifetime distribution for the specified nucleation type
     if (nuc_type == "exp") {
         return [](double Ttilde) -> double {
@@ -58,7 +58,7 @@ std::function<double(double)> lifetime_dist_func(const std::string &nuc_type) {
 
 
 // calculate as vector here rather than calling function at integration step since it is expensive
-std::vector<double> lifetime_dist2(const std::vector<double> &Ttilde, const std::string &nuc_type) {
+std::vector<double> lifetime_dist2(const std::vector<double>& Ttilde, const std::string& nuc_type) {
     std::vector<double> dist;
     dist.reserve(Ttilde.size()); // allocates fixed memory to dist
 
@@ -97,7 +97,7 @@ double prof_int_f(double chi, FluidProfile& prof) { // calculate integral in eq 
 }
 
 /* profile integrals (single value) */
-double prof_int_f_der(double chi, FluidProfile& prof) {
+double prof_int_f_der(double chi, const FluidProfile& prof) {
     const auto v_prof = prof.v_prof();
 
     auto integrand = [&](double xi) {
@@ -112,7 +112,7 @@ double prof_int_f_der(double chi, FluidProfile& prof) {
     return f_der;
 }
 
-double prof_int_l(double chi, FluidProfile& prof) {
+double prof_int_l(double chi, const FluidProfile& prof) {
     const auto la_prof = prof.la_prof();
 
     auto integrand = [&](double xi) {
@@ -128,7 +128,7 @@ double prof_int_l(double chi, FluidProfile& prof) {
 }
 
 /* profile integrals (vector) */
-std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(std::vector<double> chi_vals, FluidProfile& prof) {
+std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vector<double>& chi_vals, const FluidProfile& prof) {
     const auto xi_vals = prof.xi_vals();
     const auto v_vals = prof.v_vals();
     const auto la_vals = prof.la_vals();
@@ -168,7 +168,7 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(std::vector<dou
 }
 
 // not sure if needed
-std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof) {
+std::complex<double> Apm(std::string& pm, double chi, const FluidProfile& prof) {
     double sgn;
     if (pm == "+") {
         sgn = 1;
@@ -185,7 +185,7 @@ std::complex<double> Apm(std::string pm, double chi, FluidProfile& prof) {
 }
 
 // |A_+|^2
-double Ap_sq(double chi, FluidProfile& prof) {
+double Ap_sq(double chi, const FluidProfile& prof) {
     const auto prof_int_1 = prof_int_f_der(chi, prof);
     const auto prof_int_2 = prof_int_l(chi, prof);
 
@@ -193,7 +193,7 @@ double Ap_sq(double chi, FluidProfile& prof) {
 }
 
 // precomputes f' and l for all chi for efficiently
-std::vector<double> Ap_sq(std::vector<double> chi_vals, FluidProfile& prof) {
+std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof) {
     const auto csq = prof.params().csq();
     const auto [fd_int, l_int] = prof_ints_fl(chi_vals, prof);
     const auto m = chi_vals.size();

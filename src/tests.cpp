@@ -277,7 +277,7 @@ void test_Apsq(bool plot) { // test Ap_sq
     Hydrodynamics::FluidProfile profile(params);
 
     // const auto chi_vals = logspace(0.1, 10, 1000);
-    const auto chi_vals = linspace(0.0, 100.0, 200);
+    const auto chi_vals = linspace(0.0, 40.0, 200);
     const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, profile);
 
     if (plot) {
@@ -289,6 +289,130 @@ void test_Apsq(bool plot) { // test Ap_sq
         plt::save("Ap_sq_profile.png");
     }
     return;
+}
+
+void test_Ekin(bool plot) {
+    const PhaseTransition::PTParams params;
+    const Hydrodynamics::FluidProfile profile(params);
+
+    const auto kRs_vals = logspace(0.1, 1e3, 500);
+    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
+    const auto Eks = Spectrum::zetaKin(Ek);
+    
+    if (plot) {
+        plt::figure_size(800, 600);
+        plt::loglog(Eks.kvec(), Eks.Pvec());
+        plt::xlabel("k");
+        plt::ylabel("Ekin(k)");
+        plt::xlim(1e-1, 1e+3);
+        plt::ylim(1e-4, 1e+0);
+        plt::grid(true);
+        plt::save("Ekin_spectrum.png");
+    }
+
+    return;
+}
+
+void test_GWSpec(bool plot) {
+    const PhaseTransition::PTParams params;
+
+    const auto kRs_vec = logspace(1e-3, 1e+3, 20);
+    // const std::vector<double> kRs_vec = {0.2};
+    const auto OmegaGW = Spectrum::GWSpec(kRs_vec, params);
+    
+    if (plot) {
+        plt::figure_size(800, 600);
+        plt::loglog(OmegaGW.kvec(), OmegaGW.Pvec());
+        plt::xlabel("K=kRs");
+        plt::ylabel("Omega_GW(K)");
+        // plt::xlim(1e-1, 1e+3);
+        // plt::ylim(1e-4, 1e+0);
+        plt::grid(true);
+        plt::save("GW_spectrum.png");
+    }
+
+    return;
+}
+
+// probably don't need this
+void test_simpson_integrate() {
+    auto f = [](double x) { return std::sin(x); };
+    auto F = [](double a, double b) { return -std::cos(b) + std::cos(a); }; // ∫ sin(x) dx
+
+    std::cout << std::fixed << std::setprecision(10);
+
+    // Test 1: Uniform spacing
+    {
+        const int N = 101;
+        const double a = 0.0, b = M_PI;
+        double h = (b - a) / (N - 1);
+
+        const auto x1_vals = linspace(a, b, N);
+        std::vector<double> y1_vals;
+        for (const auto x : x1_vals) {
+            y1_vals.push_back(f(x));
+        }
+
+        double approx = simpson_integrate(x1_vals, y1_vals);
+        double exact = F(a, b);
+        std::cout << "Uniform spacing test:\n";
+        std::cout << "  Simpson result: " << approx << "\n";
+        std::cout << "  Exact result:   " << exact << "\n";
+        std::cout << "  Error:          " << std::abs(approx - exact) << "\n";
+        assert(std::abs(approx - exact) < 1e-6);
+    }
+
+    // Test 2: Non-uniform spacing
+    {
+        const int N = 101;
+        const double a = 0.00001, b = M_PI;
+
+        const auto x2_vals = logspace(a, b, N);
+        std::vector<double> y2_vals;
+        for (const auto x : x2_vals) {
+            y2_vals.push_back(f(x));
+        }
+
+        double approx = simpson_integrate(x2_vals, y2_vals);
+        double exact = F(a, b);
+        std::cout << "\nNon-uniform spacing test:\n";
+        std::cout << "  Simpson result: " << approx << "\n";
+        std::cout << "  Exact result:   " << exact << "\n";
+        std::cout << "  Error:          " << std::abs(approx - exact) << "\n";
+        assert(std::abs(approx - exact) < 1e-4);
+    }
+
+    // Test 3: Discontinuous function (step)
+    {
+        auto g = [](double x) { return x < 0.5 ? 1.0 : 2.0; };
+        const int N = 101;
+        std::vector<double> x(N), y(N);
+        for (int i = 0; i < N; ++i) {
+            x[i] = static_cast<double>(i) / (N - 1);
+            y[i] = g(x[i]);
+        }
+        double approx = simpson_integrate(x, y);
+        double exact = 1.0 * 0.5 + 2.0 * 0.5; // step from 1 to 2 at x = 0.5
+        std::cout << "\nDiscontinuous function test:\n";
+        std::cout << "  Result: " << approx << ", Exact: " << exact << ", Error: " << std::abs(approx - exact) << "\n";
+        assert(std::abs(approx - exact) < 1e-2);
+    }
+
+    // Test 5: Mismatched sizes (should throw)
+    {
+        std::vector<double> x = {0.0, 1.0, 2.0};
+        std::vector<double> y = {1.0, 2.0}; // wrong size
+        bool caught = false;
+        try {
+            simpson_integrate(x, y);
+        } catch (const std::invalid_argument&) {
+            caught = true;
+        }
+        assert(caught);
+        std::cout << "\nMismatched size test passed (threw as expected).\n";
+    }
+
+    std::cout << "\n✅ All extended Simpson integration tests passed.\n";
 }
 
 // tests for different versions of the power function

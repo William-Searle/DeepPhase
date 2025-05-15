@@ -28,6 +28,8 @@ PTParams::PTParams(double vw, double alpha, double beta, std::string model, std:
       model_(model),
       nuc_type_(nuc_type),
       Rs_(std::pow(8 * M_PI, 1. / 3.) * vw_ / beta_),
+      tau_s_(1.0), // change to 1.0 / universe.Hs()
+      tau_fin_(10.0), // change this
       cpsq_(), cmsq_(),
       wall_type_()
     {
