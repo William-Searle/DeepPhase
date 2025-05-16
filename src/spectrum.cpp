@@ -96,6 +96,13 @@ void PowerSpec::write(const std::string& filename) const {
     return;
 }
 
+CubicSpline<double> PowerSpec::interpolate() const {
+    if (is_scalar()) {
+        throw std::runtime_error("PowerSpec: Cannot interpolate scalar spectrum!");
+    }
+    return CubicSpline(kvec(), Pvec());
+}
+
 // PowerSpec [op] Scalar arithmetic
 PowerSpec operator+(const PowerSpec& spec, double scalar) {
     return Spectrum::scalar_arith(spec, scalar, std::plus<>());
@@ -202,11 +209,18 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     }
 
     // precompute normalised kinetic spectrum
-    // create one zetaKin class object and define interpolating function to call inside loop
-    // this avoids creating new PowerSpec objects in loop which is slow as hell
+    /*
+    - zetaKin(pRs) can be precomputed, but not zetaKin(ptRs) since ptRs = ptRs(k,p,z)
+    - use interpolator function to calculate the latter (much faster than constructing PowerSpec objects inside loops)
+    - for 0<p<inf, |k|<pt<inf (for finite k) -> okay to use pRs_vals for domain of zetaKin(ptRs)
+    */
     const Hydrodynamics::FluidProfile profile(params);
-    const auto zetaKin1 = zetaKin(pRs_vals, profile);
-    const auto zetaKin1_P_vals = zetaKin1.Pvec();
+    const auto zk = zetaKin(pRs_vals, profile);
+
+    const auto zk_pRs_vals = zk.Pvec(); // store zetaKin(pRs) vals (quicker than calling interpolator)
+    const auto zk_ptRs_interp = zk.interpolate(); // interpolating function for zetaKin(ptRs)
+    // note: this should already be normalised -> check this!!
+    // add check to cubic spline in case interpolator is called outside of domain!
 
     // precompute dlt
     const auto delta = dlt(k_vals, p_vals, z_vals, params);
@@ -225,27 +239,23 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
             const auto pRs = pRs_vals[i];
             const auto pRs2 = pRs2_vals[i];
 
-            const auto zetaKin1_fac = kRs * zetaKin1_P_vals[i] * pRs2; // kRs * zetaKin(pRs) * pRs^2
+            const auto zk_pRs_fac = kRs * zk_pRs_vals[i] * pRs2; // kRs * zetaKin(pRs) * pRs^2
 
             for (int j = 0; j < nz; j++) {
                 const auto z = z_vals[j];
                 const auto pt = ptilde(k, p, z);
                 const auto ptRs = pt * Rs;
 
-                // calc 2nd kinetic spectrum (can't store earlier since pt=pt(k,p,z))
-                // could calc ALL ptRs and then create only one Ek vector -> saves many ctor calls
-                // this MUST be precomputed otherwise zetaKin is ALWAYS 1!!!
-                const auto Ek = Ekin(ptRs, profile);
-                const auto zetaKin2 = zetaKin(Ek);
-
+                // neccessary to store these? only called once so maybe not
+                const auto zk_ptRs = zk_ptRs_interp(ptRs);
                 const auto dlta = delta[m][i][j];
 
                 const auto ptRs4_inv = 1.0 / (ptRs * ptRs * ptRs * ptRs);
                 const auto z_fac = 1.0 - z;
                 const auto z_fac2 = z_fac * z_fac;
 
-                integrand[i][j] = z_fac2 * ptRs4_inv * zetaKin1_fac * zetaKin2.P() * dlt;
-                // integrand[i][j] = z_fac2 * ptRs4_inv * zetaKin1_fac * dlta;
+                integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs * dlta;
+                // integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * dlta;
             }
         }
 
@@ -256,16 +266,14 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
 }
 /***************************/
 
-kRs /int_0^{\infty} dP \int_{-1}^1 dz (1-z^2)^2 (P^2)/(Pt^4) zetaKin(P) zetaKin(Pt) dlt(k,p,z)
-
-
 /*** dlt spectrum ***/
 double ptilde(double k, double p, double z) {
     return std::sqrt(k*k - 2.0 * k * p * z + p*p);
 }
 
-double ff(double tau_m, double k, double cs) {
-    return std::cos(k * cs * tau_m); // for SSM -> NEED TO UPDATE THIS
+double ff(double tau_m, double kcs) {
+    // kcs = k*cs -> ff called this way to make dlt faster
+    return std::cos(kcs * tau_m); // for SSM -> NEED TO UPDATE THIS
 }
 
 double dtau_fin(double tau_fin, double tau_s) {
@@ -283,54 +291,90 @@ std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_v
 
     const auto tau_vals = linspace(tau_s, tau_fin, 50);
     const auto n = tau_vals.size();
+    const auto nsq = n * n;
+
+    const auto nk = k_vals.size();
+    const auto np = p_vals.size();
+    const auto nz = z_vals.size();
 
     // store tau_m = tau2 - tau1 and tau_sq_inv = 1/(tau1 * tau2) values
     // avoids repeated calculation in loops over k, p, z (much quicker!)
-    std::vector<std::vector<double>> tau_m(n, std::vector<double>(n));
-    std::vector<std::vector<double>> tau_sq_inv(n, std::vector<double>(n));
+    std::vector<double> tau_m(nsq);
+    std::vector<double> tau_sq_inv(nsq);
     for (int i = 0; i < n; i++) { // tau1
         for (int j = 0; j < n; j++) { // tau2
+            const auto idx = i * n + j;
+
             const auto tau1 = tau_vals[i];
             const auto tau2 = tau_vals[j];
-            tau_m[i][j] = tau2 - tau1;
-            tau_sq_inv[i][j] = 1.0 / (tau1 * tau2);
+
+            tau_m[idx] = tau2 - tau1;
+            tau_sq_inv[idx] = 1.0 / (tau1 * tau2);
+        }
+    }
+
+    // fill ff (reduces redundancy)
+    std::vector<std::vector<double>> ff1_cache(nsq, std::vector<double>(np));
+    std::vector<std::vector<double>> ff3_cache(nsq, std::vector<double>(nk));
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < n; i++) // tau1
+    for (int j = 0; j < n; j++) { // tau2
+        const auto idx = i * n + j;
+        const auto tau_minus = tau_m[idx];
+        // fill ff3
+        for (int kk = 0; kk < nk; kk++) {
+            const auto k = k_vals[kk];
+            ff3_cache[idx][kk] = std::cos(k * tau_minus);
+        }
+        // fill ff1
+        for (int pp = 0; pp < np; pp++) {
+            const auto p = p_vals[pp];
+            ff1_cache[idx][pp] = ff(tau_minus, p*cs); // redundancy computing p*cs here - change?
         }
     }
 
     // reserve memory for output tensor
-    const auto nk = k_vals.size();
-    const auto np = p_vals.size();
-    const auto nz = z_vals.size();
     std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
-    auto result2 = result;
-    // bottleneck is subtraction in ptilde
-    // better way to parallelise loops?
-    // slightly slower initialising integrand inside z loop
-    //  - could initialise outside of loop (with result) and give integrand a thread_id then sum all threads to make more efficient
-    #pragma omp parallel for
-    for (int kk = 0; kk < nk; kk++) {
+
+    // collapsing loops gives marginal improvement - not sure if there is any way around redundancy defining k,p,z though
+    #pragma omp parallel for collapse(3)
+    for (int kk = 0; kk < nk; kk++)
+    for (int pp = 0; pp < np; pp++)
+    for (int zz = 0; zz < nz; zz++) {
         const auto k = k_vals[kk];
-        for (int pp = 0; pp < np; pp++) {
-            const auto p = p_vals[pp];
-            for (int zz = 0; zz < nz; zz++) {
-                const auto z = z_vals[zz];
-                const auto pt = ptilde(k, p, z);
-                std::vector<std::vector<double>> integrand(n, std::vector<double>(n));
-                // integration routine
-                for (int i = 0; i < n; i++) { // tau1
-                    for (int j = 0; j < n; j++) { // tau2
-                        const auto tau_minus = tau_m[i][j];
-                        integrand[i][j] = ff(tau_minus, p, cs) * ff(tau_minus, pt, cs) * std::cos(k * tau_minus) * tau_sq_inv[i][j];
-                    }
-                }
-                result[kk][pp][zz] = simpson_2d_integrate(tau_vals, tau_vals, integrand);
+        const auto p = p_vals[pp];
+        const auto z = z_vals[zz];
+
+        const auto pt = ptilde(k, p, z); // collapsing loops a lot quicker than breaking up ptilde calc so redundancy here is ok!
+        const auto ptcs = pt * cs;
+
+        // integration routine
+        std::vector<double> integrand(nsq);
+        // std::vector<std::vector<double>> integrand(n, std::vector<double>(n));
+        #pragma omp simd
+        for (int i = 0; i < n; i++) { // tau1
+            for (int j = 0; j < n; j++) { // tau2
+                const auto idx = i * n + j;
+                const auto tau_minus = tau_m[idx];
+
+                const auto ff3 = ff3_cache[idx][kk];
+                const auto ff1 = ff1_cache[idx][pp];
+                const auto ff2 = ff(tau_minus, ptcs);
+                
+
+                integrand[idx] = ff1 * ff2 * ff3 * tau_sq_inv[idx];
+                // integrand[i][j] = ff1 * ff2 * ff3 * tau_sq_inv[idx];
             }
         }
+        result[kk][pp][zz] = simpson_2d_integrate_flat(tau_vals, tau_vals, integrand);
+        // result[kk][pp][zz] = simpson_2d_integrate(tau_vals, tau_vals, integrand);
     }
 
     return result;
 }
 
+// dlt2 creates local thread copy of integrand rather than creating an instance of integrand inside the loop
+// overhead from omp seems to slow it down considerably for small number of integration steps (probably okay for large number of steps)
 std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     const auto cs = std::sqrt(params.csq());
 
@@ -339,57 +383,82 @@ std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_
 
     const auto tau_vals = linspace(tau_s, tau_fin, 50);
     const auto n = tau_vals.size();
+    const auto nsq = n * n;
 
-    // store tau_m = tau2 - tau1 and tau_sq_inv = 1/(tau1 * tau2) values
-    // avoids repeated calculation in loops over k, p, z (much quicker!)
-    std::vector<std::vector<double>> tau_m(n, std::vector<double>(n));
-    std::vector<std::vector<double>> tau_sq_inv(n, std::vector<double>(n));
-    for (int i = 0; i < n; i++) { // tau1
-        for (int j = 0; j < n; j++) { // tau2
-            const auto tau1 = tau_vals[i];
-            const auto tau2 = tau_vals[j];
-            tau_m[i][j] = tau2 - tau1;
-            tau_sq_inv[i][j] = 1.0 / (tau1 * tau2);
-        }
-    }
-
-    // reserve memory for output tensor
     const auto nk = k_vals.size();
     const auto np = p_vals.size();
     const auto nz = z_vals.size();
-    std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
-    auto result2 = result;
 
-    // splitting up ptilde and ff calcs like this doesn't really change efficiency
-    #pragma omp parallel for
-    for (int kk = 0; kk < nk; kk++) {
-        const auto k = k_vals[kk];
-        const auto k2 = k * k;
+    // store tau_m = tau2 - tau1 and tau_sq_inv = 1/(tau1 * tau2) values
+    // avoids repeated calculation in loops over k, p, z (much quicker!)
+    std::vector<double> tau_m(nsq);
+    std::vector<double> tau_sq_inv(nsq);
+    for (int i = 0; i < n; i++) { // tau1
+        for (int j = 0; j < n; j++) { // tau2
+            const auto idx = i * n + j;
+
+            const auto tau1 = tau_vals[i];
+            const auto tau2 = tau_vals[j];
+
+            tau_m[idx] = tau2 - tau1;
+            tau_sq_inv[idx] = 1.0 / (tau1 * tau2);
+        }
+    }
+
+    // fill ff (reduces redundancy)
+    std::vector<std::vector<double>> ff1_cache(nsq, std::vector<double>(np));
+    std::vector<std::vector<double>> ff3_cache(nsq, std::vector<double>(nk));
+    #pragma omp parallel for collapse(2)
+    for (int i = 0; i < n; i++) // tau1
+    for (int j = 0; j < n; j++) { // tau2
+        const auto idx = i * n + j;
+        const auto tau_minus = tau_m[idx];
+        // fill ff3
+        for (int kk = 0; kk < nk; kk++) {
+            const auto k = k_vals[kk];
+            ff3_cache[idx][kk] = std::cos(k * tau_minus);
+        }
+        // fill ff1
         for (int pp = 0; pp < np; pp++) {
             const auto p = p_vals[pp];
-            const auto p2 = p * p;
-            const auto kp = k * p;
-            const auto kp2_sum = k2 + p2;
-            const auto pcs = p * cs;
-            for (int zz = 0; zz < nz; zz++) {
-                const auto z = z_vals[zz];
-                const auto pt = std::sqrt(kp2_sum - 2.0 * kp * z); // ptilde = sqrt(k^2 - 2kpz + p^2)
-                const auto ptcs = pt * cs;
+            ff1_cache[idx][pp] = ff(tau_minus, p*cs); // redundancy computing p*cs here - change?
+        }
+    }
 
-                std::vector<std::vector<double>> integrand(n, std::vector<double>(n));
-                // integration routine
-                for (int i = 0; i < n; i++) { // tau1
-                    for (int j = 0; j < n; j++) { // tau2
-                        const auto tau_minus = tau_m[i][j];
-                        const auto ff_p = std::cos(pcs * tau_minus); // for SSM only
-                        const auto ff_pt = std::cos(ptcs * tau_minus); // for SSM only
+    // reserve memory for integration
+    std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
+    std::vector<std::vector<double>> integrands(omp_get_max_threads(), std::vector<double>(nsq));
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        std::vector<double>& integrand = integrands[tid]; // local thread copy in integrand
 
-                        integrand[i][j] = ff_p * ff_pt * std::cos(k * tau_minus) * tau_sq_inv[i][j];
-                    }
+        #pragma omp for collapse(3)
+        for (int kk = 0; kk < nk; kk++)
+        for (int pp = 0; pp < np; pp++)
+        for (int zz = 0; zz < nz; zz++) {
+            const auto k = k_vals[kk];
+            const auto p = p_vals[pp];
+            const auto z = z_vals[zz];
+
+            const auto pt = ptilde(k, p, z); // collapsing loops a lot quicker than breaking up ptilde calc so redundancy here is ok!
+            const auto ptcs = pt * cs;
+
+            // integration routine
+            for (int i = 0; i < n; i++) { // tau1
+                for (int j = 0; j < n; j++) { // tau2
+                    const auto idx = i * n + j;
+                    const auto tau_minus = tau_m[idx];
+                    const auto ff3 = ff3_cache[idx][kk];
+                    const auto ff1 = ff1_cache[idx][pp];
+                    const auto ff2 = ff(tau_minus, ptcs);
+
+                    integrand[idx] = ff1 * ff2 * ff3 * tau_sq_inv[idx];
                 }
-
-                result[kk][pp][zz] = simpson_2d_integrate(tau_vals, tau_vals, integrand);
             }
+
+            // each iteration of (k,p,z) handled by separate thread, so result should be thread safe
+            result[kk][pp][zz] = simpson_2d_integrate_flat(tau_vals, tau_vals, integrand);
         }
     }
 
@@ -443,13 +512,14 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
     // define Ttilde from chi = Ttilde * k / beta (makes calling Apsq simpler)
     // using K = k * Rs below
     // Ap_sq = inf at 0
-    const auto chi_vals = logspace(0.1, 40.0, 200); // bad to hard code?
+    const auto chi_vals = logspace(1e-3, 1e+3, 200); // bad to hard code?
     const auto n = chi_vals.size();
 
     const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, prof);
     std::vector<double> P_vals;
 
     const auto fac1 = beta * Rs * Rs / (2.0 * M_PI * M_PI);
+    // runs very quickly, don't think its necessary to parallelise unless k and chi vecs are huge
     // #pragma omp parallel for
     for (const auto kRs : kRs_vals) {
         const auto kRs_inv = 1.0 / kRs;
@@ -477,7 +547,13 @@ PowerSpec zetaKin(const PowerSpec& Ekin) {
     } else if (isnan(Ekin_max)) {
         throw std::runtime_error("In zetaKin: Ekin.max() = nan");
     }
-    return Ekin / Ekin_max;
+
+    const auto zk = Ekin / Ekin_max;
+    if (zk.max() != 1.0) {
+        // throw std::runtime_error("In zetaKin: Power spectrum failed normalisation test");
+    }
+
+    return zk;
 }
 
 PowerSpec zetaKin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof) {

@@ -154,6 +154,5 @@ double power3(double x);
 std::string to_string_with_precision(double value, int precision = 2);
 
 double simpson_integrate(const std::vector<double>& x, const std::vector<double>& y);
-double simpson_2d_integrate(const std::vector<double>& x,
-  const std::vector<double>& y,
-  const std::vector<std::vector<double>>& f);
+double simpson_2d_integrate(const std::vector<double>& x, const std::vector<double>& y, const std::vector<std::vector<double>>& f);
+double simpson_2d_integrate_flat(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& f_flat);

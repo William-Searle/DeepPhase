@@ -7,6 +7,7 @@
 #include <algorithm>
 
 #include "PhaseTransition.hpp"
+#include "maths_ops.hpp"
 
 /*
 TO DO:
@@ -46,6 +47,8 @@ class PowerSpec {
     bool is_scalar() const; // Move to private after testing?
     void write(const std::string& filename) const;
 
+    CubicSpline<double> interpolate() const; // generate cubic spline interpolation of P vals
+
     // Scalar arithmetic
     // Note: += changes an object in the class, but + creates a new object, 
     // so + is not a member function and we therefore define it as a friend 
@@ -84,7 +87,7 @@ class PowerSpec {
 
 double ptilde(double k, double p, double z);
 
-double ff(double tau_m, double k, double cs);
+double ff(double tau_m, double kcs);
 double dtau_fin(double tau_fin, double tau_s);
 
 std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);

@@ -316,7 +316,7 @@ void test_Ekin(bool plot) {
 void test_GWSpec(bool plot) {
     const PhaseTransition::PTParams params;
 
-    const auto kRs_vec = logspace(1e-3, 1e+3, 20);
+    const auto kRs_vec = logspace(1e-3, 1e+3, 10);
     // const std::vector<double> kRs_vec = {0.2};
     const auto OmegaGW = Spectrum::GWSpec(kRs_vec, params);
     

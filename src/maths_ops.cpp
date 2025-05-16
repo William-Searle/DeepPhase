@@ -111,6 +111,79 @@ double simpson_integrate(const std::vector<double>& x, const std::vector<double>
     return integral;
 }
 
+// can't just use a wrapper for 2d vector simpson since it slows down dlt a lot
+double simpson_2d_integrate_flat(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& f_flat) {
+    const size_t nx = x.size();
+    const size_t ny = y.size();
+
+    if (f_flat.size() != ny * nx) {
+        throw std::invalid_argument("Size of f_flat must be y.size() * x.size()");
+    }
+
+    auto f = [&](size_t j, size_t i) -> double {
+        return f_flat[j * nx + i];
+    };
+
+    double total = 0.0;
+
+    size_t nx_lim = (nx % 2 == 0) ? nx - 1 : nx;
+    size_t ny_lim = (ny % 2 == 0) ? ny - 1 : ny;
+
+    for (size_t j = 0; j + 2 < ny_lim; j += 2) {
+        double hy1 = y[j + 1] - y[j];
+        double hy2 = y[j + 2] - y[j + 1];
+        double hy = y[j + 2] - y[j];
+
+        for (size_t i = 0; i + 2 < nx_lim; i += 2) {
+            double hx1 = x[i + 1] - x[i];
+            double hx2 = x[i + 2] - x[i + 1];
+            double hx = x[i + 2] - x[i];
+
+            if (std::abs(hx1 - hx2) > 1e-8 || std::abs(hy1 - hy2) > 1e-8) {
+                double area =
+                    0.25 * (x[i + 1] - x[i]) * (y[j + 1] - y[j]) * (f(j, i) + f(j + 1, i) + f(j, i + 1) + f(j + 1, i + 1)) +
+                    0.25 * (x[i + 2] - x[i + 1]) * (y[j + 1] - y[j]) * (f(j, i + 1) + f(j + 1, i + 1) + f(j, i + 2) + f(j + 1, i + 2)) +
+                    0.25 * (x[i + 1] - x[i]) * (y[j + 2] - y[j + 1]) * (f(j + 1, i) + f(j + 2, i) + f(j + 1, i + 1) + f(j + 2, i + 1)) +
+                    0.25 * (x[i + 2] - x[i + 1]) * (y[j + 2] - y[j + 1]) * (f(j + 1, i + 1) + f(j + 2, i + 1) + f(j + 1, i + 2) + f(j + 2, i + 2));
+                total += area;
+            } else {
+                total += (hx * hy / 36.0) * (
+                    f(j, i) + 4 * f(j, i + 1) + f(j, i + 2) +
+                    4 * (f(j + 1, i) + 4 * f(j + 1, i + 1) + f(j + 1, i + 2)) +
+                    f(j + 2, i) + 4 * f(j + 2, i + 1) + f(j + 2, i + 2)
+                );
+            }
+        }
+    }
+
+    // Handle remaining strip in x if nx is even
+    if (nx % 2 == 0) {
+        for (size_t j = 0; j + 1 < ny; ++j) {
+            double hy = y[j + 1] - y[j];
+            double hx = x[nx - 1] - x[nx - 2];
+            total += 0.25 * hx * hy * (
+                f(j, nx - 2) + f(j + 1, nx - 2) +
+                f(j, nx - 1) + f(j + 1, nx - 1)
+            );
+        }
+    }
+
+    // Handle remaining strip in y if ny is even
+    if (ny % 2 == 0) {
+        for (size_t i = 0; i + 1 < nx; ++i) {
+            double hx = x[i + 1] - x[i];
+            double hy = y[ny - 1] - y[ny - 2];
+            total += 0.25 * hx * hy * (
+                f(ny - 2, i) + f(ny - 2, i + 1) +
+                f(ny - 1, i) + f(ny - 1, i + 1)
+            );
+        }
+    }
+
+    return total;
+}
+
+// unused
 double simpson_2d_integrate(const std::vector<double>& x, const std::vector<double>& y, const std::vector<std::vector<double>>& f) {
     const size_t nx = x.size();
     const size_t ny = y.size();
