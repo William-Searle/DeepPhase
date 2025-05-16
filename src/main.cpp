@@ -38,7 +38,7 @@ int main() {
     // const auto kRs_vals = logspace(1e-3, 1e+3, 100);
     // const auto pRs_vals = logspace(1e-2, 1e+3, 1000);
     // const auto Ttilde_vals = logspace(1e-2, 20, 1000);
-    // const auto z_vals = linspace(-1.0, 1.0, 4000);
+    // const auto z_vals = linspace(-1.0, 1.0, 1000);
     // takes 2-4mins to run
     /****************************/
 

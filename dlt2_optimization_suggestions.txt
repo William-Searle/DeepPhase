@@ -1,0 +1,48 @@
+
+Optimization Suggestions for dlt2 Function
+==========================================
+
+1. Inner Integration Loop Hotspot
+---------------------------------
+- The double loop over `i` and `j` (each of size `n`) results in n^2 iterations.
+- `ff(tau_minus, ptcs)` is called inside the innermost loop and may be expensive.
+- Optimization:
+  * Inline or approximate `ff()` if possible.
+  * Precompute values of `ff()` if `tau_minus` and `ptcs` vary over a limited range.
+
+2. simpson_2d_integrate_flat Overhead
+-------------------------------------
+- Could be a performance bottleneck if it includes checks for grid uniformity or branching.
+- Optimization:
+  * Inline the function for performance-critical paths.
+  * Use a specialized version if the integration grid is always uniform.
+
+3. Redundant Calculations
+--------------------------
+- `ff1_cache[idx][pp] = ff(tau_minus, p * cs);` is repeated for every (i, j, pp).
+- Optimization:
+  * Precompute `p_cs_vals[pp] = p * cs` once and use it.
+
+- `ptcs = pt * cs` is recalculated for every (k, p, z).
+- Optimization:
+  * If `ptilde(k, p, z)` is expensive, consider caching `ptcs`.
+
+4. Loop Ordering
+----------------
+- The order of `kk`, `pp`, `zz` loops matters due to memory access patterns and cache locality.
+- Optimization:
+  * Place the fastest-varying (largest) loop innermost for better cache usage.
+  * Profile dimensions of `nk`, `np`, and `nz`. If `nk` is largest, make `kk` innermost.
+
+5. OpenMP Parallelism
+---------------------
+- `#pragma omp for collapse(3)` might not scale well if one of the dimensions is small.
+- Optimization:
+  * Avoid collapsing all three loops if dimensions vary widely.
+  * Consider dynamic scheduling or reordering loops to better balance load across threads.
+
+Summary
+-------
+- Inline or cache heavy function calls.
+- Reorder loops based on data size for cache efficiency.
+- Optimize OpenMP usage by tuning loop structure and scheduling.

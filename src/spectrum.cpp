@@ -433,7 +433,7 @@ std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_
         int tid = omp_get_thread_num();
         std::vector<double>& integrand = integrands[tid]; // local thread copy in integrand
 
-        #pragma omp for collapse(3)
+        #pragma omp for collapse(3) schedule(dynamic)
         for (int kk = 0; kk < nk; kk++)
         for (int pp = 0; pp < np; pp++)
         for (int zz = 0; zz < nz; zz++) {
@@ -452,8 +452,10 @@ std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_
                     const auto ff3 = ff3_cache[idx][kk];
                     const auto ff1 = ff1_cache[idx][pp];
                     const auto ff2 = ff(tau_minus, ptcs);
+                    // const auto ff2 = std::cos(ptcs * tau_minus);
 
                     integrand[idx] = ff1 * ff2 * ff3 * tau_sq_inv[idx];
+                    // integrand[idx] = ff1 * ff3 * tau_sq_inv[idx];
                 }
             }
 
