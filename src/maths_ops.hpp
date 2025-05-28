@@ -125,9 +125,9 @@ class CubicSpline {
  * 
  * @return std::vector<double> Linearly spaced values.
  */
-std::vector<double> linspace(double start, double end, std::size_t num);
+std::vector<double> linspace(double start, double end, std::size_t num=100);
 
-std::vector<double> logspace(double start, double stop, std::size_t num);
+std::vector<double> logspace(double start, double stop, std::size_t num=100);
 
 /**
  * @brief Computes x raised to an integer exponent.
@@ -153,6 +153,51 @@ double power3(double x);
 
 std::string to_string_with_precision(double value, int precision = 2);
 
+struct SimpsonWeights2D {
+    std::vector<std::vector<double>> Ax_weights; // size: (nx-2) x 3
+    std::vector<std::vector<double>> Ay_weights; // size: (ny-2) x 3
+    std::vector<double> dx;  // size: nx-2
+    std::vector<double> dy;  // size: ny-2
+};
+
+static void precompute_1d_weights(
+    const std::vector<double>& coords,
+    std::vector<std::vector<double>>& weights,
+    std::vector<double>& intervals);
+
+SimpsonWeights2D precompute_simpson_weights_2d(
+    const std::vector<double>& x,
+    const std::vector<double>& y);
+
+double simpson_2d_nonuniform_flat_weighted(
+    const std::vector<double>& x,                        // full x vector, size nx
+    const std::vector<double>& y,                        // full y vector, size ny
+    const std::vector<double>& f_flat,                   // flattened f array, size nx * ny
+    const std::vector<std::vector<double>>& Ax_weights,  // size (nx-2)/2 x 3
+    const std::vector<std::vector<double>>& Ay_weights,  // size (ny-2)/2 x 3
+    const std::vector<double>& dx,                       // size (nx-2)/2
+    const std::vector<double>& dy                        // size (ny-2)/2
+);
+
 double simpson_integrate(const std::vector<double>& x, const std::vector<double>& y);
+double simpson_nonuniform(const std::vector<double>& x, const std::vector<double>& y);
 double simpson_2d_integrate(const std::vector<double>& x, const std::vector<double>& y, const std::vector<std::vector<double>>& f);
 double simpson_2d_integrate_flat(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& f_flat);
+double simpson_2d_nonuniform_flat(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& f_flat);
+
+double adaptive_simpson_recursive(const std::function<double(double)>& f,
+                                  double a, double b,
+                                  double fa, double fb, double fm,
+                                  double eps, int depth, int max_depth);
+
+double adaptive_simpson(const std::function<double(double)>& f,
+                        double a, double b,
+                        double eps = 1e-8, int max_depth = 20);
+
+double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
+                           double x0, double x1, double y0, double y1,
+                           double eps = 1e-8, int max_depth = 20);
+
+double Si(double x);
+double Ci(double x);
+std::pair<double, double> SiCi(double x);

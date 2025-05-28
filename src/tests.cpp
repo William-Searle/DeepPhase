@@ -276,8 +276,7 @@ void test_Apsq(bool plot) { // test Ap_sq
     PhaseTransition::PTParams params;
     Hydrodynamics::FluidProfile profile(params);
 
-    // const auto chi_vals = logspace(0.1, 10, 1000);
-    const auto chi_vals = linspace(0.0, 40.0, 200);
+    const auto chi_vals = logspace(1e-3, 100, 1000);
     const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, profile);
 
     if (plot) {
@@ -295,7 +294,7 @@ void test_Ekin(bool plot) {
     const PhaseTransition::PTParams params;
     const Hydrodynamics::FluidProfile profile(params);
 
-    const auto kRs_vals = logspace(0.1, 1e3, 500);
+    const auto kRs_vals = logspace(1e-1, 1e+3, 500);
     const auto Ek = Spectrum::Ekin(kRs_vals, profile);
     const auto Eks = Spectrum::zetaKin(Ek);
     
@@ -329,6 +328,72 @@ void test_GWSpec(bool plot) {
         // plt::ylim(1e-4, 1e+0);
         plt::grid(true);
         plt::save("GW_spectrum.png");
+    }
+
+    return;
+}
+
+void test_SiCi() {
+    // Reference values (e.g., from WolframAlpha or SciPy)
+    struct TestCase {
+        double x;
+        double expected_si;
+        double expected_ci;
+    };
+
+    TestCase tests[] = {
+        {0.1, 0.0999445, -1.72787},
+        {1.0, 0.946083, 0.337404},
+        {2.0, 1.60541, 0.422981},
+        {5.0, 1.54993, -0.19003},
+    };
+
+    double tol = 1e-5;
+
+    for (const auto& t : tests) {
+        double si = Si(t.x);
+        double ci = Ci(t.x);
+
+        std::cout << "x = " << t.x << ": "
+                  << "Si = " << si << " (expected " << t.expected_si << "), "
+                  << "Ci = " << ci << " (expected " << t.expected_ci << ")\n";
+
+        assert(std::abs(si - t.expected_si) < tol && "Si(x) does not match expected value");
+        assert(std::abs(ci - t.expected_ci) < tol && "Ci(x) does not match expected value");
+    }
+
+    std::cout << "All sine/cosine integral tests passed!\n";
+}
+
+void test_dlt_SSM() {
+    const PhaseTransition::PTParams params;
+
+    const auto k_vals = logspace(1e-3, 1e+3, 5);
+    const auto p_vals = linspace(1e-2, 1e+3, 200);
+    const auto z_vals = linspace(-1.0, 1.0, 200);
+
+    const auto nk = k_vals.size();
+    const auto np = p_vals.size();
+    const auto nz = z_vals.size();
+
+    const auto dlta1 = Spectrum::dlt(k_vals, p_vals, z_vals, 50, params);
+    const auto dlta2 = Spectrum::dlt_SSM(k_vals, p_vals, z_vals, params);
+
+    const auto tol = 1e-10;
+    for (int kk = 0; kk < nk; kk++) {
+        for (int pp = 0; pp < np; pp++) {
+            for (int zz = 0; zz < nz; zz++) {
+                const auto dlt1 = dlta1[kk][pp][zz];
+                const auto dlt2 = dlta2[kk][pp][zz];
+
+                // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
+
+                // const auto error = std::abs(dlt1 - dlt2);
+                // if (error > tol) {
+                //     std::cout << "err=" << error << " for (k,p,z)=(" << kk << "," << pp << "," << zz << ")\n";
+                // }
+            }
+        }
     }
 
     return;
@@ -415,6 +480,39 @@ void test_simpson_integrate() {
     std::cout << "\n✅ All extended Simpson integration tests passed.\n";
 }
 
+// tests uniform/nonuniform 2d simpson integrators
+void test_integrators() {
+    // Known function: f(x, y) = x * y over [0,1] x [0,1]
+    // Integral = ∫₀¹∫₀¹ x*y dxdy = 1/4 = 0.25
+
+    const size_t nx = 500;
+    const size_t ny = 500;
+    std::vector<double> x(nx), y(ny), f_flat(nx * ny);
+
+    // Create non-uniform x and y grids
+    for (size_t i = 0; i < nx; ++i) {
+        x[i] = std::pow(double(i) / (nx - 1), 1.5); // skewed toward 0
+    }
+    for (size_t j = 0; j < ny; ++j) {
+        y[j] = std::pow(double(j) / (ny - 1), 1.2); // skewed toward 0
+    }
+
+    // Evaluate function f(x, y) = x * y on grid
+    for (size_t j = 0; j < ny; ++j) {
+        for (size_t i = 0; i < nx; ++i) {
+            f_flat[j * nx + i] = x[i] * y[j];
+        }
+    }
+
+    double true_val = 0.25;
+    double approx_uniform = simpson_2d_integrate_flat(x, y, f_flat);
+    double approx_nonuniform = simpson_2d_nonuniform_flat(x, y, f_flat);
+
+    std::cout << std::fixed << std::setprecision(10);
+    std::cout << "True integral      = " << true_val << "\n";
+    std::cout << "Original integrator = " << approx_uniform << " (rel. error = " << std::abs(approx_uniform - true_val) / true_val << ")\n";
+    std::cout << "Non-uniform integrator = " << approx_nonuniform << " (rel. error = " << std::abs(approx_nonuniform - true_val) / true_val << ")\n";
+}
 // tests for different versions of the power function
 namespace PowerTest { 
 

@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <vector>
 #include <stdexcept>
+#include <cmath>
 
 template <typename T>
 CubicSpline<T>::CubicSpline() : initialised_(false) {}
@@ -98,7 +99,7 @@ bool CubicSpline<T>::is_strictly_monotonic(const std::vector<T>& x) const {
     bool decreasing = true;
 
     for (size_t i = 1; i < x.size(); ++i) {
-        if (isnan(x[i]))
+        if (std::isnan(x[i]))
             throw std::invalid_argument("CubicSpline: NaN x-value detected.");
         if (x[i] <= x[i - 1]) increasing = false;
         if (x[i] >= x[i - 1]) decreasing = false;
@@ -139,8 +140,13 @@ T CubicSpline<T>::operator()(T xi) const {
     }
 
     // Extrapolate flat for out-of-bounds input
-    if (xi <= x_.front()) return y_.front();
-    if (xi >= x_.back()) return y_.back();
+    // if (xi <= x_.front()) return y_.front();
+    // if (xi >= x_.back()) return y_.back();
+
+    // Gives error for out-of-bounds input
+    if (xi < x_.front() || xi > x_.back()) {
+        throw std::invalid_argument("Error: CubicSpline called outside of domain bounds!");
+    }
 
     // Binary search to find correct interval
     auto it = std::upper_bound(x_.begin(), x_.end(), xi);

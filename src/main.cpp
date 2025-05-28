@@ -41,29 +41,39 @@ int main() {
     // const auto z_vals = linspace(-1.0, 1.0, 1000);
     // takes 2-4mins to run
     /****************************/
+    // const PhaseTransition::Universe un;
+    // un.print();
 
-    const PhaseTransition::PTParams params;
-    // const auto kRs_vals = logspace(1e-3, 1e+3, 5);
-    // const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
+    // const PhaseTransition::PTParams params;
+    // params.print();
+
+    test_Ekin(false);
+
+    // const auto k_vals = logspace(1e-3, 1e+3, 5);
+    // const auto p_vals = linspace(1e-2, 1e+3, 200);
+    // const auto z_vals = linspace(-1.0, 1.0, 200);
+
+    // const auto nk = k_vals.size();
+    // const auto np = p_vals.size();
+    // const auto nz = z_vals.size();
+
     // const auto Ek = Spectrum::Ekin(kRs_vals, params);
-    
-    // const bool plot = false;
-    // const bool plot = true;
-    // if (plot) {
-    //     plt::figure_size(800, 600);
-    //     plt::loglog(OmegaGW.kvec(), OmegaGW.Pvec());
-    //     plt::xlabel("K=kRs");
-    //     plt::ylabel("Omega_GW(K)");
-    //     // plt::xlim(1e-1, 1e+3);
-    //     // plt::ylim(1e-4, 1e+0);
-    //     plt::grid(true);
-    //     plt::save("GW_spectrum.png");
-    // }
+    // const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
+    // const auto dlta1 = Spectrum::dlt(k_vals, p_vals, z_vals, 300, params);
+    // const auto dlta2 = Spectrum::dlt2(k_vals, p_vals, z_vals, 50, params);
 
-    const auto k_vals = logspace(1e-3, 1e+3, 5);
-    const auto p_vals = linspace(1e-2, 1e+3, 200);
-    const auto z_vals = linspace(-1.0, 1.0, 200);
-    const auto dlta = Spectrum::dlt2(k_vals, p_vals, z_vals, params);
+    // for (int kk = 0; kk < nk; kk++) {
+    //     const auto k = k_vals[kk];
+    //     for (int pp = 0; pp < np; pp++) {
+    //         const auto p = p_vals[pp];
+    //         for (int zz = 0; zz < nz; zz++) {
+    //             const auto z = z_vals[zz];
+    //             const auto diff = (dlta1[kk][pp][zz] - dlta2[kk][pp][zz]) / dlta1[kk][pp][zz];
+    //             if (diff != 0.0)
+    //                 std::cout << "(k,p,z)=(" << k << "," << p << "," << z << "), diff=" << diff << "\n";
+    //         }
+    //     }
+    // }
 
     /************************ CLOCK / PROFILER *************************/
     const auto tf = std::chrono::high_resolution_clock::now();

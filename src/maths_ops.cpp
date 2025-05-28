@@ -4,6 +4,10 @@
 #include <iomanip>
 #include <cmath>
 #include <stdexcept>
+#include <functional>
+
+#include "constants.hpp"
+#include "maths_ops.hpp"
 
 /*
 TO DO:
@@ -106,6 +110,34 @@ double simpson_integrate(const std::vector<double>& x, const std::vector<double>
     if (n % 2 == 0) {
         double h = x[n - 1] - x[n - 2];
         integral += 0.5 * h * (y[n - 2] + y[n - 1]);
+    }
+
+    return integral;
+}
+
+double simpson_nonuniform(const std::vector<double>& x, const std::vector<double>& y) {
+    const size_t n = x.size();
+    double integral = 0.0;
+
+    size_t i = 0;
+    while (i + 2 < n) {
+        const double x0 = x[i],     x1 = x[i+1],     x2 = x[i+2];
+        const double y0 = y[i],     y1 = y[i+1],     y2 = y[i+2];
+        const double h0 = x1 - x0,  h1 = x2 - x1;
+
+        // Use Simpson-like Lagrange formula
+        const double denom = h0 * h1 * (h0 + h1);
+        const double A = -h1 * h1 / denom;
+        const double B = (h1 * h1 - h0 * h0) / denom;
+        const double C = h0 * h0 / denom;
+        integral += (A * y0 + B * y1 + C * y2) * (x2 - x0) / 2.0;
+
+        i += 2; // advance in steps of 2
+    }
+
+    // Fallback for remaining points using trapezoid
+    if (i + 1 < n) {
+        integral += 0.5 * (x[i + 1] - x[i]) * (y[i] + y[i + 1]);
     }
 
     return integral;
@@ -249,4 +281,341 @@ double simpson_2d_integrate(const std::vector<double>& x, const std::vector<doub
     }
 
     return total;
+}
+
+// Helper to compute weights along one dimension for non-uniform points
+// Inputs:
+//   coords: vector of coordinates (x or y)
+// Outputs:
+//   weights: vector of vectors of 3 weights per interval
+//   intervals: vector of interval sizes (x2 - x0)
+static void precompute_1d_weights(
+    const std::vector<double>& coords,
+    std::vector<std::vector<double>>& weights,
+    std::vector<double>& intervals)
+{
+    const size_t n = coords.size();
+    if (n < 3) {
+        throw std::invalid_argument("Grid must have at least 3 points for Simpson's rule");
+    }
+
+    weights.resize(n - 2);
+    intervals.resize(n - 2);
+
+    for (size_t i = 0; i + 2 < n; ++i) {
+        const double x0 = coords[i];
+        const double x1 = coords[i+1];
+        const double x2 = coords[i+2];
+
+        const double hx0 = x1 - x0;
+        const double hx1 = x2 - x1;
+        const double denom = hx0 * hx1 * (hx0 + hx1);
+
+        // Compute weights for points i, i+1, i+2
+        double A0 = -hx1 * hx1 / denom;
+        double A1 = (hx1 * hx1 - hx0 * hx0) / denom;
+        double A2 = hx0 * hx0 / denom;
+
+        weights[i] = {A0, A1, A2};
+        intervals[i] = x2 - x0;
+    }
+}
+
+// define this without function call to 1d version for speed
+SimpsonWeights2D precompute_simpson_weights_2d(
+    const std::vector<double>& x,
+    const std::vector<double>& y)
+{
+    SimpsonWeights2D w;
+
+    precompute_1d_weights(x, w.Ax_weights, w.dx);
+    precompute_1d_weights(y, w.Ay_weights, w.dy);
+
+    return w;
+}
+
+// assumes log-spaced grid
+double simpson_2d_nonuniform_flat(const std::vector<double>& x, const std::vector<double>& y, const std::vector<double>& f_flat) {
+    const size_t nx = x.size();
+    const size_t ny = y.size();
+
+    if (f_flat.size() != nx * ny) {
+        throw std::invalid_argument("Size of f_flat must be x.size() * y.size()");
+    }
+
+    double total = 0.0;
+
+    size_t i = 0;
+    while (i + 2 < nx) {
+        size_t j = 0;
+        while (j + 2 < ny) {
+            const double x0 = x[i], x1 = x[i+1], x2 = x[i+2];
+            const double y0 = y[j], y1 = y[j+1], y2 = y[j+2];
+
+            const double hx0 = x1 - x0, hx1 = x2 - x1;
+            const double hy0 = y1 - y0, hy1 = y2 - y1;
+
+            const double denom_x = hx0 * hx1 * (hx0 + hx1);
+            const double Ax0 = -hx1 * hx1 / denom_x;
+            const double Ax1 = (hx1 * hx1 - hx0 * hx0) / denom_x;
+            const double Ax2 = hx0 * hx0 / denom_x;
+            const double dx = x2 - x0;
+
+            const double denom_y = hy0 * hy1 * (hy0 + hy1);
+            const double Ay0 = -hy1 * hy1 / denom_y;
+            const double Ay1 = (hy1 * hy1 - hy0 * hy0) / denom_y;
+            const double Ay2 = hy0 * hy0 / denom_y;
+            const double dy = y2 - y0;
+
+            const size_t row0 = j * nx;
+            const size_t row1 = (j+1) * nx;
+            const size_t row2 = (j+2) * nx;
+
+            double local = 0.0;
+            local += Ax0 * Ay0 * f_flat[row0 + i];
+            local += Ax1 * Ay0 * f_flat[row0 + i+1];
+            local += Ax2 * Ay0 * f_flat[row0 + i+2];
+
+            local += Ax0 * Ay1 * f_flat[row1 + i];
+            local += Ax1 * Ay1 * f_flat[row1 + i+1];
+            local += Ax2 * Ay1 * f_flat[row1 + i+2];
+
+            local += Ax0 * Ay2 * f_flat[row2 + i];
+            local += Ax1 * Ay2 * f_flat[row2 + i+1];
+            local += Ax2 * Ay2 * f_flat[row2 + i+2];
+
+            total += dx * dy * local / 4.0;
+            j += 2;
+        }
+
+        // Trapezoidal rule for last row if ny is even
+        if (ny % 2 == 0) {
+            const double hy = y[ny - 1] - y[ny - 2];
+            const size_t row0 = (ny - 2) * nx;
+            const size_t row1 = (ny - 1) * nx;
+            for (size_t ii = 0; ii + 1 < 3; ++ii) {
+                const double hx = x[i + ii + 1] - x[i + ii];
+                total += 0.25 * hx * hy * (
+                    f_flat[row0 + i + ii] + f_flat[row1 + i + ii] +
+                    f_flat[row0 + i + ii + 1] + f_flat[row1 + i + ii + 1]);
+            }
+        }
+
+        i += 2;
+    }
+
+    // Trapezoidal rule for last column if nx is even
+    if (nx % 2 == 0) {
+        const double hx = x[nx - 1] - x[nx - 2];
+        for (size_t j = 0; j + 1 < ny; ++j) {
+            const double hy = y[j + 1] - y[j];
+            const size_t row0 = j * nx;
+            const size_t row1 = (j+1) * nx;
+            total += 0.25 * hx * hy * (
+                f_flat[row0 + nx - 2] + f_flat[row1 + nx - 2] +
+                f_flat[row0 + nx - 1] + f_flat[row1 + nx - 1]);
+        }
+    }
+
+    return total;
+}
+
+double simpson_2d_nonuniform_flat_weighted(
+    const std::vector<double>& x,                        // full x vector, size nx
+    const std::vector<double>& y,                        // full y vector, size ny
+    const std::vector<double>& f_flat,                   // flattened f array, size nx * ny
+    const std::vector<std::vector<double>>& Ax_weights,  // size (nx-2)/2 x 3
+    const std::vector<std::vector<double>>& Ay_weights,  // size (ny-2)/2 x 3
+    const std::vector<double>& dx,                       // size (nx-2)/2
+    const std::vector<double>& dy                        // size (ny-2)/2
+) {
+    const size_t nx = x.size(); // pass this into integrator for slight speedup
+    const size_t ny = y.size();
+
+    if (f_flat.size() != nx * ny)
+        throw std::invalid_argument("f_flat size must equal nx * ny");
+
+    auto f = [&](size_t j, size_t i) -> double {
+        return f_flat[j * nx + i];
+    };
+
+    double total = 0.0;
+
+    // Bulk integration with precomputed Simpson weights
+    for (size_t i = 0; i + 2 < nx; i += 2) {
+        size_t wx_idx = i / 2;
+        for (size_t j = 0; j + 2 < ny; j += 2) {
+            size_t wy_idx = j / 2;
+
+            double local = 0.0;
+            for (int jj = 0; jj < 3; ++jj) {
+                for (int ii = 0; ii < 3; ++ii) {
+                    local += Ax_weights[wx_idx][ii] * Ay_weights[wy_idx][jj] * f(j + jj, i + ii);
+                }
+            }
+            total += dx[wx_idx] * dy[wy_idx] * local / 4.0;
+        }
+    }
+
+    // Handle last row (if ny even) with trapezoidal rule along y
+    if (ny % 2 == 0) {
+        size_t last_y = ny - 2;
+        double hy = y[ny - 1] - y[last_y];
+
+        for (size_t i = 0; i + 1 < nx; ++i) {
+            double hx = x[i + 1] - x[i];
+
+            total += 0.25 * hx * hy * (
+                f(last_y, i) + f(last_y + 1, i) +
+                f(last_y, i + 1) + f(last_y + 1, i + 1)
+            );
+        }
+    }
+
+    // Handle last column (if nx even) with trapezoidal rule along x
+    if (nx % 2 == 0) {
+        size_t last_x = nx - 2;
+        double hx = x[nx - 1] - x[last_x];
+
+        for (size_t j = 0; j + 1 < ny; ++j) {
+            double hy = y[j + 1] - y[j];
+
+            total += 0.25 * hx * hy * (
+                f(j, last_x) + f(j + 1, last_x) +
+                f(j, last_x + 1) + f(j + 1, last_x + 1)
+            );
+        }
+    }
+
+    return total;
+}
+
+double adaptive_simpson_recursive(const std::function<double(double)>& f,
+                                  double a, double b,
+                                  double fa, double fb, double fm,
+                                  double eps, int depth, int max_depth) {
+    double h = b - a;
+    double c = (a + b) / 2.0;
+    double fd = f((a + c) / 2.0);
+    double fe = f((c + b) / 2.0);
+
+    double Sleft  = (h / 12.0) * (fa + 4.0 * fd + fm);
+    double Sright = (h / 12.0) * (fm + 4.0 * fe + fb);
+    double S2 = Sleft + Sright;
+
+    double S = (h / 6.0) * (fa + 4.0 * fm + fb); // coarse Simpson
+    if (depth >= max_depth || std::abs(S2 - S) < 15.0 * eps) {
+        return S2 + (S2 - S) / 15.0; // Richardson extrapolation
+    } else {
+        return adaptive_simpson_recursive(f, a, c, fa, fm, fd, eps / 2.0, depth + 1, max_depth)
+             + adaptive_simpson_recursive(f, c, b, fm, fb, fe, eps / 2.0, depth + 1, max_depth);
+    }
+}
+
+double adaptive_simpson(const std::function<double(double)>& f,
+                        double a, double b, double eps,
+                        int max_depth) {
+    if (a == b) return 0.0;
+
+    double fa = f(a);
+    double fb = f(b);
+    double fm = f((a + b) / 2.0);
+
+    return adaptive_simpson_recursive(f, a, b, fa, fb, fm, eps, 0, max_depth);
+}
+
+double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
+                           double x0, double x1,double y0, double y1,
+                           double eps, int max_depth) {
+    auto outer_integrand = [&](double x) {
+        auto inner_integrand = [&](double y) {
+            return f2d(x, y);
+        };
+        return adaptive_simpson(inner_integrand, y0, y1, eps / 2.0, max_depth);
+    };
+
+    return adaptive_simpson(outer_integrand, x0, x1, eps / 2.0, max_depth);
+}
+
+// double fast_sin(double x) {
+
+// }
+
+double Si(double x) {
+    auto sin_integrand = [](double t) {
+        return t == 0.0 ? 1.0 : std::sin(t) / t;
+    };
+
+    if (x == 0.0) return 0.0;
+
+    const int nt = 200; // integration steps
+    std::vector<double> t_vals = linspace(0.0, x, nt);
+    std::vector<double> sin_integrand_vals(nt);
+    
+    for (int j = 0; j < nt; j++) {
+        const auto t = t_vals[j];
+        sin_integrand_vals[j] = sin_integrand(t);
+    }
+
+    return simpson_integrate(t_vals, sin_integrand_vals);
+}
+
+double Ci(double x) { // not working - giving nan
+    // if (x == 0.0) return -INFINITY;
+    if (x == 0.0) return 0.0;
+
+    // auto cos_integrand = [](double t) {
+    //     return t == 0.0 ? 0.0 : (std::cos(t) - 1.0) / t;
+    // };
+
+    auto cos_integrand = [](double t) {
+        if (std::abs(t) < 1e-4) return -0.5 * t; // Taylor exp near zero (otherwise simpson integration breaks)
+        return (std::cos(t) - 1.0) / t;
+    };
+
+    const int nt = 200; // integration steps
+    std::vector<double> t_vals = linspace(0.0, x, nt);
+    std::vector<double> cos_integrand_vals(nt);
+    
+    for (int j = 0; j < nt; j++) {
+        const auto t = t_vals[j];
+        cos_integrand_vals[j] = cos_integrand(t);
+    }
+
+    const auto res = gamma_euler + std::log(x) + simpson_integrate(t_vals, cos_integrand_vals);
+
+    if (std::isnan(res)) {
+        std::cout << "Ci(x) nan for x=" << x << "\n";
+    }
+
+    return res;
+}
+
+std::pair<double, double> SiCi(double x) {
+    auto sin_integrand = [](double t) {
+        return t == 0.0 ? 1.0 : std::sin(t) / t;
+    };
+
+    auto cos_integrand = [](double t) {
+        return t == 0.0 ? 0.0 : (std::cos(t) - 1.0) / t;
+    };
+
+    if (x == 0.0) return {0.0, -INFINITY};
+
+    const int nt = 200; // integration steps
+    std::vector<double> t_vals = linspace(0.0, x, nt);
+
+    std::vector<double> sin_integrand_vals(nt);
+    std::vector<double> cos_integrand_vals(nt);
+    
+    for (int j = 0; j < nt; j++) {
+        const auto t = t_vals[j];
+        sin_integrand_vals[j] = sin_integrand(t);
+        cos_integrand_vals[j] = cos_integrand(t);
+    }
+
+    const auto sin_int = simpson_integrate(t_vals, sin_integrand_vals);
+    const auto cos_int = gamma_euler + std::log(x) + simpson_integrate(t_vals, cos_integrand_vals);
+
+    return {sin_int, cos_int};
 }

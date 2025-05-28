@@ -2,6 +2,7 @@
 #include <string>
 #include <cmath>
 #include <iostream>
+#include <iomanip>
 #include <vector>
 #include <unordered_set>
 #include <cassert>
@@ -17,37 +18,103 @@ TO DO:
 
 namespace PhaseTransition {
 
-// PTParams
-PTParams::PTParams()
-    : PTParams(0.5, 0.1, 1.0, "bag", "exp") {}
+// Universe
+Universe::Universe()
+    : Universe(dflt_universe::T0, dflt_universe::Ts, dflt_universe::H0, dflt_universe::Hs, dflt_universe::g0, dflt_universe::gs) {}
 
-PTParams::PTParams(double vw, double alpha, double beta, std::string model, std::string nuc_type)
+Universe::Universe(double T0, double Ts, double H0, double Hs, double g0, double gs)
+    : T0_(T0),
+      Ts_(Ts), 
+      H0_(H0), 
+      Hs_(Hs), 
+      g0_(g0), 
+      gs_(gs) {}
+
+std::ostream& operator<<(std::ostream& os, const Universe& un) {
+    os << "************** Universe parameters **************\n"
+       << std::left
+       << std::setw(20) << " " << std::setw(13) << "Today" << "Start of PT\n"
+       << std::setw(20) << " " << std::setw(13) << "-----" << "-----------\n"
+       << std::setw(20) << "Temperature:" << "T0=" << std::setw(10) << un.T0() << "Ts=" << un.Ts() << "\n"
+       << std::setw(20) << "Hubble constant:" << "H0=" << std::setw(10) << un.H0() << "Hs=" << un.Hs() << "\n"
+       << std::setw(20) << "Number of DoF:" << "g0=" << std::setw(10) << un.g0() << "gs=" << un.gs() << "\n"
+       << "*************************************************\n";
+       
+    return os;
+}
+
+// some way to combine this with PTParams print()?
+void Universe::print() const {
+    std::cout << *this;
+}
+
+const Universe& default_universe() {
+    static Universe u;;
+    return u;
+}
+
+// PTParams
+// make new ctor for reading in Veff since we calculate all the params
+PTParams::PTParams()
+    : PTParams(dflt_PTParams::vw, dflt_PTParams::alpha, dflt_PTParams::beta, dflt_PTParams::dtau, dflt_PTParams::model, dflt_PTParams::nuc_type, default_universe()) {}
+
+PTParams::PTParams(double vw, double alpha, double beta, double dtau, const char* model, const char* nuc_type, const Universe& un)
     : vw_(vw),
       alpha_(alpha), 
       beta_(beta),
-      model_(model),
-      nuc_type_(nuc_type),
-      Rs_(std::pow(8 * M_PI, 1. / 3.) * vw_ / beta_),
-      tau_s_(1.0), // change to 1.0 / universe.Hs()
-      tau_fin_(10.0), // change this
-      cpsq_(), cmsq_(),
-      wall_type_()
+      dtau_(dtau),
+      tau_s_(),
+      tau_fin_(),
+      model_(),
+      nuc_type_(),
+      wall_type_(),
+      Rs_(),
+      vcj_(), cpsq_(), cmsq_(),
+      universe_(un)
     {
       // defaults to bag model if input model is not in valid_models
-      static const std::unordered_set<std::string> valid_models = {"bag", "improved bag", "Veff"};
-      model_ = valid_models.count(model) ? model : "bag";
+      // write something that indicates other ctor should be called for Veff
+      static const std::unordered_set<const char*> valid_models = {"bag", "improved bag"};
+      if (valid_models.count(model)) {
+        model_ = model;
+      } else {
+        std::cout << "Warning: Invalid model '" << model << "' for equation of state. Using default model (" << dflt_PTParams::model << ")\n";
+        model_ = dflt_PTParams::model;
+      }
 
-      // compute model-dependent quantities
-      const auto mod_par = model_params(model_);
-      cpsq_ = mod_par[0];
-      cmsq_ = mod_par[1];
-      //   alpha_ = params[2];
+      // check valid bubble nucleation type
+      static const std::unordered_set<const char*> valid_nuc = {"exp", "sim"};
+      if (valid_nuc.count(nuc_type)) {
+        nuc_type_ = nuc_type;
+      } else {
+        std::cout << "Warning: Invalid model '" << nuc_type << "' for bubble nucleation. Using default nucleation type (" << dflt_PTParams::nuc_type << ")\n";
+        nuc_type_ = dflt_PTParams::nuc_type;
+      }
 
+      // check valid PT duration
+      if (dtau < 0.0) {
+        std::cout << "Warning: Invalid PT duration (dtau < 0). Using default value dtau=" << dflt_PTParams::dtau << "\n";
+        dtau_ = dflt_PTParams::dtau;
+      }
+      tau_s_ = 1.0 / universe_.Hs();
+      tau_fin_ = tau_s_ + dtau_;
+
+      /***** calc model-dependent quantities *****/
+      if (model == "bag") {
+        cpsq_ = 1.0 / 3.0;
+        cmsq_ = cpsq_;
+      } else {
+          throw std::invalid_argument("Only Bag model has been implemented so far");
+      }
+
+      Rs_ = std::pow(8 * M_PI, 1. / 3.) * vw_ / beta_;
       vcj_ = (1.0 / std::sqrt(3.0)) * (1.0 + std::sqrt(alpha_ + 3.0 * alpha_ * alpha_)) / (1.0 + alpha_);
-      const auto vcjsq = vcj_ * vcj_;
-      assert(vcjsq > cpsq_); // does this always hold?
+      /*******************************************/
 
+      /************** set wall type **************/
+      const auto vcjsq = vcj_ * vcj_;
       const auto vwsq = vw_ * vw_;
+      assert(vcjsq > cpsq_); // does this always hold?
 
       if (vwsq <= cpsq_) {
         wall_type_ = "deflagration";
@@ -56,32 +123,29 @@ PTParams::PTParams(double vw, double alpha, double beta, std::string model, std:
       } else {
         wall_type_ = "detonation";
       }
+      /*******************************************/
     }
 
 std::ostream& operator<<(std::ostream& os, const PTParams& params) {
-    os << "cpsq = " << params.cpsq_ << "\n"
-       << "cmsq = " << params.cmsq_ << "\n"
-       << "vw = " << params.vw_ << "\n"
-       << "alpha = " << params.alpha_ << "\n"
-       << "beta = " << params.beta_ << "\n"
-       << "nuc_type = " << params.nuc_type_ << "\n"
-       << "Rs = " << params.Rs_ << "\n";
+    os << "********** Phase Transition parameters **********\n"
+       << std::left
+       << std::setw(35) << "Equation of state:" << params.model_ << "\n"
+       << std::setw(35) << "Nucleation type:" << params.nuc_type_ << "\n"
+       << std::setw(35) << "Wall type:" << params.wall_type_ << "\n"
+       << std::setw(35) << "Wall velocity:" << "vw=" << params.vw_ << "\n"
+       << std::setw(35) << "PT strength parameter:" << "alpha=" << params.alpha_ << "\n"
+       << std::setw(35) << "Transition rate parameter:" << "beta=" << params.beta_ << "\n"
+       << std::setw(35) << "PT duration" << "dtau=" << params.dtau_ << "\n"
+       << std::setw(35) << "Speed of sound (broken phase):" << "cpsq=" << params.cpsq_ << "\n"
+       << std::setw(35) << "Speed of sound (old phase):" << "cmsq=" << params.cmsq_ << "\n"
+       << std::setw(35) << "Mean bubble separation:" << "Rs=" << params.Rs_ << "\n"
+       << "*************************************************\n";
+       
     return os;
 }
 
-std::vector<double> PTParams::model_params(const std::string& model) const {
-    if (model == "bag") {
-        return bag_params();
-    } else if (model == "improved bag") {
-        throw std::invalid_argument("Only Bag model has been implemented so far");
-        // return improved_bag_params();
-    } else if (model == "Veff") {
-        throw std::invalid_argument("Only Bag model has been implemented so far");
-        // return veff_params();
-    } else {
-        std::cout << "Warning: Invalid equation of state model. Defaulting to Bag model." << std::endl;
-        return bag_params();
-    }
+void PTParams::print() const {
+    std::cout << *this;
 }
 
 double PTParams::vUF(const double v) const { // universe frame (centre of bubble)
@@ -98,19 +162,6 @@ e- = a- * T-^4
 csq = dp/de -> cpsq = cmsq = 1/3
 alpha = eps / (a+ * T+^4)
 */
-
-std::vector<double> PTParams::bag_params() const {
-    std::vector<double> param_vec;
-    // const auto eps =  // Bag constant
-    const auto cpsq = 1.0 / 3.0;
-    const auto cmsq = cpsq;
-    // const auto alpha = 
-
-    param_vec.push_back(cpsq);
-    param_vec.push_back(cmsq);
-    // param_vec.push_back(alpha);
-    return param_vec; // {cpsq, cmsq, alpha}
-}
 
 // see (B.6) in Hindmarsh GWs from FOPT in the SSM
 // only true for bag model - move all bag stuff together at some point
@@ -142,21 +193,5 @@ std::vector<double> PTParams::wpm() const {
     return wpm; // {wp, wm}
 }
 /********************/
-
-void PTParams::print() const {
-    std::cout << *this;
-}
-
-// Universe
-Universe::Universe()
-    : Universe(2.725, 100.0, 67.8, 1.0, 3.91, 100.0) {}
-
-Universe::Universe(double T0, double Ts, double H0, double Hs, double g0, double gs)
-    : T0_(T0),
-      Ts_(Ts), 
-      H0_(H0), 
-      Hs_(Hs), 
-      g0_(g0), 
-      gs_(gs) {}
 
 } // namespace PhaseTransition

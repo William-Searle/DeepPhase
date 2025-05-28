@@ -9,3 +9,6 @@ constexpr double hbar = 1.05e-34; // reduced planck's constant (J * s)
 
 // bag model
 constexpr double csq_bag = 1/3; // speed of sound in fluid
+
+// maths
+constexpr double gamma_euler = 0.5772156649015328606; // Euler-Mascheroni constant

@@ -53,7 +53,13 @@ void test_Ekin(bool plot=true);
 
 void test_GWSpec(bool plot=true);
 
+void test_SiCi();
+
+void test_dlt_SSM();
+
 void test_simpson_integrate();
+
+void test_integrators();
 
 /// @brief Namespace for performance testing alternatives to std::pow
 namespace PowerTest {

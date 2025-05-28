@@ -17,51 +17,14 @@ TO DO:
 
 namespace PhaseTransition {
 
-/**
- * @class PTParams
- * @brief Class representing the parameters of the phase transition (PT).
- * 
- * This class encapsulates the parameters needed to describe the phase transition dynamics,
- * including speeds of sound, wall velocity, strength of the transition, and bubble nucleation type.
- */
-class PTParams { // will probably need to update this later
-  public:
-    // ctors
-    PTParams();
-    PTParams(double vw, double alpha, double beta, std::string model, std::string nuc_type);
-
-    double cpsq() const { return cpsq_; } // speed of sound squared (symmetric phase)
-    double cmsq() const { return cmsq_; } // speed of sound squared (broken phase)
-    double csq() const { return cmsq_; } // keep this? - applies to bag model only
-    double vw() const { return vw_; } // wall velocity
-    double vcj() const { return vcj_; } // Chapman-Jouget speed
-    double alpha() const { return alpha_; } // strength parameter
-    double beta() const { return beta_; } // inverse PT duration
-    double Rs() const { return Rs_; } // characteristic length scale R_*
-    double tau_s() const { return tau_s_; } // start time of PT
-    double tau_fin() const { return tau_fin_; } // end time of PT
-
-    std::string nuc_type() const { return nuc_type_; } // bubble nucleation type
-    std::string wall_type() const { return wall_type_; } // deflagration, hybrid, or detonation
-    std::string model() const { return model_; } // equation of state model
-
-    double vUF(const double v) const; // converts v,w,e to universe frame
-
-    std::vector<double> vpm() const; // fluid velocity {vp=symmetric phase, vm=broken phase}
-    std::vector<double> wpm() const; // fluid enthalpy {wp=symmetric phase, wm=broken phase}
-
-    // print params
-    void print() const;
-    friend std::ostream& operator<<(std::ostream& os, const PTParams& p);
-  
-  private:
-      const double vw_, alpha_, beta_, Rs_, tau_s_, tau_fin_;
-      double cpsq_, cmsq_, vcj_;
-      const std::string nuc_type_;
-      std::string wall_type_, model_; // make copy of model that is const?
-
-      std::vector<double> model_params(const std::string& model) const; // computes model parameters
-      std::vector<double> bag_params() const;
+// move universe class somewhere else?
+struct dflt_universe {
+  static constexpr double T0 = 2.725;
+  static constexpr double Ts = 100.0;
+  static constexpr double H0 = 67.8;
+  static constexpr double Hs = 1.0;
+  static constexpr double g0 = 3.91;
+  static constexpr double gs = 100.0;
 };
 
 /**
@@ -86,10 +49,69 @@ class Universe {
     double g0() const { return g0_; } // number of dof
     double gs() const { return gs_; }
 
-    void print() const; // print universe params
+    // print params
+    void print() const;
+    friend std::ostream& operator<<(std::ostream& os, const Universe& p);
 
   private:
     const double T0_, Ts_, H0_, Hs_, g0_, gs_;
+};
+
+const Universe& default_universe();
+
+struct dflt_PTParams {
+  static constexpr double vw = 0.5;              // Wall velocity
+  static constexpr double alpha = 0.1;           // PT strength
+  static constexpr double beta = 1.0;            // Transition rate param
+  static constexpr double dtau = 10.0;            // PT duration
+  static constexpr const char* model = "bag";    // equation of state
+  static constexpr const char* nuc_type = "exp"; // bubble nucleation type
+};
+
+  /**
+ * @class PTParams
+ * @brief Class representing the parameters of the phase transition (PT).
+ * 
+ * This class encapsulates the parameters needed to describe the phase transition dynamics,
+ * including speeds of sound, wall velocity, strength of the transition, and bubble nucleation type.
+ */
+ class PTParams { // will probably need to update this later
+  public:
+    // ctors
+    PTParams();
+    PTParams(double vw, double alpha, double beta, double dtau, const char* model, const char* nuc_type, const Universe& un);
+
+    double cpsq() const { return cpsq_; } // speed of sound squared (symmetric phase)
+    double cmsq() const { return cmsq_; } // speed of sound squared (broken phase)
+    double csq() const { return cmsq_; } // keep this? - applies to bag model only
+    double vw() const { return vw_; } // wall velocity
+    double vcj() const { return vcj_; } // Chapman-Jouget speed
+    double alpha() const { return alpha_; } // strength parameter
+    double beta() const { return beta_; } // inverse PT duration
+    double Rs() const { return Rs_; } // characteristic length scale R_*
+    double tau_s() const { return tau_s_; } // start time of PT
+    double tau_fin() const { return tau_fin_; } // end time of PT
+    double dtau() const { return dtau_; } // PT duration
+
+    const char* model() const { return model_; } // equation of state model
+    const char* nuc_type() const { return nuc_type_; } // bubble nucleation type
+    std::string wall_type() const { return wall_type_; } // deflagration, hybrid, or detonation
+
+    // move fluid stuff elsewhere!!
+    double vUF(const double v) const; // converts v,w,e to universe frame
+
+    std::vector<double> vpm() const; // fluid velocity {vp=symmetric phase, vm=broken phase}
+    std::vector<double> wpm() const; // fluid enthalpy {wp=symmetric phase, wm=broken phase}
+
+    // print params
+    void print() const;
+    friend std::ostream& operator<<(std::ostream& os, const PTParams& p);
+  
+  private:
+      const Universe universe_;
+      double vw_, alpha_, beta_, Rs_, tau_s_, tau_fin_, dtau_, cpsq_, cmsq_, vcj_;
+      const char *model_, *nuc_type_;
+      std::string wall_type_;
 };
 
 } // namespace PhaseTransition

@@ -17,6 +17,8 @@ TO DO:
 #include <complex>
 #include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <functional>
+#include <chrono>
+#include <omp.h>
 
 #include "profile.hpp"
 
@@ -128,6 +130,8 @@ double prof_int_l(double chi, const FluidProfile& prof) {
 }
 
 /* profile integrals (vector) */
+// double check good integration step size (i.e. xi_vals) when fluid solver implemented
+// python code uses ~8000 steps
 std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vector<double>& chi_vals, const FluidProfile& prof) {
     const auto xi_vals = prof.xi_vals();
     const auto v_vals = prof.v_vals();
@@ -142,6 +146,7 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
     std::vector<double> l_integrand(n), l(m);
 
     // integrand/integral evaluation
+    #pragma omp parallel for
     for (int j = 0; j < m; j++) { // chi
         const auto chi = chi_vals[j];
         const auto inv_chi = 1.0 / chi;     
@@ -194,6 +199,10 @@ double Ap_sq(double chi, const FluidProfile& prof) {
 
 // precomputes f' and l for all chi for efficiently
 std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof) {
+    /***************************** CLOCK ******************************/
+    const auto ti = std::chrono::high_resolution_clock::now();
+    /******************************************************************/
+
     const auto csq = prof.params().csq();
     const auto [fd_int, l_int] = prof_ints_fl(chi_vals, prof);
     const auto m = chi_vals.size();
@@ -204,6 +213,12 @@ std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfil
         const auto l = l_int[j];
         Apsq[j] = 0.25 * (f*f + csq * l*l);
     }
+
+    /***************************** CLOCK ******************************/
+    const auto tf = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = tf - ti;
+    std::cout << "Timer (Ap_sq): " << duration.count() << " s" << std::endl;
+    /******************************************************************/
 
     return Apsq;
 }
