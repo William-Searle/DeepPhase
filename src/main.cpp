@@ -47,7 +47,7 @@ int main() {
     // const PhaseTransition::PTParams params;
     // params.print();
 
-    test_Ekin(false);
+    test_Ekin();
 
     // const auto k_vals = logspace(1e-3, 1e+3, 5);
     // const auto p_vals = linspace(1e-2, 1e+3, 200);

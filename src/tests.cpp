@@ -301,8 +301,8 @@ void test_Ekin(bool plot) {
     if (plot) {
         plt::figure_size(800, 600);
         plt::loglog(Eks.kvec(), Eks.Pvec());
-        plt::xlabel("k");
-        plt::ylabel("Ekin(k)");
+        plt::xlabel("K=kRs");
+        plt::ylabel("Ekin(K)");
         plt::xlim(1e-1, 1e+3);
         plt::ylim(1e-4, 1e+0);
         plt::grid(true);

@@ -142,31 +142,66 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
     const auto fac = 4.0 * M_PI;
 
     // allocate memory for integrand/result
-    std::vector<double> fd_integrand(n), fd(m); 
-    std::vector<double> l_integrand(n), l(m);
+    std::vector<double> fd(m); 
+    std::vector<double> l(m);
 
     // integrand/integral evaluation
-    #pragma omp parallel for
-    for (int j = 0; j < m; j++) { // chi
-        const auto chi = chi_vals[j];
-        const auto inv_chi = 1.0 / chi;     
+    // #pragma omp parallel for
+    // for (int j = 0; j < m; j++) { // chi
+    //     const auto chi = chi_vals[j];
+    //     const auto inv_chi = 1.0 / chi;
+        
+    //     std::vector<double> fd_integrand(n); 
+    //     std::vector<double> l_integrand(n);
 
-        for (int i = 0; i < n; i++) { // xi
-            const auto xi = xi_vals[i];
-            const auto v_prof = v_vals[i];
-            const auto la_prof = la_vals[i];
+    //     for (int i = 0; i < n; i++) { // xi
+    //         const auto xi = xi_vals[i];
+    //         const auto v_prof = v_vals[i];
+    //         const auto la_prof = la_vals[i];
             
-            const auto chi_xi = chi * xi;
-            const auto sin_cx = std::sin(chi_xi);
-            const auto cos_cx = std::cos(chi_xi);
+    //         const auto chi_xi = chi * xi;
+    //         const auto sin_cx = std::sin(chi_xi);
+    //         const auto cos_cx = std::cos(chi_xi);
 
-            fd_integrand[i] = fac * inv_chi * v_prof * (xi * cos_cx - sin_cx * inv_chi);
-            l_integrand[i] = fac * inv_chi * xi * la_prof * sin_cx;
+    //         fd_integrand[i] = fac * inv_chi * v_prof * (xi * cos_cx - sin_cx * inv_chi);
+    //         l_integrand[i] = fac * inv_chi * xi * la_prof * sin_cx;
+    //     }
+
+    //     // much faster than interpolating function + boost integrator
+    //     fd[j] = simpson_integrate(xi_vals, fd_integrand);
+    //     l[j] = simpson_integrate(xi_vals, l_integrand);
+    // }
+
+    std::vector<std::vector<double>> fd_integrands(omp_get_max_threads(), std::vector<double>(n));
+    std::vector<std::vector<double>> l_integrands(omp_get_max_threads(), std::vector<double>(n));
+    #pragma omp parallel
+    {
+        int tid = omp_get_thread_num();
+        std::vector<double>& fd_integrand = fd_integrands[tid]; // local thread copy of integrand
+        std::vector<double>& l_integrand = l_integrands[tid];
+
+        #pragma omp for
+        for (int j = 0; j < m; j++) { // chi
+            const auto chi = chi_vals[j];
+            const auto inv_chi = 1.0 / chi;
+
+            for (int i = 0; i < n; i++) { // xi
+                const auto xi = xi_vals[i];
+                const auto v_prof = v_vals[i];
+                const auto la_prof = la_vals[i];
+                
+                const auto chi_xi = chi * xi;
+                const auto sin_cx = std::sin(chi_xi);
+                const auto cos_cx = std::cos(chi_xi);
+
+                fd_integrand[i] = fac * inv_chi * v_prof * (xi * cos_cx - sin_cx * inv_chi);
+                l_integrand[i] = fac * inv_chi * xi * la_prof * sin_cx;
+            }
+
+            // much faster than interpolating function + boost integrator
+            fd[j] = simpson_integrate(xi_vals, fd_integrand);
+            l[j] = simpson_integrate(xi_vals, l_integrand);
         }
-
-        // much faster than interpolating function + boost integrator
-        fd[j] = simpson_integrate(xi_vals, fd_integrand);
-        l[j] = simpson_integrate(xi_vals, l_integrand);
     }
     
     return {fd, l}; // {f', l}

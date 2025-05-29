@@ -573,6 +573,7 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
 
     const auto nk = kRs_vals.size();
     std::vector<double> P_vals(nk);
+    // std::vector<double> P_vals;
 
 
     // define Ttilde from chi = Ttilde * k / beta (makes calling Apsq simpler)
@@ -613,6 +614,22 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
         }
     }
 
+    // for (const auto kRs : kRs_vals) {
+    //     const auto kRs_inv = 1.0 / kRs;
+    //     const auto fac2 = fac1 * power(kRs_inv, 5);
+    //     const auto fac3 = beta * Rs * kRs_inv;
+
+    //     std::vector<double> integrand(n);
+    //     for (int i = 0; i < n; i++) {
+    //         const auto chi = chi_vals[i];
+    //         integrand[i] = fac2 * lt_dist(fac3 * chi) * power(chi, 6) * Apsq[i];
+            
+    //     }
+
+    //     const auto P = simpson_integrate(chi_vals, integrand);
+    //     P_vals.push_back(P);
+    // }
+
     return PowerSpec(kRs_vals, P_vals);
 }
 
@@ -626,7 +643,7 @@ PowerSpec zetaKin(const PowerSpec& Ekin) {
 
     const auto zk = Ekin / Ekin_max;
     if (zk.max() != 1.0) {
-        // throw std::runtime_error("In zetaKin: Power spectrum failed normalisation test");
+        throw std::runtime_error("In zetaKin: Power spectrum failed normalisation test");
     }
 
     return zk;
