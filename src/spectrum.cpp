@@ -193,10 +193,10 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     const auto Rs = params.Rs();
     const auto Rs_inv = 1.0 / Rs;
 
-    const auto z_vals = linspace(-1.0, 1.0, 200);
+    const auto z_vals = linspace(-1.0, 1.0, 200); // logspace gives nan over this domain
     const auto nz = z_vals.size();
 
-    const auto pRs_vals = linspace(1e-2, 1e+3, 200); // P = p*Rs
+    const auto pRs_vals = logspace(1e-2, 1e+3, 200); // P = p*Rs
     const auto np = pRs_vals.size();
 
     std::vector<double> pRs2_vals; // keep here otherwise have to calculate for each k
@@ -212,23 +212,30 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
         k_vals.push_back(kRs * Rs_inv);
     }
 
-    // precompute normalised kinetic spectrum
-    /*
-    - zetaKin(pRs) can be precomputed, but not zetaKin(ptRs) since ptRs = ptRs(k,p,z)
-    - use interpolator function to calculate the latter (much faster than constructing PowerSpec objects inside loops)
-    - for 0<p<inf, |k|<pt<inf (for finite k) -> okay to use pRs_vals for domain of zetaKin(ptRs)
-    */
-    const Hydrodynamics::FluidProfile profile(params);
-    const auto zk = zetaKin(pRs_vals, profile);
+    /********** precompute normalised kinetic spectrum **********/
+    // NOTE: this is currently a bit buggy and domain of interpolating function requires fine tuning depending on range of k,p,z
+    // zetaKin(ptRs) can't be precomputed since ptRs = ptRs(k,p,z) -> use interpolator (much faster than constructing PowerSpec objects inside loops)
 
-    const auto zk_pRs_vals = zk.Pvec(); // store zetaKin(pRs) vals (quicker than calling interpolator)
-    const auto zk_ptRs_interp = zk.interpolate(); // interpolating function for zetaKin(ptRs)
-    // note: this should already be normalised -> check this!!
-    // add check to cubic spline in case interpolator is called outside of domain!
+    // calc temp ptRs vals for interpolating func
+    const auto pRs_max = pRs_vals.back();
+    const auto kRs_max = kRs_vals.back();
+    const auto ptRs_max = 10.0 * (kRs_max + pRs_max); // max of pt=sqrt(k^2-2kpz+p^2)
+    const auto ptRs_min = 1e-7; // not sure how to choose best min val - update later
+
+    const auto ptRs_vals_tmp = logspace(ptRs_min, ptRs_max, 2.0*np);
+
+    const Hydrodynamics::FluidProfile profile(params); // generate fluid profile
+
+    const auto zk_pRs_spec = zetaKin(pRs_vals, profile);
+    const auto zk_pRs_vals = zk_pRs_spec.Pvec(); // store zetaKin(pRs) vals (quicker than calling interpolator)
+
+    const auto zk_ptRs_spec = zetaKin(ptRs_vals_tmp, profile);    
+    const auto zk_ptRs_interp = zk_ptRs_spec.interpolate(); // interpolating function for zetaKin(ptRs)
+    /************************************************************/
 
     // precompute dlt
-    const size_t nt = 50; // best num. steps will depend on tau_s and tau_fin
-    const auto delta = dlt(k_vals, p_vals, z_vals, nt, params);
+    const int nt = 50;
+    const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
 
     const auto nk = kRs_vals.size();
     std::vector<double> GW_P_vals(nk);
@@ -251,16 +258,16 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
                 const auto pt = ptilde(k, p, z);
                 const auto ptRs = pt * Rs;
 
-                // neccessary to store these? only called once so maybe not
-                const auto zk_ptRs = zk_ptRs_interp(ptRs);
-                const auto dlta = delta[m][i][j];
-
                 const auto ptRs4_inv = 1.0 / (ptRs * ptRs * ptRs * ptRs);
                 const auto z_fac = 1.0 - z;
                 const auto z_fac2 = z_fac * z_fac;
 
+                // neccessary to store these? only called once so maybe not
+                const auto zk_ptRs = zk_ptRs_interp(ptRs); // see ptRs_min/max if domain issues arise
+                // const auto zk_ptRs = 1.0;
+                const auto dlta = delta[m][i][j];
+
                 integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs * dlta;
-                // integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * dlta;
             }
         }
 
@@ -273,7 +280,8 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
 
 /*** dlt spectrum ***/
 double ptilde(double k, double p, double z) {
-    return std::sqrt(k*k - 2.0 * k * p * z + p*p);
+    const auto arg = k*k - 2.0 * k * p * z + p*p;
+    return std::sqrt(std::max(arg, 0.0)); // gives 0 for large k,p (FIND BETTER FIX. THIS IS BAD IN CASE ARG <0 FROM BAD K,P)
 }
 
 double ff(double tau_m, double kcs) {
@@ -288,7 +296,7 @@ double dtau_fin(double tau_fin, double tau_s) {
 // tau_vals is the same for each call of dlt() -> redundance when calling dlt() in a loop since it recalculates tau_m each time
 // best to store dlt as a nk x np x npt tensor to avoid this
 // WARNING: dlt takes in k, NOT K=kRs
-std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const size_t nt, const PhaseTransition::PTParams& params) {
+std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     /***************************** CLOCK ******************************/
     const auto ti = std::chrono::high_resolution_clock::now();
     /******************************************************************/
@@ -299,6 +307,7 @@ std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_v
     const auto tau_fin = params.tau_fin();
 
     // integrand becomes very large for small tau -> use logspace for accuracy of integration
+    // const auto nt = 50;
     const auto tau_vals = logspace(tau_s, tau_fin, nt);
     const auto ntsq = nt * nt;
 
@@ -370,6 +379,10 @@ std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_v
             const auto p = p_vals[pp];
             const auto z = z_vals[zz];
 
+            if (std::isnan(z)) {
+                throw std::runtime_error("bad z");
+            }
+
             const auto pt = ptilde(k, p, z); // collapsing loops a lot quicker than breaking up ptilde calc so redundancy here is ok!
             const auto ptcs = pt * cs;
 
@@ -383,7 +396,6 @@ std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_v
                 integrand[i] = ff1 * ff2 * ff3 * tau_sq_inv[i];
             }
 
-            // each iteration of (k,p,z) handled by separate thread, so result should be thread safe
             // result[kk][pp][zz] = simpson_2d_nonuniform_flat(tau_vals, tau_vals, integrand);
             result[kk][pp][zz] = simpson_2d_nonuniform_flat_weighted(tau_vals, tau_vals, integrand, Ax_weights, Ay_weights, dx, dy);
         }
@@ -642,7 +654,7 @@ PowerSpec zetaKin(const PowerSpec& Ekin) {
     }
 
     const auto zk = Ekin / Ekin_max;
-    if (zk.max() != 1.0) {
+    if (abs(zk.max() - 1.0) > 1e-15) {
         throw std::runtime_error("In zetaKin: Power spectrum failed normalisation test");
     }
 

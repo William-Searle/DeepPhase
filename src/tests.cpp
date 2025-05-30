@@ -291,16 +291,26 @@ void test_Apsq(bool plot) { // test Ap_sq
 }
 
 void test_Ekin(bool plot) {
-    const PhaseTransition::PTParams params;
-    const Hydrodynamics::FluidProfile profile(params);
+    const PhaseTransition::Universe un;
+
+    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, "bag", "exp", un);
+    const Hydrodynamics::FluidProfile profile1(params1);
+
+    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, "bag", "sim", un);
+    const Hydrodynamics::FluidProfile profile2(params2);
 
     const auto kRs_vals = logspace(1e-1, 1e+3, 500);
-    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
-    const auto Eks = Spectrum::zetaKin(Ek);
+
+    const auto Ek1 = Spectrum::Ekin(kRs_vals, profile1);
+    const auto Eks1 = Spectrum::zetaKin(Ek1);
+
+    const auto Ek2 = Spectrum::Ekin(kRs_vals, profile2);
+    const auto Eks2 = Spectrum::zetaKin(Ek2);
     
     if (plot) {
         plt::figure_size(800, 600);
-        plt::loglog(Eks.kvec(), Eks.Pvec());
+        plt::loglog(Eks1.kvec(), Eks1.Pvec(), "k-");
+        plt::loglog(Eks2.kvec(), Eks2.Pvec(), "r-");
         plt::xlabel("K=kRs");
         plt::ylabel("Ekin(K)");
         plt::xlim(1e-1, 1e+3);
@@ -313,18 +323,25 @@ void test_Ekin(bool plot) {
 }
 
 void test_GWSpec(bool plot) {
-    const PhaseTransition::PTParams params;
+    const PhaseTransition::Universe un;
 
-    const auto kRs_vec = logspace(1e-3, 1e+3, 10);
-    // const std::vector<double> kRs_vec = {0.2};
-    const auto OmegaGW = Spectrum::GWSpec(kRs_vec, params);
+    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, "bag", "exp", un);
+    const Hydrodynamics::FluidProfile profile1(params1);
+
+    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, "bag", "sim", un);
+    const Hydrodynamics::FluidProfile profile2(params2);
+
+    const auto kRs_vec = logspace(1e-3, 1e+3, 50);
+    const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
+    const auto OmegaGW2 = Spectrum::GWSpec(kRs_vec, params2);
     
     if (plot) {
         plt::figure_size(800, 600);
-        plt::loglog(OmegaGW.kvec(), OmegaGW.Pvec());
+        plt::loglog(OmegaGW1.kvec(), OmegaGW1.Pvec(), "k-");
+        plt::loglog(OmegaGW2.kvec(), OmegaGW2.Pvec(), "r-");
         plt::xlabel("K=kRs");
         plt::ylabel("Omega_GW(K)");
-        // plt::xlim(1e-1, 1e+3);
+        plt::xlim(1e-3, 1e+3);
         // plt::ylim(1e-4, 1e+0);
         plt::grid(true);
         plt::save("GW_spectrum.png");
@@ -376,15 +393,15 @@ void test_dlt_SSM() {
     const auto np = p_vals.size();
     const auto nz = z_vals.size();
 
-    const auto dlta1 = Spectrum::dlt(k_vals, p_vals, z_vals, 50, params);
-    const auto dlta2 = Spectrum::dlt_SSM(k_vals, p_vals, z_vals, params);
+    const auto dlta1 = Spectrum::dlt(50, k_vals, p_vals, z_vals, params);
+    // const auto dlta2 = Spectrum::dlt_SSM(50, k_vals, p_vals, z_vals, params);
 
     const auto tol = 1e-10;
     for (int kk = 0; kk < nk; kk++) {
         for (int pp = 0; pp < np; pp++) {
             for (int zz = 0; zz < nz; zz++) {
                 const auto dlt1 = dlta1[kk][pp][zz];
-                const auto dlt2 = dlta2[kk][pp][zz];
+                // const auto dlt2 = dlta2[kk][pp][zz];
 
                 // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
 

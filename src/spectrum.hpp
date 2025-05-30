@@ -17,6 +17,7 @@ TO DO:
 - PowerSpec class documentation
 - PowerSpec dflt ctor create it's own instance of params and profile so i don't have to keep calling it
 - store k_vals adn P_vals in PowerSpec rather than calling with k(), P()? might be quicker
+- simplify powerspec class to just take std::vector (not called for single k,P and these can just be stored in a vec anyway)
 */
 
 namespace Spectrum {
@@ -90,8 +91,8 @@ double ptilde(double k, double p, double z);
 double ff(double tau_m, double kcs);
 double dtau_fin(double tau_fin, double tau_s);
 
-std::vector<std::vector<std::vector<double>>> dlt(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const size_t nt, const PhaseTransition::PTParams& params);
-std::vector<std::vector<std::vector<double>>> dlt2(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const size_t nt, const PhaseTransition::PTParams& params);
+std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
+std::vector<std::vector<std::vector<double>>> dlt2(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const size_t nt, const PhaseTransition::PTParams& params);
 std::vector<std::vector<std::vector<double>>> dlt_adaptive(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
 std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
 

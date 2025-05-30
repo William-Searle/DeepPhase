@@ -145,7 +145,8 @@ T CubicSpline<T>::operator()(T xi) const {
 
     // Gives error for out-of-bounds input
     if (xi < x_.front() || xi > x_.back()) {
-        throw std::invalid_argument("Error: CubicSpline called outside of domain bounds!");
+        std::cout << "CubicSpline failed at xi=" << xi << "\n";
+        throw std::invalid_argument("CubicSpline called outside of domain bounds!");
     }
 
     // Binary search to find correct interval
