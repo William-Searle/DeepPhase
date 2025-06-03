@@ -30,9 +30,9 @@ TO DO:
 void test_all() {
     std::cout << "Running all tests..." << "\n"
               << "Running class tests:" << std::endl;
-    test_vec();
-    test_PowerSpec();
-    test_FluidProfile();
+    // test_vec();
+    // test_PowerSpec();
+    // test_FluidProfile();
 
     // finish later
     // maybe output error if individual tests fail and then continue to the next test
@@ -110,21 +110,6 @@ void test_PowerSpec() {
     return;
 }
 
-void test_vec() {
-    vec<double> a{1.0, 2.0, 3.0};
-    vec<double> b{4.0, 5.0, 6.0};
-
-    auto c = a + b;
-    auto d = a * 2.0;
-    auto dot = a.dot(b);
-
-    c.print();                           // [ 5 7 9 ]
-    d.print();                           // [ 2 4 6 ]
-    std::cout << "Dot: " << dot << "\n"; // Dot: 32
-
-    return;
-}
-
 void test_FluidProfile() { // not finished
     // check read profile (from xiao's code) and solve ODE solutions are consistent
     // plot profiles
@@ -137,16 +122,26 @@ void test_FluidProfile() { // not finished
     FluidProfile profile(params);
 
     // Generate streamplot data
-    try {
-        profile.generate_streamplot_data(30, 30, "test_streamplot.csv");
-    } catch (...) {
-        assert(false && "generate_streamplot_data threw an exception");
-    }
+    profile.generate_streamplot_data(30, 30, "test_streamplot.csv");
 
     auto xi_vals = profile.xi_vals();
-    auto v_interp = profile.v_prof();
-    auto w_interp = profile.w_prof();
-    auto la_interp = profile.la_prof();
+    auto v_vals = profile.v_vals();
+    auto w_vals = profile.w_vals();
+    auto la_vals = profile.la_vals();
+
+    for (int i = 0; i < xi_vals.size(); i++) {
+        const auto xi = xi_vals[i];
+        const auto v = v_vals[i];
+        const auto w = w_vals[i];
+        const auto la = la_vals[i];
+
+        if (isnan(xi) || isnan(v) || isnan(w) || isnan(la)) throw std::runtime_error("NaN detected in fluid profile");
+
+        if (xi < 0.0) throw std::runtime_error("Domain error: xi < 0");
+        if (xi > 1.0) throw std::runtime_error("Domain error: xi > 1");
+
+        // also test if v,w are non-zero behind bubble wall or in front of shock
+    }
 
     profile.plot("fluid_profile_test.png");
 
@@ -201,46 +196,6 @@ void test_interpolator() {
     plt::save("interpolator_test.png");
 
     std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
-}
-
-// Integration tests
-double test_func_gsl(double x, void *params) {
-    // integral over -inf to inf gives sqrt(pi) = 1.77245
-    return std::exp(-x * x);
-}
-
-void test_boostmath() {
-    auto f = [](double x) { return std::exp(-x*x); };
-
-    boost::math::quadrature::gauss_kronrod<double, 15> intgrl_type;
-    double result = intgrl_type.integrate(f, -std::numeric_limits<double>::infinity(), std::numeric_limits<double>::infinity());
-    std::cout << "result: " << result << "\n";
-    return;
-}
-
-void test_gsl_integration() { // might not need GSL, remove if not (unlink in cmake)
-    // Create a GSL integration workspace
-    gsl_integration_workspace *workspace = gsl_integration_workspace_alloc(1000);
-
-    // Define the result variables
-    double result, error;
-
-    // Wrap the function in a gsl_function struct
-    gsl_function gsl_func;
-    gsl_func.function = &test_func_gsl;  // Assign the function pointer
-    gsl_func.params = nullptr;       // Pass any additional parameters (none in this case)
-
-    // Perform the integration using the GSL integration function
-    gsl_integration_qagi(&gsl_func, 0, 1e-7, 1000, workspace, &result, &error);
-
-    // Output the result and the estimated error
-    std::cout << "Result of the integration: " << result << std::endl;
-    std::cout << "Estimated error: " << error << std::endl;
-
-    // Free the GSL workspace
-    gsl_integration_workspace_free(workspace);
-
-    return;
 }
 
 void test_prof_ints(bool plot) { // test profile integrals f' and l

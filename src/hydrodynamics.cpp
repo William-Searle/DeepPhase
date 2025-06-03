@@ -42,23 +42,6 @@ double lifetime_dist(double Ttilde, const std::string& nuc_type) {
     }
 }
 
-std::function<double(double)> lifetime_dist_func(const std::string& nuc_type) {
-    // Return a lambda function that computes the lifetime distribution for the specified nucleation type
-    if (nuc_type == "exp") {
-        return [](double Ttilde) -> double {
-            return std::exp(-Ttilde);
-        };
-    } else if (nuc_type == "sim") {
-        return [](double Ttilde) -> double {
-            const auto exp_fac = - Ttilde * Ttilde * Ttilde / 6.0;
-            return 0.5 * Ttilde * Ttilde * std::exp(exp_fac);
-        };
-    } else {
-        throw std::invalid_argument("Invalid nucleation type: " + nuc_type);
-    }
-}
-
-
 // calculate as vector here rather than calling function at integration step since it is expensive
 std::vector<double> lifetime_dist2(const std::vector<double>& Ttilde, const std::string& nuc_type) {
     std::vector<double> dist;
@@ -83,50 +66,20 @@ std::vector<double> lifetime_dist2(const std::vector<double>& Ttilde, const std:
     return dist;
 }
 
-// not sure if needed
-double prof_int_f(double chi, FluidProfile& prof) { // calculate integral in eq 30
-    const auto v_prof = prof.v_prof();
-
-    auto integrand = [&](double xi) {
-        return v_prof(xi) * std::sin(chi * xi);
-    };
-
-    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    double f = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    f *= 4.0 * M_PI / chi;
-
-    return f;
-}
-
-/* profile integrals (single value) */
-double prof_int_f_der(double chi, const FluidProfile& prof) {
-    const auto v_prof = prof.v_prof();
-
-    auto integrand = [&](double xi) {
-        return v_prof(xi) * (xi * std::cos(chi * xi) - std::sin(chi * xi) / chi);
-    };
-
-    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    double f_der = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    // double f_der = integrator.integrate(integrand, 0.0, 1000.0);
-    f_der *= 4.0 * M_PI / chi;
-
-    return f_der;
-}
-
-double prof_int_l(double chi, const FluidProfile& prof) {
-    const auto la_prof = prof.la_prof();
-
-    auto integrand = [&](double xi) {
-        return xi * la_prof(xi) * std::sin(chi * xi);
-    };
-
-    boost::math::quadrature::gauss_kronrod<double, 15> integrator;
-    double l = integrator.integrate(integrand, 0.0, std::numeric_limits<double>::infinity());
-    // double l = integrator.integrate(integrand, 0.0, 10000.0);
-    l *= 4.0 * M_PI / chi;
-
-    return l;
+std::function<double(double)> lifetime_dist_func(const std::string& nuc_type) {
+    // Return a lambda function that computes the lifetime distribution for the specified nucleation type
+    if (nuc_type == "exp") {
+        return [](double Ttilde) -> double {
+            return std::exp(-Ttilde);
+        };
+    } else if (nuc_type == "sim") {
+        return [](double Ttilde) -> double {
+            const auto exp_fac = - Ttilde * Ttilde * Ttilde / 6.0;
+            return 0.5 * Ttilde * Ttilde * std::exp(exp_fac);
+        };
+    } else {
+        throw std::invalid_argument("Invalid nucleation type: " + nuc_type);
+    }
 }
 
 /* profile integrals (vector) */
@@ -144,33 +97,6 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
     // allocate memory for integrand/result
     std::vector<double> fd(m); 
     std::vector<double> l(m);
-
-    // integrand/integral evaluation
-    // #pragma omp parallel for
-    // for (int j = 0; j < m; j++) { // chi
-    //     const auto chi = chi_vals[j];
-    //     const auto inv_chi = 1.0 / chi;
-        
-    //     std::vector<double> fd_integrand(n); 
-    //     std::vector<double> l_integrand(n);
-
-    //     for (int i = 0; i < n; i++) { // xi
-    //         const auto xi = xi_vals[i];
-    //         const auto v_prof = v_vals[i];
-    //         const auto la_prof = la_vals[i];
-            
-    //         const auto chi_xi = chi * xi;
-    //         const auto sin_cx = std::sin(chi_xi);
-    //         const auto cos_cx = std::cos(chi_xi);
-
-    //         fd_integrand[i] = fac * inv_chi * v_prof * (xi * cos_cx - sin_cx * inv_chi);
-    //         l_integrand[i] = fac * inv_chi * xi * la_prof * sin_cx;
-    //     }
-
-    //     // much faster than interpolating function + boost integrator
-    //     fd[j] = simpson_integrate(xi_vals, fd_integrand);
-    //     l[j] = simpson_integrate(xi_vals, l_integrand);
-    // }
 
     std::vector<std::vector<double>> fd_integrands(omp_get_max_threads(), std::vector<double>(n));
     std::vector<std::vector<double>> l_integrands(omp_get_max_threads(), std::vector<double>(n));
@@ -207,32 +133,7 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
     return {fd, l}; // {f', l}
 }
 
-// not sure if needed
-std::complex<double> Apm(std::string& pm, double chi, const FluidProfile& prof) {
-    double sgn;
-    if (pm == "+") {
-        sgn = 1;
-    } else if (pm == "-") {
-        sgn = -1;
-    } else {
-        throw std::invalid_argument("Invalid argument pm=" + pm + ". Requires '+' or '-'.");
-    }
-
-    std::complex<double> i(0.0, 1.0); // define elsewhere?
-    const std::complex<double> AA = (-i/2.0) * (prof_int_f_der(chi, prof) + sgn * i * std::sqrt(prof.params().csq()) * prof_int_l(chi, prof));
-
-    return AA;
-}
-
 // |A_+|^2
-double Ap_sq(double chi, const FluidProfile& prof) {
-    const auto prof_int_1 = prof_int_f_der(chi, prof);
-    const auto prof_int_2 = prof_int_l(chi, prof);
-
-    return 0.25 * (prof_int_1 * prof_int_1) + prof.params().csq() * (prof_int_2 * prof_int_2);
-}
-
-// precomputes f' and l for all chi for efficiently
 std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof) {
     /***************************** CLOCK ******************************/
     const auto ti = std::chrono::high_resolution_clock::now();

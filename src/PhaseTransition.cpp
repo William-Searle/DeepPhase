@@ -55,6 +55,7 @@ const Universe& default_universe() {
 
 // PTParams
 // make new ctor for reading in Veff since we calculate all the params
+// alpha only exists for Bag model, maybe change how it is input/stored in PTParams
 PTParams::PTParams()
     : PTParams(dflt_PTParams::vw, dflt_PTParams::alpha, dflt_PTParams::beta, dflt_PTParams::dtau, dflt_PTParams::model, dflt_PTParams::nuc_type, default_universe()) {}
 
@@ -74,7 +75,7 @@ PTParams::PTParams(double vw, double alpha, double beta, double dtau, const char
     {
       // defaults to bag model if input model is not in valid_models
       // write something that indicates other ctor should be called for Veff
-      static const std::unordered_set<const char*> valid_models = {"bag", "improved bag"};
+      static const std::unordered_set<const char*> valid_models = {"bag"};//, "improved bag"};
       if (valid_models.count(model)) {
         model_ = model;
       } else {

@@ -46,59 +46,23 @@ std::vector<double> lifetime_dist2(const std::vector<double>& Ttilde, const std:
 std::function<double(double)> lifetime_dist_func(const std::string& nuc_type);
 
 /**
- * @brief Computes the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
+ * @brief Computes the integrated profile functions f'(χ) and l(χ) defined in Eq. (30), (31) of Pol, Procacci, Caprini (2024).
  *
  * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
- * @param prof FluidProfile object used for interpolation and evaluation.
+ * @param prof FluidProfile object
  * 
- * @return Value of the integrated profile function f.
+ * @return Pair of vector of the integrated profile functions f' and l.
  */
-double prof_int_f(double chi, const FluidProfile& prof);
-
-/**
- * @brief Computes the first derivative of the integrated profile function f(χ) defined in Eq. (30) of Pol, Procacci, Caprini (2024).
- *
- * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
- * @param prof FluidProfile object used for interpolation and evaluation.
- * 
- * @return Value of the integrated profile function f.
- */
-double prof_int_f_der(double chi, const FluidProfile& prof);
-
-std::vector<double> prof_int_f_der(const std::vector<double>& chi_vals, const FluidProfile& prof);
-
-/**
- * @brief Computes the integrated profile function l(χ) defined in Eq. (31) of Pol, Procacci, Caprini (2024).
- *
- * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
- * @param prof FluidProfile object used for interpolation and evaluation.
- * 
- * @return Value of the integrated profile function l.
- */
-double prof_int_l(double chi, const FluidProfile& prof);
-
 std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 /**
- * @brief Computes the complex amplitude A₊ or A₋ defined in Eq. (29) of Pol, Procacci, Caprini (2024).
- *
- * @param pm String indicating plus or minus branch ("+" or "-").
- * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
- * @param prof FluidProfile object.
- * 
- * @return Complex amplitude A₊ or A₋.
- */
-std::complex<double> Apm(std::string& pm, double chi, const FluidProfile& prof);
-
-/**
- * @brief Computes |A₊(χ)|²
+ * @brief Computes |A₊(χ)|², defined in Eq. (29) of Pol, Procacci, Caprini (2024).
  *
  * @param chi χ=k*T_n (k = momentum, T_n = lifetime of n'th bubble)
  * @param prof Fluid profile object.
  * 
- * @return Squared modulus |A₊(χ)|².
+ * @return Vector of squared modulus |A₊(χ)|² values
  */
-double Ap_sq(double chi, const FluidProfile& prof);
 std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 } // namespace Hydrodynamics
