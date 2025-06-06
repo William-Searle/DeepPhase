@@ -149,10 +149,6 @@ void PTParams::print() const {
     std::cout << *this;
 }
 
-double PTParams::vUF(const double v) const { // universe frame (centre of bubble)
-    return (vw_ - v) / ( 1.0 - vw_ * v);
-}
-
 /* Bag model: */
 /*
 p+ = (1/3) * a+ * T+^4 - eps
@@ -164,35 +160,6 @@ csq = dp/de -> cpsq = cmsq = 1/3
 alpha = eps / (a+ * T+^4)
 */
 
-// see (B.6) in Hindmarsh GWs from FOPT in the SSM
-// only true for bag model - move all bag stuff together at some point
-std::vector<double> PTParams::vpm() const {  // rest frame of bubble wall
-    std::vector<double> vpm;
-
-    const auto vm = vw_; // not sure if correct - see B.7
-
-    int sgn = vm > 1.0 / std::sqrt(3.0) ? 1 : -1;
-    const auto tt = vm / 2.0 + 1.0 / (6.0 * vm);
-    const auto troot = tt * tt + alpha_ * alpha_ + (2.0 / 3.0) * alpha_ - 1.0 / 3.0;
-    const auto vp = (1.0 / (1.0 + alpha_)) * tt + sgn * std::sqrt(troot);
-
-    vpm.push_back(vp);
-    vpm.push_back(vm);
-
-    return vpm; // {vp, vm}
-}
-
-std::vector<double> PTParams::wpm() const { 
-    std::vector<double> wpm;
-
-    const auto wp = 0.1; // PLACEHOLDER
-    const auto wm = 0.1; // PLACEHOLDER
-
-    wpm.push_back(wp);
-    wpm.push_back(wm);
-
-    return wpm; // {wp, wm}
-}
 /********************/
 
 } // namespace PhaseTransition

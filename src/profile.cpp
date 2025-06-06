@@ -1,6 +1,5 @@
 // profile.cpp
 #include <cmath>
-#include <boost/numeric/odeint.hpp>
 #include <iostream>
 #include <sstream>
 #include <vector>
@@ -46,7 +45,6 @@ TO DO:
 // }
 
 namespace plt = matplotlibcpp;
-using namespace boost::numeric::odeint;
 
 namespace Hydrodynamics { // calculate bubble profile
 
@@ -101,38 +99,24 @@ void push_back_state::operator()(const state_type &y, double t) const {
 
 /****************************** FluidProfile class ******************************/
 // Define ctor
-FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
+FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const bool test)
     : params_(params),
       csq_(params_.csq()),
       y0_(),
-      xi_vals_(), v_vals_(), w_vals_(), la_vals_()
+      xi_vals_(), v_vals_(), w_vals_(), la_vals(),
+      mode_(),
+      vp_(), vpUF_(), vm_(), vmUF_(),
+      wp_(), wm_()
     {
-        // define initial state vector (xi0, v0, w0) = (vw+dlt, v+, w+)
-        // is this just for bag model?
-        // (starts integration just outside of wall)
-        const auto dlt = 0.01;
-        const auto xi0 = params_.vw() + dlt;
-        y0_.push_back(xi0);
-
-        const auto vp = params_.vpm()[0];
-        const auto v0 = params_.vUF(vp);
-        y0_.push_back(v0);
-
-        const auto wp = params_.wpm()[0];
-        const auto w0 = 0.1; // PLACEHOLDER
-        y0_.push_back(w0);
+        // define hydrodynamic mode and initial state vector (xi0, v0, w0)
+        get_mode_y0();
 
         // calculate fluid profiles v(xi), w(xi), la(xi)
-        
-        bool read_prof = true; // change this to input
-        std::string filename = "input_profile.csv";
-
-
-        if (read_prof) { // read fluid profile from file
+        if (test) { // read fluid profile from file (testing only)
             // WARNING: doesn't compare vw, alpha used in input file to params_
-            const std::vector<state_type> data = read(filename);
+            const std::vector<state_type> data = read("input_profile.csv");
             xi_vals_ = data[0];
-            v_vals_ = data[1]; // only store interpolating func values
+            v_vals_ = data[1];
             w_vals_ = data[2];
             la_vals_ = data[3];
         } else { // calculate fluid profile using ODE solver
@@ -261,6 +245,69 @@ double FluidProfile::w_shock(double xi) const {
 }
 
 // Private functions
+
+// determine hydrodynamic mode
+void FluidProfile::get_mode_y0() const {
+    const auto vw = params_.vw();
+    const auto vwsq = vw * vw;
+
+    const auto cmsq = params_.cmsq();
+    const auto cpsq = params_.cpsq();
+
+    // if (vwsq < cpsq) { // deflagration
+    //     mode_ = 0;
+    //     y0_[0] = xi_shock(); // xi0 - start integration at shock
+
+    //     vmUF_ = 0.0;
+    //     vm_ = vw;
+    //     vp = ; // need to be careful calculating this since alpha /= alpha+
+    //     vpUF_ = mu(vw, vp_);
+    //     y0_[1] = v_shock(vpUF_); // v0 = v(xi_sh) = v1 (fluid velocity just behind shock)
+
+    // }
+    const auto dlt = 0.01; // wall and shock are discontinuities for v(xi) so start integration just before them
+    if (vwsq >= cpsq) { // detonation
+        mode_ = 2;
+        y0_[0] = vw - dlt; // xi0 = xi_w
+
+        vpUF_ = 0.0; // v+ (centre of bubble frame / universe frame)
+        vp_ = vw; // v+ (bubble wall frame)
+        vm_ = calc_vm(vp_);
+        vmUF_ = mu(vw, vm_);
+        y0_[1] = vmUF_; // v0 = v(xi_w) = vm(UF)
+
+        // wp_ = params_.wN();
+        wp_ = 1.0;
+        wm_ = calc_wm(wp_, vp_, vm_);
+        y0_[2] = wm_; // w0 = w(xi_w) = wm
+    } else {
+        throw std::invalid_argument("Deflagration/Hybrid solutions not yet implemented");
+    }
+
+
+}
+
+// sgn=1 for detonation, not sure what condition specifically fixes this though
+// sgn=-1 for deflag/hybrid?
+// this is for bag model only, generalise for any EoS?
+double FluidProfile::calc_vm(double vp) const { // vm from vp
+    const auto sgn = 1.0;
+    const auto fac = vp * (1.0 + alpha_) / 2.0 + (1./3. - alpha_) / (2.0 * vp);
+    return fac + sgn * std::sqrt(fac * fac - 1./3.);
+}
+
+// bag model only
+double FluidProfile::calc_vp(double vm) const { // vp from vm
+    const auto sgn = 1.0;
+    const auto fac = vm / 2.0 + 1.0 / (6.0 * vm);
+    return (fac + sgn * std::sqrt(fac * fac + alpha_ * alpha_ + (2./3.) * alpha_ - 1./3.)) / (1.0 + alpha_);
+}
+
+double FluidProfile::calc_wm(double wp, double vp, double vm) const {
+    // from matching condition -> generic for all EoS and hydrodynamic models using perfect fluid EM tensor
+    return wp * vp * (1.0 - vm * vm) / (vm * (1.0 - vp * vp));
+}
+
 std::vector<state_type> FluidProfile::read(const std::string& filename) const {
     std::cout << "Warning: Read fluid profile does not check PT parameters of input file. Manual entry of PT parameters required!\n";
 
@@ -295,47 +342,6 @@ std::vector<state_type> FluidProfile::read(const std::string& filename) const {
     return {xi_vals, v_vals, w_vals, la_vals};
 }
 
-std::vector<state_type> FluidProfile::solve_profile(int n) const {
-    FluidSystem fluid(params_);
-    auto y = y0_; // integrator needs non-const initial state
-    
-    std::cout << "(xi0,w0,w0)=(";
-    for (double vals : y) {
-        std::cout << vals << ",";
-    }
-    std::cout << ")\n";
-
-    std::vector<state_type> states;
-    std::vector<double> times;
-
-    const auto ti = 0.0;
-    const auto tf = 5.0;
-    const auto dt = (tf - ti) / n;
-
-    // integrate_const(runge_kutta4<state_type>(), fluid, y0, ti, tf, dt, push_back_state(states, times));
-
-    runge_kutta4<state_type> stepper; // integration type
-    int count = 1; // counts integration steps
-
-    for (auto t = ti; t < tf; t += dt) {
-        // std::cout << "t=" << t << ",\t" << "y=(" << y[0] << "," << y[1] << "," << y[2] << ")\n";
-
-        states.push_back(y);
-        times.push_back(t);
-
-        const auto y_prev = y;
-        stepper.do_step(fluid, y, t, dt);
-
-        if (y[0] > 1.0 || y[0] < 0.0) {
-            std::cout << "Stopping integration prematurely (n=" << count << "/" << n << ") at tau=" << t << ", xi=" << y_prev[0] << ". Further integration will yield domain error (xi < 0 or xi > 1)" << std::endl;
-            break;
-        }
-        count++;
-    }
-
-    return states; // need output of times anywhere?
-}
-
 // This is for Bag EoS
 state_type FluidProfile::calc_lambda_vals(state_type w_vals) const {
     state_type result;
@@ -343,6 +349,27 @@ state_type FluidProfile::calc_lambda_vals(state_type w_vals) const {
         result.push_back((3.0 / 4.0) * (w - 1.0));
     }
     return result;
+}
+
+std::vector<state_type> FluidProfile::solve_profile(int n) const {    
+    std::cout << "Solving fluid profile for hydrodynamic mode=";
+    if (mode_ == 0) {
+        std::cout << "deflagration...\n";
+    } else if (mode_ == 1) {
+        std::cout << "hybrid...\n";
+    } else {
+        std::cout << "detonation...\n";
+    }
+
+    FluidSystem fluid(params_);
+    std::vector<state_type> states;
+    std::vector<double> times;
+
+    const auto ti = 0.0;
+    const auto tf = 5.0;
+    const auto dt = (tf - ti) / n;
+
+    return states; // need output of times anywhere?
 }
 /*******************************************************************************/
 

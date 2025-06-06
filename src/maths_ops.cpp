@@ -619,3 +619,36 @@ std::pair<double, double> SiCi(double x) {
 
     return {sin_int, cos_int};
 }
+
+
+std::pair<std::vector<double>, std::vector<double>> runge_kutta_ODE_solver(ODE_System system, const double t0, const double tf, const double y0, const size_t n) {
+    // write check for if tf < t0 -> do something to integrate backwards
+    const auto h = (tf - t0) / n; // step size
+
+    const auto N = syst.size();
+
+    // define solution vectors
+    std::vector<double> t_vals(n);
+    std::vector<double> y_vals(n);
+
+    // set initial conditions
+    t_vals[0] = t0;
+    y_vals[0] = y0;
+
+    for (int i = 0; i < n-1; i++) {
+        const auto t = t_vals[i]; // t_i
+        const auto y = y_vals[i]; // y_i
+
+        for (int j =0; j < N; j++) { // iterate over all ODEs
+            const auto k1 = dydx[j](t, y); // current step
+            const auto k2 = dydx[j](t + h / 2.0, y + h * k1 / 2.0);
+            const auto k3 = dydx[j](t + h / 2.0, y + h * k2 / 2.0);
+            const auto k4 = dydx[j](t + h, y + h * k3); // full step
+
+            y_vals[j][i+1] = y + (h / 6.0) * (k1 + 2.0 * (k2 + k3) + k4); // y_{i+1}
+        }
+        t_vals[i+1] = t + h; // t_{i+1}
+    }
+
+    return {t_vals, y_vals};
+}

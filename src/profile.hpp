@@ -59,7 +59,7 @@ struct push_back_state {
  */
 class FluidProfile {
   public:
-    FluidProfile(const PhaseTransition::PTParams& params); // ctor
+    FluidProfile(const PhaseTransition::PTParams& params, const bool test=true); // ctor
     // write dflt ctor?
 
     // are these needed?
@@ -83,7 +83,15 @@ class FluidProfile {
     const double csq_; // local copy of speed of sound
     std::vector<double> y0_; // initial conditions
     state_type xi_vals_, v_vals_, w_vals_, la_vals_; // xi, v(xi), w(xi), la(x)
+    int mode_;
+    double vp_, vpUF_, vm_, vmUF_; // v+, v- in bubble wall frame and universe frame (UF)
+    double wp_, wm_; // w+, w-
+    double alpha_;
 
+    void get_mode_y0() const; // define hydrodynamic mode and initial state (xi0,v0,w0)
+    double calc_vm(double vp) const;
+    double calc_vp(double vm) const;
+    double calc_wm(double wp, double vp, double vm) const;
     // put number of integration points in input file? seems bad to hardcode
     /**
      * @brief Solves the hydrodynamic profile ODE system.
@@ -93,11 +101,7 @@ class FluidProfile {
      * @return Vector of state vectors representing the profile.
      */
     std::vector<state_type> solve_profile(int n=100) const;
-
-    void profile(bool read_prof = true);
-
     std::vector<state_type> read(const std::string& filename) const; // read bubble profile from disk
-
     state_type calc_lambda_vals(state_type w_vals) const;
 };
 

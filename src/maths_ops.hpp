@@ -201,3 +201,6 @@ double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
 double Si(double x);
 double Ci(double x);
 std::pair<double, double> SiCi(double x);
+
+using system = std::vector<std::function<double(double, double)>>;
+std::pair<std::vector<double>, std::vector<double>> runge_kutta_ODE_solver(system dydx, const double t0, const double tf, const double y0, const size_t n);

@@ -97,12 +97,6 @@ struct dflt_PTParams {
     const char* nuc_type() const { return nuc_type_; } // bubble nucleation type
     std::string wall_type() const { return wall_type_; } // deflagration, hybrid, or detonation
 
-    // move fluid stuff elsewhere!!
-    double vUF(const double v) const; // converts v,w,e to universe frame
-
-    std::vector<double> vpm() const; // fluid velocity {vp=symmetric phase, vm=broken phase}
-    std::vector<double> wpm() const; // fluid enthalpy {wp=symmetric phase, wm=broken phase}
-
     // print params
     void print() const;
     friend std::ostream& operator<<(std::ostream& os, const PTParams& p);
