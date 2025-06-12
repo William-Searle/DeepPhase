@@ -5,6 +5,7 @@
 #include <vector>
 #include <string>
 #include <fstream>
+#include <iomanip>
 
 #include "profile.hpp"
 #include "PhaseTransition.hpp"
@@ -48,6 +49,20 @@ namespace plt = matplotlibcpp;
 
 namespace Hydrodynamics { // calculate bubble profile
 
+double mu(double xi, double v) {
+    return (xi - v) / (1.0 - xi * v);
+}
+
+double dvdxi(double xi, double v, const double csq) {
+    const auto mu_val = mu(xi, v);
+    const auto denom = gammaSq(v) * (1.0 - v * xi) * (mu_val * mu_val / csq - 1.0);
+    return (2.0 * v / xi) / denom;
+}
+
+double dwdxi(double xi, double v, double w, const double csq) {
+    return w * gammaSq(v) * mu(xi, v) * (1.0 + 1.0 / csq) * dvdxi(xi, v, csq);
+}
+
 /*************************** Fluid profile ODE **********************************/
 /*
 EoM for a perfect fluid comes from \partial_{\mu} T^{mu nu} = 0:
@@ -66,7 +81,7 @@ double FluidSystem::dv_dtau(double xi, double v) const {
 }
 
 double FluidSystem::dw_dtau(double xi, double v, double w) const {
-    return w * (1 + 1/params_.csq()) * Physics::gammaSq(v) * mu(xi, v) * dv_dtau(xi, v);
+    return w * (1 + 1/params_.csq()) * gammaSq(v) * mu(xi, v) * dv_dtau(xi, v);
 }
 /*******************************************************************************/
 
@@ -103,32 +118,34 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const bool t
     : params_(params),
       csq_(params_.csq()),
       y0_(),
-      xi_vals_(), v_vals_(), w_vals_(), la_vals(),
+      xi_vals_(), v_vals_(), w_vals_(), la_vals_(),
       mode_(),
       vp_(), vpUF_(), vm_(), vmUF_(),
-      wp_(), wm_()
+      wpwN_(), wmwN_()
     {
         // define hydrodynamic mode and initial state vector (xi0, v0, w0)
         get_mode_y0();
 
         // calculate fluid profiles v(xi), w(xi), la(xi)
         if (test) { // read fluid profile from file (testing only)
-            // WARNING: doesn't compare vw, alpha used in input file to params_
+            std::cout << "WARNING: Reading in fluid profile doesn't check if PT parameters are the same as those passed into FluidProfile class\n";
             const std::vector<state_type> data = read("input_profile.csv");
             xi_vals_ = data[0];
             v_vals_ = data[1];
             w_vals_ = data[2];
             la_vals_ = data[3];
         } else { // calculate fluid profile using ODE solver
-            std::cout << "Warning: Profile solver not finished! Use pre-calculated bubble profile instead." << std::endl;
+            std::cout << "Warning: Profile solver not finished!" << std::endl;
             
-            const auto prof = solve_profile();
-            for (size_t i = 0; i < prof.size(); i++) {
-                xi_vals_.push_back(prof[i][0]);
-                v_vals_.push_back(prof[i][1]);
-                w_vals_.push_back(prof[i][2]);
-            }
-            la_vals_ = calc_lambda_vals(w_vals_);
+            const size_t n = 1000;
+            const auto prof = solve_profile(n);
+
+            xi_vals_ = prof[0];
+            v_vals_ = prof[1];
+            w_vals_ = prof[2];
+            la_vals_ = prof[3];
+
+            assert(xi_vals_.size() == v_vals_.size() && xi_vals_.size() == w_vals_.size());
         }
 
         // build interpolating functions (probably not needed)
@@ -138,11 +155,14 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const bool t
         // v_prof_.build(xi_vals_, v_vals_);
         // w_prof_.build(xi_vals_, w_vals_);
         // la_prof_.build(xi_vals_, la_vals_);
+
+        std::cout << "Fluid profile constructed!\n";
     }
 
 // Public functions
 void FluidProfile::write(const std::string& filename) const {
     std::cout << "Writing fluid profile to disk... ";
+
     std::ofstream file(filename);
     file << "xi,v,w,la\n";
 
@@ -247,7 +267,11 @@ double FluidProfile::w_shock(double xi) const {
 // Private functions
 
 // determine hydrodynamic mode
-void FluidProfile::get_mode_y0() const {
+void FluidProfile::get_mode_y0() {
+    if (!y0_.empty()) {
+        throw std::runtime_error("In FluidProfile: Initial state vector non-empty when 'get_mode_y0()' is called");
+    }
+
     const auto vw = params_.vw();
     const auto vwsq = vw * vw;
 
@@ -265,34 +289,35 @@ void FluidProfile::get_mode_y0() const {
     //     y0_[1] = v_shock(vpUF_); // v0 = v(xi_sh) = v1 (fluid velocity just behind shock)
 
     // }
-    const auto dlt = 0.01; // wall and shock are discontinuities for v(xi) so start integration just before them
+    const auto dlt = 0.001; // wall and shock are discontinuities for v(xi) so start integration just before them
     if (vwsq >= cpsq) { // detonation
         mode_ = 2;
-        y0_[0] = vw - dlt; // xi0 = xi_w
+        xi0_ = vw - dlt; // xi0 = xi_w
+        xif_ = std::sqrt(cmsq) + dlt;
+
+        alpha_ = params_.alpha();
 
         vpUF_ = 0.0; // v+ (centre of bubble frame / universe frame)
-        vp_ = vw; // v+ (bubble wall frame)
+        vp_ = -vw; // v+ (bubble wall frame)
         vm_ = calc_vm(vp_);
         vmUF_ = mu(vw, vm_);
-        y0_[1] = vmUF_; // v0 = v(xi_w) = vm(UF)
+        y0_.push_back(vmUF_); // v0 = v(xi_w) = vm(UF)
 
-        // wp_ = params_.wN();
-        wp_ = 1.0;
-        wm_ = calc_wm(wp_, vp_, vm_);
-        y0_[2] = wm_; // w0 = w(xi_w) = wm
+        wpwN_ = 1.0; // w+ = wN
+        wmwN_ = calc_wm(wpwN_, vp_, vm_);
+        y0_.push_back(wmwN_); // w0 = w(xi_w) = wm
     } else {
         throw std::invalid_argument("Deflagration/Hybrid solutions not yet implemented");
     }
-
-
 }
 
 // sgn=1 for detonation, not sure what condition specifically fixes this though
 // sgn=-1 for deflag/hybrid?
 // this is for bag model only, generalise for any EoS?
 double FluidProfile::calc_vm(double vp) const { // vm from vp
+    const auto vp_abs = abs(vp);
     const auto sgn = 1.0;
-    const auto fac = vp * (1.0 + alpha_) / 2.0 + (1./3. - alpha_) / (2.0 * vp);
+    const auto fac = vp_abs * (1.0 + alpha_) / 2.0 + (1./3. - alpha_) / (2.0 * vp_abs);
     return fac + sgn * std::sqrt(fac * fac - 1./3.);
 }
 
@@ -305,7 +330,7 @@ double FluidProfile::calc_vp(double vm) const { // vp from vm
 
 double FluidProfile::calc_wm(double wp, double vp, double vm) const {
     // from matching condition -> generic for all EoS and hydrodynamic models using perfect fluid EM tensor
-    return wp * vp * (1.0 - vm * vm) / (vm * (1.0 - vp * vp));
+    return wp * abs(vp) * (1.0 - vm * vm) / (vm * (1.0 - vp * vp));
 }
 
 std::vector<state_type> FluidProfile::read(const std::string& filename) const {
@@ -344,6 +369,7 @@ std::vector<state_type> FluidProfile::read(const std::string& filename) const {
 
 // This is for Bag EoS
 state_type FluidProfile::calc_lambda_vals(state_type w_vals) const {
+    // in general, la(xi) = (w(xi)-p(xi)-eN)/wN, where eN=energy density at nuc temp TN
     state_type result;
     for (const auto w : w_vals) {
         result.push_back((3.0 / 4.0) * (w - 1.0));
@@ -354,22 +380,79 @@ state_type FluidProfile::calc_lambda_vals(state_type w_vals) const {
 std::vector<state_type> FluidProfile::solve_profile(int n) const {    
     std::cout << "Solving fluid profile for hydrodynamic mode=";
     if (mode_ == 0) {
-        std::cout << "deflagration...\n";
+        std::cout << "deflagration";
     } else if (mode_ == 1) {
-        std::cout << "hybrid...\n";
+        std::cout << "hybrid";
     } else {
-        std::cout << "detonation...\n";
+        std::cout << "detonation";
+    }
+    std::cout << " from xi0=" << xi0_ << ", xif=" << xif_ << ", with {v0, w0}={" << y0_[0] << ", " << y0_[1] << "}\n";
+
+    // dydxi = {dvdxi, dwdxi}
+    auto dydxi = [this](double xi, const state_type& y) -> state_type {
+        auto v = y[0];
+        auto w = y[1];
+        return { dvdxi(xi, v, csq_), dwdxi(xi, v, w, csq_) };
+    };
+
+    const auto [xi_sol_tmp, y_sol_tmp] = rk4_solver(dydxi, xi0_, xif_, y0_, n);
+
+    // fill v, w vectors
+    state_type v_sol_tmp, w_sol_tmp;
+    for (int i = 0; i < xi_sol_tmp.size(); i++) {
+        v_sol_tmp.push_back(y_sol_tmp[i][0]);
+        w_sol_tmp.push_back(y_sol_tmp[i][1]);
     }
 
-    FluidSystem fluid(params_);
-    std::vector<state_type> states;
-    std::vector<double> times;
+    // start & end points where profile=const (outside integration)
+    const int m = 100;
+    state_type xi_start, xi_end;
+    if (xi0_ < xif_) { // forwards integration
+        xi_start = linspace(0.0, xi0_, m);
+        xi_end = linspace(xif_, 1.0, m);
+    } else { // backwards integration
+        xi_start = linspace(1.0, xi0_, m);
+        xi_end = linspace(xif_, 0.0, m);
+    }
 
-    const auto ti = 0.0;
-    const auto tf = 5.0;
-    const auto dt = (tf - ti) / n;
+    const state_type v_start(m, 0.0);
+    const state_type v_end = v_start;
 
-    return states; // need output of times anywhere?
+    double w_start_val, w_end_val;
+    if (mode_ == 0) { // deflagration
+        w_start_val = 0.0;
+        w_end_val = 0.0;
+    } else if (mode_ == 1) { // hybrid
+        w_start_val = 0.0;
+        w_end_val = 0.0;
+    } else { // detonation (backwards integration for det so start/end values swapped)
+        w_start_val = 1.0; // w+/wN = 1
+        w_end_val = w_sol_tmp.back();
+    }
+    const state_type w_start(m, w_start_val);
+    const state_type w_end(m, w_end_val);
+
+    state_type xi_sol, v_sol, w_sol;
+
+    // concatenate xi vals
+    xi_sol.insert(xi_sol.end(), xi_start.begin(), xi_start.end());
+    xi_sol.insert(xi_sol.end(), xi_sol_tmp.begin(), xi_sol_tmp.end());
+    xi_sol.insert(xi_sol.end(), xi_end.begin(), xi_end.end());
+
+    // concatenate v(xi) vals
+    v_sol.insert(v_sol.end(), v_start.begin(), v_start.end());
+    v_sol.insert(v_sol.end(), v_sol_tmp.begin(), v_sol_tmp.end());
+    v_sol.insert(v_sol.end(), v_end.begin(), v_end.end());
+
+    // concatenate w(xi) vals
+    w_sol.insert(w_sol.end(), w_start.begin(), w_start.end());
+    w_sol.insert(w_sol.end(), w_sol_tmp.begin(), w_sol_tmp.end());
+    w_sol.insert(w_sol.end(), w_end.begin(), w_end.end());
+
+    // calculate la(xi)
+    const auto la_sol = calc_lambda_vals(w_sol);
+
+    return {xi_sol, v_sol, w_sol, la_sol};
 }
 /*******************************************************************************/
 

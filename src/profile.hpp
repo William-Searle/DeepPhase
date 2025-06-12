@@ -16,6 +16,19 @@ TO DO:
 
 namespace Hydrodynamics {
 
+/**
+ * @brief Computes the Lorentz factor between the wall frame and the universe frame.
+ *
+ * @param xi Fluid velocity in the wall frame.
+ * @param v Fluid velocity in the universe frame.
+ * 
+ * @return Lorentz factor (mu).
+ */
+double mu(double xi, double v);
+
+double dvdxi(double xi, double v, const double csq);
+double dwdxi(double xi, double v, double w, const double csq);
+
 using state_type = std::vector<double>;
 
 /**
@@ -59,7 +72,7 @@ struct push_back_state {
  */
 class FluidProfile {
   public:
-    FluidProfile(const PhaseTransition::PTParams& params, const bool test=true); // ctor
+    FluidProfile(const PhaseTransition::PTParams& params, const bool test=false); // ctor
     // write dflt ctor?
 
     // are these needed?
@@ -81,14 +94,15 @@ class FluidProfile {
   private:
     const PhaseTransition::PTParams params_; // local copy of PT parameters
     const double csq_; // local copy of speed of sound
+    double xi0_, xif_;
     std::vector<double> y0_; // initial conditions
     state_type xi_vals_, v_vals_, w_vals_, la_vals_; // xi, v(xi), w(xi), la(x)
     int mode_;
     double vp_, vpUF_, vm_, vmUF_; // v+, v- in bubble wall frame and universe frame (UF)
-    double wp_, wm_; // w+, w-
+    double wpwN_, wmwN_; // w+/wN, w-/wN
     double alpha_;
 
-    void get_mode_y0() const; // define hydrodynamic mode and initial state (xi0,v0,w0)
+    void get_mode_y0(); // define hydrodynamic mode and initial state (xi0,v0,w0)
     double calc_vm(double vp) const;
     double calc_vp(double vm) const;
     double calc_wm(double wp, double vp, double vm) const;

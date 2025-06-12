@@ -202,5 +202,13 @@ double Si(double x);
 double Ci(double x);
 std::pair<double, double> SiCi(double x);
 
-using system = std::vector<std::function<double(double, double)>>;
-std::pair<std::vector<double>, std::vector<double>> runge_kutta_ODE_solver(system dydx, const double t0, const double tf, const double y0, const size_t n);
+using state_type = std::vector<double>;
+using deriv_func = std::function<state_type(double, const state_type&)>;
+
+std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
+    const deriv_func& dydx,
+    double x0,
+    double xf,
+    const state_type& y0,
+    size_t n
+);

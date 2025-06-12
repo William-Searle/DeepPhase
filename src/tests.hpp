@@ -14,6 +14,9 @@
 /// @brief Runs all tests
 void test_all();
 
+void test_rk4_coupled_odes();
+void test_rk4_solver();
+
 /// @brief Tests functionality of the PowerSpec class.
 void test_PowerSpec();
 

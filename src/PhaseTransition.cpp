@@ -57,13 +57,14 @@ const Universe& default_universe() {
 // make new ctor for reading in Veff since we calculate all the params
 // alpha only exists for Bag model, maybe change how it is input/stored in PTParams
 PTParams::PTParams()
-    : PTParams(dflt_PTParams::vw, dflt_PTParams::alpha, dflt_PTParams::beta, dflt_PTParams::dtau, dflt_PTParams::model, dflt_PTParams::nuc_type, default_universe()) {}
+    : PTParams(dflt_PTParams::vw, dflt_PTParams::alpha, dflt_PTParams::beta, dflt_PTParams::dtau, dflt_PTParams::wN, dflt_PTParams::model, dflt_PTParams::nuc_type, default_universe()) {}
 
-PTParams::PTParams(double vw, double alpha, double beta, double dtau, const char* model, const char* nuc_type, const Universe& un)
+PTParams::PTParams(double vw, double alpha, double beta, double dtau, double wN, const char* model, const char* nuc_type, const Universe& un)
     : vw_(vw),
       alpha_(alpha), 
       beta_(beta),
       dtau_(dtau),
+      wN_(wN),
       tau_s_(),
       tau_fin_(),
       model_(),

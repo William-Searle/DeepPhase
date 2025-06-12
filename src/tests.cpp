@@ -42,6 +42,100 @@ void test_all() {
     return;
 }
 
+void test_rk4_coupled_odes() {
+    // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
+    auto dydx = [](double x, const state_type& y) -> state_type {
+        return { y[1], -y[0] };
+    };
+
+    const double x0 = 0.0;
+    const double xf = M_PI / 2;  // pi/2, where cos(pi/2) = 0, sin(pi/2) = 1
+    const size_t steps = 5000;
+    const state_type y0 = {1.0, 0.0};  // y0 = cos(0), y1 = -sin(0)
+
+    auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
+
+    state_type y1_vals, y2_vals, y1_exact, y2_exact;
+    std::vector<double> err1, err2;
+    
+    const auto tol = 1e-3;
+    bool test_passed = true;
+
+    for (int i = 0; i < x_vals.size(); i++) {
+        // fill solver result
+        y1_vals.push_back(y_vals[i][0]);
+        y2_vals.push_back(y_vals[i][1]);
+
+        // fill exact result
+        const auto x = x_vals[i];
+        y1_exact.push_back(std::cos(x));
+        y2_exact.push_back(-std::sin(x));
+
+        // error estimate
+        err1.push_back(std::abs((y1_vals[i] - y1_exact[i]) / y1_exact[i]));
+        err2.push_back(std::abs((y2_vals[i] - y2_exact[i]) / y2_exact[i]));
+
+        if (err1[i] > tol || err2[i] > tol) {
+            test_passed = false;
+        }
+    }
+
+    if (test_passed) {
+        std::cout << "Convergence test passed! (err < " << tol << ")\n";
+    } else {
+        std::cout << "Convergence test failed! (err > " << tol << ")\n";
+    }
+
+    std::cout << "Plotting solution and exact result... ";
+
+    plt::figure_size(2400, 600);
+
+    plt::subplot2grid(1, 2, 0, 0);
+    plt::plot(x_vals, y1_vals, "k-");
+    plt::plot(x_vals, y1_exact, "r--");
+    plt::xlabel("x");
+    plt::ylabel("y0(x)");
+    plt::grid(true);
+
+    plt::subplot2grid(1, 2, 0, 1);
+    plt::plot(x_vals, y2_vals, "k-");
+    plt::plot(x_vals, y2_exact, "r--");
+    plt::xlabel("x");
+    plt::ylabel("y1(x)");
+    plt::grid(true);
+
+    const std::string filename = "test_solver.png";
+    plt::save(filename);
+
+    std::cout << "Saved to file '" << filename << "'\n";
+}
+
+void test_rk4_solver() {
+    // dy/dx = -y with y(0) = 1 => y(x) = exp(-x)
+    auto dydx = [](double x, const state_type& y) -> state_type {
+        return {-y[0]};
+    };
+
+    const double x0 = 0.0;
+    const double xf = 5.0;
+    const size_t steps = 1000;
+    const state_type y0 = {1.0};
+
+    auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
+
+    // Compare final result to exact solution: y(5) = exp(-5)
+    double y_numeric = y_vals.back()[0];
+    double y_exact = std::exp(-xf);
+    double rel_error = std::abs((y_numeric - y_exact) / y_exact);
+
+    std::cout << "RK4 y(" << xf << ") = " << y_numeric
+              << " | exact = " << y_exact
+              << " | relative error = " << rel_error << '\n';
+
+    // Assert error is small
+    assert(rel_error < 1e-3);
+}
+
 // Class tests
 void test_PowerSpec() {
     using std::cout;
@@ -248,10 +342,10 @@ void test_Apsq(bool plot) { // test Ap_sq
 void test_Ekin(bool plot) {
     const PhaseTransition::Universe un;
 
-    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, "bag", "exp", un);
+    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
     const Hydrodynamics::FluidProfile profile1(params1);
 
-    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, "bag", "sim", un);
+    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "sim", un);
     const Hydrodynamics::FluidProfile profile2(params2);
 
     const auto kRs_vals = logspace(1e-1, 1e+3, 500);
@@ -280,10 +374,10 @@ void test_Ekin(bool plot) {
 void test_GWSpec(bool plot) {
     const PhaseTransition::Universe un;
 
-    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, "bag", "exp", un);
+    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
     const Hydrodynamics::FluidProfile profile1(params1);
 
-    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, "bag", "sim", un);
+    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "sim", un);
     const Hydrodynamics::FluidProfile profile2(params2);
 
     const auto kRs_vec = logspace(1e-3, 1e+3, 50);

@@ -14,16 +14,6 @@ TO DO:
 namespace Hydrodynamics {
 
 /**
- * @brief Computes the Lorentz factor between the wall frame and the universe frame.
- *
- * @param xi Fluid velocity in the wall frame.
- * @param v Fluid velocity in the universe frame.
- * 
- * @return Lorentz factor (mu).
- */
-double mu(double xi, double v);
-
-/**
  * @brief Computes the bubble lifetime distribution at the normalized time Ttilde.
  *
  * @param Ttilde Normalized time (T * β).

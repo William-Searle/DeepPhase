@@ -42,7 +42,11 @@ int main() {
     // takes 2-4mins to run
     /****************************/
 
-    test_FluidProfile();
+    PhaseTransition::PTParams params;
+    Hydrodynamics::FluidProfile prof(params);
+
+    prof.write("test_prof.csv");
+    prof.plot("test_prof.png");
 
     /************************ CLOCK / PROFILER *************************/
     const auto tf = std::chrono::high_resolution_clock::now();

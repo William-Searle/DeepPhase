@@ -24,10 +24,6 @@ TO DO:
 
 namespace Hydrodynamics {
 
-double mu(double xi, double v) {
-    return (xi - v) / (1.0 - xi * v);
-}
-
 double lifetime_dist(double Ttilde, const std::string& nuc_type) {
 
     std::function<double(double)> lifetime_func;

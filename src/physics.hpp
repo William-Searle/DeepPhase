@@ -6,7 +6,6 @@
  * @brief Contains basic relativistic physics utility functions.
  */
 
-namespace Physics {
 
 /**
  * @brief Computes the Lorentz factor γ for a given velocity.
@@ -23,5 +22,3 @@ double gamma(double v);
  * @return The square of the Lorentz factor γ².
  */
 double gammaSq(double v);
-
-} // namespace Physics
