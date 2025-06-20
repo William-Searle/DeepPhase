@@ -86,7 +86,7 @@ void PowerSpec::write(const std::string& filename) const {
     //     throw std::invalid_argument("Power spectrum is not a vector, cannot write to disk.")
     // }
     std::cout << "Writing power spectrum to disk... ";
-    std::ofstream file(filename);
+    std::ofstream file("../" + filename);
     file << "k,P\n";
 
     const auto k_vals = std::get<SpectrumVec>(data_).first;

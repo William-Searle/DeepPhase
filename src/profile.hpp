@@ -29,42 +29,38 @@ double mu(double xi, double v);
 double dvdxi(double xi, double v, const double csq);
 double dwdxi(double xi, double v, double w, const double csq);
 
+double dxi_dtau(double xi, double v, const double csq);
+double dv_dtau(double xi, double v, const double csq);
+double dw_dtau(double xi, double v, double w, const double csq);
+
+void generate_streamplot_data(const PhaseTransition::PTParams& params, int xi_pts, int y_pts, const std::string& filename);
+void generate_streamplot_data(const PhaseTransition::PTParams& params);
+
+// struct FluidState {
+//     double v;   // velocity
+//     double w;   // enthalpy
+//     // double T;   // temperature
+
+//     FluidState operator+(const FluidState& other) const {
+//         // return {v + other.v, w + other.w, T + other.T};
+//         return {v + other.v, w + other.w};
+//     }
+//     FluidState operator*(double scalar) const {
+//         // return {v * scalar, w * scalar, T * scalar};
+//         return {v * scalar, w * scalar};
+//     }
+// };
+
+// struct FluidODE {
+//   double dvdxi(double xi, double v, const double csq);
+//   double dwdxi(double xi, double v, double w, const double csq);
+
+//   double dxi_dtau(double xi, double v, const double csq);
+//   double dv_dtau(double xi, double v, const double csq);
+//   double dw_dtau(double xi, double v, double w, const double csq);
+// };
+
 using state_type = std::vector<double>;
-
-/**
- * @class FluidSystem
- * @brief Defines the ODE system governing the evolution of fluid variables.
- */
-class FluidSystem {
-  public:
-    FluidSystem(const PhaseTransition::PTParams& params) : params_(params) {}
-
-    double dxi_dtau(double xi, double v) const;
-    double dv_dtau(double xi, double v) const;
-    double dw_dtau(double xi, double v, double w) const;
-
-     /**
-     * @brief Operator overload to evaluate the full ODE system at a given state and time.
-     * 
-     * @param y Current state vector {xi, v, w}.
-     * @param dydt Output derivative vector.
-     * @param tau Current value of the independent variable (not used explicitly).
-     */
-    void operator()(const state_type &y, state_type &dydt, double /*tau*/) const;
-
-  private:
-    PhaseTransition::PTParams params_;
-};
-
-/// @brief Observer to store integration states and times during ODE solving.
-struct push_back_state {
-    std::vector<state_type> &states;
-    std::vector<double> &times;
-
-    push_back_state(std::vector<state_type> &s, std::vector<double> &t) : states(s), times(t) {}
-
-    void operator()(const state_type& y, double t) const;
-};
 
 /**
  * @class FluidProfile
@@ -72,11 +68,14 @@ struct push_back_state {
  */
 class FluidProfile {
   public:
-    FluidProfile(const PhaseTransition::PTParams& params, const bool test=false); // ctor
+    FluidProfile(const PhaseTransition::PTParams& params); // ctor
     // write dflt ctor?
 
     // are these needed?
     PhaseTransition::PTParams params() const { return params_; }; // PT parameters
+
+    double xi0() const { return xi0_; };
+    double xif() const { return xif_; };
     std::vector<double> init_state() const { return y0_; }; // Initial state vector {xi0, v0, w0}
     
     state_type xi_vals() const { return xi_vals_; }; // Vector of xi=r/t
@@ -84,39 +83,43 @@ class FluidProfile {
     state_type w_vals() const { return w_vals_; }; // w(xi)
     state_type la_vals() const { return la_vals_; }; // la(xi)
 
-    double v_shock(double xi) const; // v profile shock wave
-    double w_shock(double xi) const; // w profile shock wave
-
     void write(const std::string& filename = "bubble_prof.csv") const; // write bubble profile to disk
     void plot(const std::string& filename = "bubble_prof.png") const; // Plots bubble profiles
-    void generate_streamplot_data(int xi_pts=30, int y_pts=30, const std::string& filename="streamplot_data.csv") const;
 
   private:
     const PhaseTransition::PTParams params_; // local copy of PT parameters
-    const double csq_; // local copy of speed of sound
-    double xi0_, xif_;
-    std::vector<double> y0_; // initial conditions
+    const double cpsq_, cmsq_, vw_, alN_;
+    
+    int mode_; // hydrodynamic mode (deflagration=0, hybrid=1, detonation=2)
+    double xi0_, xif_; // initial/final xi
+    std::vector<double> y0_; // initial conditions {v0, w0}
+    
+    // double vp_, vm_, v1_, v2_;
+    // double vpUF_, vmUF_, v1UF_, v2UF_;
+    // double wp_, wm_, w1_, w2_;
+    
     state_type xi_vals_, v_vals_, w_vals_, la_vals_; // xi, v(xi), w(xi), la(x)
-    int mode_;
-    double vp_, vpUF_, vm_, vmUF_; // v+, v- in bubble wall frame and universe frame (UF)
-    double wpwN_, wmwN_; // w+/wN, w-/wN
-    double alpha_;
 
-    void get_mode_y0(); // define hydrodynamic mode and initial state (xi0,v0,w0)
-    double calc_vm(double vp) const;
-    double calc_vp(double vm) const;
+    int get_mode(double vw, double cmsq, double alN) const;
+    double vJ_det(double alp);
+
+    double calc_vm(double vp, double alpha_p) const;
+    double calc_vp(double vm, double alpha_p) const;
     double calc_wm(double wp, double vp, double vm) const;
+    double calc_w1wN(double xi_sh) const;
+
+    double xi_shock(double v1UF) const; // position of shock front
+    double get_alp_wall(double vpUF, double vw) const;
+    double get_alp_shock(double vpUF, double v1UF, double alphaN) const;
+    double v1UF_residual_func(double v1UF, const deriv_func& dydxi);
+
     // put number of integration points in input file? seems bad to hardcode
-    /**
-     * @brief Solves the hydrodynamic profile ODE system.
-     * 
-     * @param n Number of integration steps.
-     * 
-     * @return Vector of state vectors representing the profile.
-     */
-    std::vector<state_type> solve_profile(int n=100) const;
-    std::vector<state_type> read(const std::string& filename) const; // read bubble profile from disk
+    std::vector<state_type> solve_profile(int n=100);
     state_type calc_lambda_vals(state_type w_vals) const;
+
+    // testing purposes ONLY
+    std::vector<state_type> read(const std::string& filename) const; // read bubble profile from disk
+
 };
 
 } // namespace Hydrodynamics

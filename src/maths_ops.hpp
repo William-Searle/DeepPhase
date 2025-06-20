@@ -212,3 +212,5 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
     const state_type& y0,
     size_t n
 );
+
+double root_finder(std::function<double(double)> f, double a, double b, double tol = 1e-8, int max_iter = 100);

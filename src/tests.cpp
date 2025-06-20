@@ -105,7 +105,7 @@ void test_rk4_coupled_odes() {
     plt::grid(true);
 
     const std::string filename = "test_solver.png";
-    plt::save(filename);
+    plt::save("../" + filename);
 
     std::cout << "Saved to file '" << filename << "'\n";
 }
@@ -214,9 +214,6 @@ void test_FluidProfile() { // not finished
 
     PTParams params;
     FluidProfile profile(params);
-
-    // Generate streamplot data
-    profile.generate_streamplot_data(30, 30, "test_streamplot.csv");
 
     auto xi_vals = profile.xi_vals();
     auto v_vals = profile.v_vals();

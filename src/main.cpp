@@ -42,10 +42,21 @@ int main() {
     // takes 2-4mins to run
     /****************************/
 
-    PhaseTransition::PTParams params;
-    Hydrodynamics::FluidProfile prof(params);
+    const auto vw = 0.7;
+    const auto alpha = 0.1;
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    prof.write("test_prof.csv");
+    PhaseTransition::Universe un;
+    PhaseTransition::PTParams params(vw, alpha, beta, dtau, wN, model, nuc_type, un);
+
+    params.print();
+
+    Hydrodynamics::FluidProfile prof(params);
+    // prof.write("test_prof.csv");
     prof.plot("test_prof.png");
 
     /************************ CLOCK / PROFILER *************************/

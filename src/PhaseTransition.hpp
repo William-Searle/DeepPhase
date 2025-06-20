@@ -87,7 +87,7 @@ struct dflt_PTParams {
     double csq() const { return cmsq_; } // keep this? - applies to bag model only
     double vw() const { return vw_; } // wall velocity
     double vcj() const { return vcj_; } // Chapman-Jouget speed
-    double alpha() const { return alpha_; } // strength parameter
+    double alphaN() const { return alpha_; } // strength parameter at nuc temp (alpha_N)
     double beta() const { return beta_; } // inverse PT duration
     double Rs() const { return Rs_; } // characteristic length scale R_*
     double tau_s() const { return tau_s_; } // start time of PT

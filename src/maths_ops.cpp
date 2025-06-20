@@ -6,6 +6,7 @@
 #include <stdexcept>
 #include <functional>
 #include <cassert>
+#include <matplotlibcpp.h>
 
 #include "constants.hpp"
 #include "maths_ops.hpp"
@@ -655,6 +656,7 @@ std::pair<double, double> SiCi(double x) {
 // }
 
 // write my own/make this better
+// make it suitable to pass in just dvdxi (rather than only {dvdxi, dwdxi})
 std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
     const deriv_func& dydx,
     double x0,
@@ -705,4 +707,56 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
     }
 
     return {x_vals, y_vals};
+}
+
+double root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
+    double fa = f(a);
+    double fb = f(b);
+
+    // if (fa * fb >= 0.0) {
+    //     std::cout << "f(a)=" << fa << ", f(b)=" << fb << "\n";
+    //     throw std::runtime_error("Root is not bracketed. Must have f(a)*f(b)>=0.");
+    // }
+
+    double c = a;
+    double fc = fa;
+    double s = b;
+    double fs = fb;
+
+    for (int iter = 0; iter < max_iter; ++iter) {
+        if (fa != fc && fb != fc) {
+            // inverse quadratic interpolation
+            s = (a * fb * fc) / ((fa - fb) * (fa - fc)) +
+                (b * fa * fc) / ((fb - fa) * (fb - fc)) +
+                (c * fa * fb) / ((fc - fa) * (fc - fb));
+        } else {
+            // secant method
+            s = b - fb * (b - a) / (fb - fa);
+        }
+
+        // Bisection fallback if needed
+        if ((s < (3*a + b)/4 || s > b) || 
+            (std::abs(s - b) >= std::abs(b - c)/2) ||
+            (std::abs(b - c) < tol)) {
+            s = (a + b)/2;
+        }
+
+        fs = f(s);
+        c = b;
+        fc = fb;
+
+        if (fa * fs < 0) {
+            b = s;
+            fb = fs;
+        } else {
+            a = s;
+            fa = fs;
+        }
+
+        if (std::abs(b - a) < tol) {
+            return s;
+        }
+    }
+
+    throw std::runtime_error("Root finder method did not converge.");
 }
