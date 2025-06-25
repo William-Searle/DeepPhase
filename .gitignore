@@ -34,8 +34,10 @@
 # Build directory
 /build/
 
-# Data files
+# Output files
 *.csv
+*.png
+*.jpg
 
 # Visual Studio
 .vscode/
