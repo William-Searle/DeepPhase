@@ -22,6 +22,8 @@ TO DO:
 - fix calc of w profile in generate_streamplot_data()
 - modify plot() so you can individually plot v,w,la too (i.e. separate plot functions)
 - write summary of detonation/deflag/hybrid at top of ctor
+- change from using y0 to using FluidState class!
+- update xi_start and xi_end so they have same spacing as xi_vals -> makes it easier for integrating v(xi) i think!
 */
 
 namespace Hydrodynamics { // calculate bubble profile
@@ -130,6 +132,10 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
 
         // define hydrodynamic mode
         mode_ = get_mode(vw_, cmsq_, alN_);
+
+        if (mode_ < 0 || mode_ > 2) {
+            throw std::invalid_argument("Hydrodynamic mode must be: 0 (deflagration), 1 (hybrid) or 2 (detonation)");
+        }
 
         // calculate fluid profiles v(xi), w(xi), la(xi)     
         const size_t n = 1000;
@@ -299,6 +305,23 @@ double FluidProfile::xi_shock(double v1UF) const {
     return fac + std::sqrt(fac * fac + cpsq_);
 }
 
+// not finished yet
+std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double cmsq) const {
+    // same as get_alp_wall but using vp, vm
+    const auto vp_min = 0.0;
+    const auto vp_max = std::min(cpsq / vw, vw); // not sure why??
+    const auto vm = (mode_ == 0) ? vw : std::sqrt(cpsq); // |vm|=vw (deflag), cp (hybrid)
+
+    auto get_alp = [] (double vp, double vm) {
+        return gammaSq(vp) * (vp * vp - vp * vm - vp / (3.0 * vm) + 1.0 / 3.0);
+    };
+    
+    const auto al_max = get_alp(vp_min, vm);
+    const auto al_min = get_alp(vp_max, vm);
+
+    return {al_min, al_max};
+}
+
 double FluidProfile::get_alp_wall(double vpUF, double vw) const {
     // alpha_+ from wall condition
     return gammaSq(vpUF) * vpUF * (2.0 * vw * vpUF + 1.0 - 3.0 * vw * vw) / (3.0 * vw);
@@ -387,21 +410,17 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
     };
 
     const auto dlt = 0.001; // wall and shocks are discontinuities so start integration just before them
-    double xi0, xif, y0;
     std::vector<state_type> y_sol_tmp;
     state_type xi_sol_tmp, v_sol_tmp, w_sol_tmp;
 
     const double w_start_val = 1.0; // w+/wN (det), w2/wN (deflag/hybrid)
     double w_end_val;
 
-    // if (mode_ == 0) {
     if (mode_ < 2) { // deflagration & hybrid
         // check alpha condition for shock
-        const auto almax = 100.; // placeholder
-        if (alN_ > almax) throw std::invalid_argument("alpha too large for shock");
-
-        const auto almin = 0.; // placeholder
-        if (alN_ < almin) throw std::invalid_argument("alpha too small for shock");
+        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
+        if (alN_ <= alp_minmax[0]) throw std::invalid_argument("alpha too small for shock");
+        if (alN_ >= alp_minmax[1]) throw std::invalid_argument("alpha too large for shock");
 
         // hybrid and deflagration ICs the same for xi_w < xi < xi_sh
         xif_ = vw_ + dlt;
@@ -416,7 +435,6 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         const double v1UF_max = 0.9;
 
         const double v1UF = root_finder(residual, v1UF_min, v1UF_max);
-        // const double v1UF = 0.06;
         y0_.push_back(v1UF);
         /*****************************************************************************/
 
@@ -427,7 +445,6 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         y0_.push_back(w1wN);
 
         // solver
-        // const int nn = (mode_ == 1) ? n/2 : n;
         const auto sol = rk4_solver(dydxi, xi0_, xif_, y0_, n);
         xi_sol_tmp = sol.first;
         y_sol_tmp = sol.second;
@@ -438,33 +455,34 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
             w_sol_tmp.push_back(y_sol_tmp[i][1]);
         }
 
-        // fix end-value for enthalpy
-        auto vpUF = v_sol_tmp.back();
-        auto alp = get_alp_wall(vpUF, vw_);
-        auto vm = -vw_;
-        auto vp = calc_vp(vm, alp);
-        auto wpwN = w_sol_tmp.back(); // w(xi_w + dlt) = w+/wN
-        auto wmwN = calc_wm(wpwN, vp, vm); // from matching condition at wall
+        if (mode_ == 0) {
+            // fix end-value for enthalpy
+            const auto vpUF = v_sol_tmp.back();
+            const auto alp = get_alp_wall(vpUF, vw_);
+            const auto vm = -vw_;
+            const auto vp = calc_vp(vm, alp);
+            const auto wpwN = w_sol_tmp.back(); // w(xi_w + dlt) = w+/wN
+            const auto wmwN = calc_wm(wpwN, vp, vm); // from matching condition at wall
 
-        w_end_val = wmwN; // enthalpy just behind wall
+            w_end_val = wmwN; // enthalpy just behind wall
 
-        if (mode_ == 1) { // hybrid
+        } else { // hybrid
             // initial conditions for rarefaction wave
             // const auto xi0_rf = vw_ - dlt;
             const auto xi0_rf = vw_ + dlt;
             const auto xif_rf = std::sqrt(cmsq_) + dlt;
 
-            std::vector<double> y0_rf(2);
+            std::vector<double> y0_rf;
 
-            vm = -std::sqrt(cmsq_);
-            auto vmUF = mu(vw_, abs(vm));
-            y0_rf[0] = vmUF;
+            const auto vm = -std::sqrt(cmsq_);
+            const auto vmUF = mu(vw_, abs(vm));
+            y0_rf.push_back(vmUF);
 
-            vpUF = v_sol_tmp.back();
-            vp = mu(vw_, abs(vpUF));
-            wpwN = w_sol_tmp.back();
-            wmwN = calc_wm(wpwN, vp, vm);
-            y0_rf[1] = wmwN;
+            const auto vpUF = v_sol_tmp.back();
+            const auto vp = mu(vw_, abs(vpUF));
+            const auto wpwN = w_sol_tmp.back();
+            const auto wmwN = calc_wm(wpwN, vp, vm);
+            y0_rf.push_back(wmwN);
 
             const auto [xi_sol_rf_tmp, y_sol_rf_tmp] = rk4_solver(dydxi, xi0_rf, xif_rf, y0_rf, n);
 

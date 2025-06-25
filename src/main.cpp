@@ -43,7 +43,7 @@ int main() {
     /****************************/
 
     const auto vw = 0.7;
-    const auto alpha = 0.1;
+    const auto alpha = 0;
     const auto beta = PhaseTransition::dflt_PTParams::beta;
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
