@@ -26,6 +26,7 @@ TO DO:
 - change throw exception for P() and k() so that it uses Pvec() and kvec() when wrong one is called
 - update Ekin to pass in Profile class (or maybe just PTParams?)
 - implement adaptive step-size in Ekin integration (and dlt later too)
+- add write/plot for GWSpec
 */
 
 namespace Spectrum {
@@ -225,6 +226,8 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     const auto ptRs_vals_tmp = logspace(ptRs_min, ptRs_max, 2.0*np);
 
     const Hydrodynamics::FluidProfile profile(params); // generate fluid profile
+    // profile.write();
+    // profile.plot();
 
     const auto zk_pRs_spec = zetaKin(pRs_vals, profile);
     const auto zk_pRs_vals = zk_pRs_spec.Pvec(); // store zetaKin(pRs) vals (quicker than calling interpolator)
@@ -234,8 +237,9 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     /************************************************************/
 
     // precompute dlt
-    const int nt = 50;
-    const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
+    // const int nt = 50;
+    // const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
+    const auto delta = dlt_SSM(k_vals, p_vals, z_vals, params);
 
     const auto nk = kRs_vals.size();
     std::vector<double> GW_P_vals(nk);
@@ -245,13 +249,15 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
         const auto kRs = kRs_vals[m];
         const auto k = kRs * Rs_inv;
 
+        const auto kRs3 = kRs * kRs * kRs;
+
         std::vector<std::vector<double>> integrand(np, std::vector<double>(nz));
         for (int i = 0; i < np; i++) {
             const auto p = p_vals[i];
             const auto pRs = pRs_vals[i];
             const auto pRs2 = pRs2_vals[i];
 
-            const auto zk_pRs_fac = kRs * zk_pRs_vals[i] * pRs2; // kRs * zetaKin(pRs) * pRs^2
+            const auto zk_pRs_fac = kRs3 * zk_pRs_vals[i] * pRs2; // kRs^3 * zetaKin(pRs) * pRs^2
 
             for (int j = 0; j < nz; j++) {
                 const auto z = z_vals[j];
@@ -511,15 +517,15 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
                     const auto x1 = pmn * tau_fin;
                     const auto x2 = pmn * tau_s;
 
-                    const auto dSi = Si(x1) - Si(x2);
-                    const auto dCi = Ci(x1) - Ci(x2);
+                    // Im(Si(x))=0 for real x
+                    // Im(Ci(x))=pi (x<0), 0 (x>0)
+                    // Taking difference dCi -> imaginary part cancels since sign of x1, x2 always the same
 
-                    if (isnan(dSi)) {
-                        std::cout << "dSi=nan for x1=" << x1 << ", x2=" << x2 << "\n";
-                    }
-                    // } else if (isnan(dCi)) {
-                    //     std::cout << "dCi=nan for x1=" << x1 << ", x2=" << x2 << "\n";
-                    // }
+                    const auto [Si_x1, Ci_x1] = SiCi(x1);
+                    const auto [Si_x2, Ci_x2] = SiCi(x2);
+
+                    const auto dSi = Si_x1 - Si_x2;
+                    const auto dCi = Ci_x1 - Ci_x2;
 
                     // dlt_temp[thread_id] += 0.25 * (dCi * dCi + dSi * dSi);
                     dlt_temp += 0.25 * (dCi * dCi + dSi * dSi);

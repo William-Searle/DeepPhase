@@ -43,8 +43,8 @@ int main() {
     /****************************/
 
     /***************************** Define PT Parameters *****************************/
-    const auto vw = 0.7;
-    const auto alpha = 0;
+    const auto vw = 0.5;
+    const auto alN = 0.1;
     const auto beta = PhaseTransition::dflt_PTParams::beta;
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
@@ -52,32 +52,59 @@ int main() {
     // const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
     PhaseTransition::Universe un;
-    PhaseTransition::PTParams params1(vw, alpha, beta, dtau, wN, model, "exp", un);
-    PhaseTransition::PTParams params2(vw, alpha, beta, dtau, wN, model, "sim", un);
+    PhaseTransition::PTParams params1(vw, alN, beta, dtau, wN, model, "exp", un);
+    PhaseTransition::PTParams params2(vw, alN, beta, dtau, wN, model, "sim", un);
     
     params1.print();
     /********************************************************************************/
 
+    // const auto k_vals = logspace(1e-3, 1e+3, 5);
+    // const auto p_vals = logspace(1e-2, 1e+3, 200);
+    // const auto z_vals = linspace(-1.0, 1.0, 200);
+
+    // const auto dlt2 = Spectrum::dlt_SSM(k_vals, p_vals, z_vals, params1);
+
+    // for (int kk = 0; kk < k_vals.size(); kk++) {
+    //     std::cout << "dlt(" << k_vals[kk] << ")=" << dlt2[kk][0][0] << "\n";
+    // }
+    
     // Ex 1: Construct fluid profile
     Hydrodynamics::FluidProfile prof(params1);
     prof.write("test_prof.csv");
     prof.plot("test_prof.png");
 
-    // Ex 2: Construct GW Spectrum
-    const auto kRs_vec = logspace(1e-3, 1e+3, 5);
-    const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
+    // Ex 2: Construct kinetic power spectrum
+    const auto kRs_vals = logspace(1e-1, 1e+3, 500);
+
+    const auto Ek = Spectrum::Ekin(kRs_vals, prof);
+    const auto Eks = Spectrum::zetaKin(Ek);
+    
+    plt::figure_size(800, 600);
+    plt::loglog(Eks.kvec(), Eks.Pvec(), "k-");
+    plt::xlabel("K=kRs");
+    plt::ylabel("Ekin(K)");
+    plt::xlim(1e-1, 1e+3);
+    plt::ylim(1e-4, 1e+0);
+    plt::grid(true);
+    plt::save("../Ekin_spectrum.png");
+
+    // Ex 3: Construct GW Spectrum
+    // const auto kRs_vec = logspace(1e-3, 1e+3, 100);
+    // const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
     // const auto OmegaGW2 = Spectrum::GWSpec(kRs_vec, params2);
     
-    // add .plot() function for GWSpec!!
-    plt::figure_size(800, 600);
-    plt::loglog(OmegaGW1.kvec(), OmegaGW1.Pvec(), "k-");
-    // plt::loglog(OmegaGW2.kvec(), OmegaGW2.Pvec(), "r-");
-    plt::xlabel("K=kRs");
-    plt::ylabel("Omega_GW(K)");
-    plt::xlim(1e-3, 1e+3);
-    // plt::ylim(1e-4, 1e+0);
-    plt::grid(true);
-    plt::save("GW_spectrum.png");
+    // add .plot() function for GWSpec (also include vw and alpha used in title)!!
+    // plt::figure_size(800, 600);
+    // plt::loglog(OmegaGW1.kvec(), OmegaGW1.Pvec(), "k-");
+    // // plt::loglog(OmegaGW2.kvec(), OmegaGW2.Pvec(), "r-");
+    // plt::suptitle("vw = " + to_string_with_precision(vw) + ", alN = " + to_string_with_precision(alN));
+    // plt::xlabel("K=kRs");
+    // plt::ylabel("Omega_GW(K)");
+    // plt::xlim(1e-3, 1e+3);
+    // // plt::ylim(1e-4, 1e+0);
+    // plt::grid(true);
+    // plt::save("../GW_spectrum.png");
+    
 
     /************************ CLOCK / PROFILER *************************/
     const auto tf = std::chrono::high_resolution_clock::now();
