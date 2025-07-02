@@ -130,9 +130,15 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
         /*   As above, but ending with 'UF'                                        */
         /***************************************************************************/
 
+        // check bad alN
+        if (alN_ <= 0.0) {
+            throw std::invalid_argument("alN must be >= 0");
+        }
+
         // define hydrodynamic mode
         mode_ = get_mode(vw_, cmsq_, alN_);
 
+        // need this?
         if (mode_ < 0 || mode_ > 2) {
             throw std::invalid_argument("Hydrodynamic mode must be: 0 (deflagration), 1 (hybrid) or 2 (detonation)");
         }
@@ -306,12 +312,14 @@ double FluidProfile::xi_shock(double v1UF) const {
     return fac + std::sqrt(fac * fac + cpsq_);
 }
 
-// not finished yet
 std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double cmsq) const {
     // same as get_alp_wall but using vp, vm
-    const auto vp_min = 0.0;
-    const auto vp_max = std::min(cpsq / vw, vw); // not sure why??
+    const auto cp = std::sqrt(cpsq);
+
     const auto vm = (mode_ == 0) ? vw : std::sqrt(cpsq); // |vm|=vw (deflag), cp (hybrid)
+    const auto vp_min = 0.0;
+    const auto vp_max = std::min(cp, vw); // vw for deflag (vw < cp), cp for hybrid (cp < vw)
+    
 
     auto get_alp = [] (double vp, double vm) {
         return gammaSq(vp) * (vp * vp - vp * vm - vp / (3.0 * vm) + 1.0 / 3.0);
@@ -372,18 +380,6 @@ double FluidProfile::v1UF_residual_func(double v1UF, const deriv_func& dydxi) {
     }
 }
 
-// not working properly yet (wrong eq i think)
-// state_type FluidProfile::calc_lambda_vals(state_type w_vals) const {
-//     // This is for Bag EoS
-//     // in general, la(xi) = (w(xi)-p(xi)-eN)/wN, where eN=energy density at nuc temp TN
-//     state_type result;
-//     for (const auto w : w_vals) {
-//         // result.push_back((3.0 / 4.0) * (w - 1.0 - alN_));
-//         result.push_back((3.0 / 4.0) * (w - 1.0));
-//     }
-//     return result;
-// }
-
 double FluidProfile::get_la_behind_wall(double w) const {
     // la(xi) behind bubble wall (detonations)
     return 0.75 * (w - 1.0 - alN_);
@@ -430,11 +426,6 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
     double w_end_val, la_end_val;
 
     if (mode_ < 2) { // deflagration & hybrid
-        // check alpha condition for shock
-        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
-        if (alN_ <= alp_minmax[0]) throw std::invalid_argument("alpha too small for shock");
-        if (alN_ >= alp_minmax[1]) throw std::invalid_argument("alpha too large for shock");
-
         // hybrid and deflagration ICs the same for xi_w < xi < xi_sh
         xif_ = vw_ + dlt;
 
@@ -469,10 +460,20 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
             la_sol_tmp.push_back(get_la_front_wall(w_sol_tmp[i]));
         }
 
+        const auto vpUF = v_sol_tmp.back();
+        const auto wpwN = w_sol_tmp.back();
+        
+        // check alp okay
+        // Note: need alp for this so must do root-finding BEFORE determining if alp is good/bad
+        const auto alp = get_alp_wall(vpUF, vw_);
+        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
+        std::cout << "alp=" << alp << ", alp_min=" << alp_minmax[0] << ", alp_max=" << alp_minmax[1] << "\n";
+
+        if (alp < alp_minmax[0]) throw std::invalid_argument("alpha too small for shock");
+        if (alp > alp_minmax[1]) throw std::invalid_argument("alpha too large for shock");
+
         if (mode_ == 0) {
             // fix end-value for enthalpy
-            const auto vpUF = v_sol_tmp.back();
-            const auto alp = get_alp_wall(vpUF, vw_);
             const auto vm = -vw_;
             const auto vp = calc_vp(vm, alp);
             const auto wpwN = w_sol_tmp.back(); // w(xi_w + dlt) = w+/wN
@@ -493,9 +494,8 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
             const auto vmUF = mu(vw_, abs(vm));
             y0_rf.push_back(vmUF);
 
-            const auto vpUF = v_sol_tmp.back();
             const auto vp = mu(vw_, abs(vpUF));
-            const auto wpwN = w_sol_tmp.back();
+            
             const auto wmwN = calc_wm(wpwN, vp, vm);
             y0_rf.push_back(wmwN);
 
