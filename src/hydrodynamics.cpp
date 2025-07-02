@@ -131,10 +131,6 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
 
 // |A_+|^2
 std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof) {
-    /***************************** CLOCK ******************************/
-    const auto ti = std::chrono::high_resolution_clock::now();
-    /******************************************************************/
-
     const auto csq = prof.params().csq();
     const auto [fd_int, l_int] = prof_ints_fl(chi_vals, prof);
     const auto m = chi_vals.size();
@@ -145,12 +141,6 @@ std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfil
         const auto l = l_int[j];
         Apsq[j] = 0.25 * (f*f + csq * l*l);
     }
-
-    /***************************** CLOCK ******************************/
-    const auto tf = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = tf - ti;
-    std::cout << "Timer (Ap_sq): " << duration.count() << " s" << std::endl;
-    /******************************************************************/
 
     return Apsq;
 }
