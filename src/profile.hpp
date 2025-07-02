@@ -114,9 +114,12 @@ class FluidProfile {
     double get_alp_shock(double vpUF, double v1UF, double alphaN) const;
     double v1UF_residual_func(double v1UF, const deriv_func& dydxi);
 
+    double get_la_behind_wall(double w) const;
+    double get_la_front_wall(double w) const;
+
     // put number of integration points in input file? seems bad to hardcode
     std::vector<state_type> solve_profile(int n=100);
-    state_type calc_lambda_vals(state_type w_vals) const;
+    // state_type calc_lambda_vals(state_type w_vals) const;
 
     // testing purposes ONLY
     std::vector<state_type> read(const std::string& filename) const; // read bubble profile from disk
