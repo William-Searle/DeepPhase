@@ -539,16 +539,14 @@ double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
     return adaptive_simpson(outer_integrand, x0, x1, eps / 2.0, max_depth);
 }
 
-// double fast_sin(double x) {
-
-// }
-
+// Im(Si(x))=0 for real x
+// Im(Ci(x))=pi for x<0 (0 otherwise)
 double Si(double x) {
-    auto sin_integrand = [](double t) {
-        return t == 0.0 ? 1.0 : std::sin(t) / t;
-    };
-
     if (x == 0.0) return 0.0;
+
+    auto sin_integrand = [](double t) {
+        return (t == 0.0) ? 1.0 : std::sin(t) / t;
+    };
 
     const int nt = 200; // integration steps
     std::vector<double> t_vals = linspace(0.0, x, nt);
@@ -562,13 +560,8 @@ double Si(double x) {
     return simpson_integrate(t_vals, sin_integrand_vals);
 }
 
-double Ci(double x) { // not working - giving nan
-    // if (x == 0.0) return -INFINITY;
-    if (x == 0.0) return 0.0;
-
-    // auto cos_integrand = [](double t) {
-    //     return t == 0.0 ? 0.0 : (std::cos(t) - 1.0) / t;
-    // };
+double Ci(double x) {
+    if (x == 0.0) return -INFINITY;
 
     auto cos_integrand = [](double t) {
         if (std::abs(t) < 1e-4) return -0.5 * t; // Taylor exp near zero (otherwise simpson integration breaks)
@@ -584,13 +577,7 @@ double Ci(double x) { // not working - giving nan
         cos_integrand_vals[j] = cos_integrand(t);
     }
 
-    const auto res = gamma_euler + std::log(x) + simpson_integrate(t_vals, cos_integrand_vals);
-
-    if (std::isnan(res)) {
-        std::cout << "Ci(x) nan for x=" << x << "\n";
-    }
-
-    return res;
+    return gamma_euler + std::log(abs(x)) + simpson_integrate(t_vals, cos_integrand_vals);
 }
 
 std::pair<double, double> SiCi(double x) {
