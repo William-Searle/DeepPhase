@@ -581,19 +581,19 @@ double Ci(double x) {
 }
 
 std::pair<double, double> SiCi(double x) {
+    if (x == 0.0) return {0.0, -INFINITY};
+
     auto sin_integrand = [](double t) {
-        return t == 0.0 ? 1.0 : std::sin(t) / t;
+        return (t == 0.0) ? 1.0 : std::sin(t) / t;
     };
 
     auto cos_integrand = [](double t) {
-        return t == 0.0 ? 0.0 : (std::cos(t) - 1.0) / t;
+        if (std::abs(t) < 1e-4) return -0.5 * t; // Taylor exp near zero (otherwise simpson integration breaks)
+        return (std::cos(t) - 1.0) / t;
     };
-
-    if (x == 0.0) return {0.0, -INFINITY};
 
     const int nt = 200; // integration steps
     std::vector<double> t_vals = linspace(0.0, x, nt);
-
     std::vector<double> sin_integrand_vals(nt);
     std::vector<double> cos_integrand_vals(nt);
     
@@ -604,7 +604,7 @@ std::pair<double, double> SiCi(double x) {
     }
 
     const auto sin_int = simpson_integrate(t_vals, sin_integrand_vals);
-    const auto cos_int = gamma_euler + std::log(x) + simpson_integrate(t_vals, cos_integrand_vals);
+    const auto cos_int = gamma_euler + std::log(abs(x)) + simpson_integrate(t_vals, cos_integrand_vals);
 
     return {sin_int, cos_int};
 }
