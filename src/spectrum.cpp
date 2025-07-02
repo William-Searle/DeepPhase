@@ -667,6 +667,7 @@ PowerSpec zetaKin(const std::vector<double>& kRs_vals, const Hydrodynamics::Flui
 }
 /***************************/
 
+// not finished
 double prefac(double csq, double T0, double H0, double g0, double gs) {
     // Gamma = w/e = 1+p/e (ratio of enthalpy to energy density)
     const auto Gamma = 1 + csq; // for bag model
