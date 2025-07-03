@@ -257,20 +257,22 @@ int FluidProfile::get_mode(double vw, double cmsq, double alN) const {
     const auto vwsq = vw * vw;
 
     // deflagration
-    if (vwsq < cmsq) return 0;
+    if (vwsq < cmsq) return 0; // deflagration
+    if (vw < vJ_det(alN)) return 1; // hybrid
+    return 2; // detonation
 
     // hybrid
     // don't understand hybrid condition (copied from Xiao's code)
-    const auto fac1 = 1.0 - 3.0 * alN + vwsq * (1.0/cmsq + 3.0 * alN);
-    const auto fac2 = -4.0 * vwsq / cmsq + fac1 * fac1;
-    if (fac1 < 0.0 || fac2 < 0.0) return 1;
+    // const auto fac1 = 1.0 - 3.0 * alN + vwsq * (1.0/cmsq + 3.0 * alN);
+    // const auto fac2 = -4.0 * vwsq / cmsq + fac1 * fac1;
+    // if (fac1 < 0.0 || fac2 < 0.0) return 1;
 
-    // detonation
-    return 2;
+    // // detonation
+    // return 2;
 }
 
 // unused
-double FluidProfile::vJ_det(double alp) {
+double FluidProfile::vJ_det(double alp) const {
     const auto sgn = 1.0; // when is sgn = -1?
     return (1.0 / std::sqrt(3.0)) * (1.0 + sgn * std::sqrt(alp + 3.0 * alp * alp)) / (1.0 + alp);
 }
@@ -459,16 +461,18 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         }
 
         const auto vpUF = v_sol_tmp.back();
+        if (vpUF >= vw_) throw std::invalid_argument("vpUF must be < vw");
+
         const auto wpwN = w_sol_tmp.back();
         
         // check alp okay
         // Note: need alp for this so must do root-finding BEFORE determining if alp is good/bad
         const auto alp = get_alp_wall(vpUF, vw_);
         const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
-        std::cout << "alp=" << alp << ", alp_min=" << alp_minmax[0] << ", alp_max=" << alp_minmax[1] << "\n";
 
-        if (alp < alp_minmax[0]) throw std::invalid_argument("alpha too small for shock");
-        if (alp > alp_minmax[1]) throw std::invalid_argument("alpha too large for shock");
+        if (alp >= alN_) throw std::invalid_argument("alpha_+ must be < alpha_N");
+        if (alp < alp_minmax[0]) throw std::invalid_argument("alpha_+ too small for shock");
+        if (alp > alp_minmax[1]) throw std::invalid_argument("alpha_+ too large for shock");
 
         if (mode_ == 0) {
             // fix end-value for enthalpy

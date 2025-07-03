@@ -101,7 +101,7 @@ class FluidProfile {
     state_type xi_vals_, v_vals_, w_vals_, la_vals_; // xi, v(xi), w(xi), la(x)
 
     int get_mode(double vw, double cmsq, double alN) const;
-    double vJ_det(double alp);
+    double vJ_det(double alp) const;
 
     double calc_vm(double vp, double alpha_p) const;
     double calc_vp(double vm, double alpha_p) const;
