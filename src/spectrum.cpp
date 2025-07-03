@@ -45,7 +45,6 @@ PowerSpec::PowerSpec(const std::vector<double>& k_vals, std::vector<double>& P_v
     }
 
 // Public functions
-
 double PowerSpec::max() const {
     const auto &Pv = P();
     return *std::max_element(Pv.begin(), Pv.end());
@@ -212,6 +211,8 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     // profile.write();
     // profile.plot();
 
+    std::cout << "Constructing kinetic power spectrum...\n";
+
     const auto zk_pRs_spec = zetaKin(pRs_vals, profile);
     const auto zk_pRs_vals = zk_pRs_spec.P(); // store zetaKin(pRs) vals (quicker than calling interpolator)
 
@@ -222,9 +223,9 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     std::cout << "Calculating gravitational wave power spectrum...\n";
 
     // precompute dlt
-    const int nt = 50;
-    const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
-    // const auto delta = dlt_SSM(k_vals, p_vals, z_vals, params);
+    // const int nt = 50;
+    // const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
+    const auto delta = dlt_SSM(k_vals, p_vals, z_vals, params);
 
     const auto nk = kRs_vals.size();
     std::vector<double> GW_P_vals(nk);
@@ -253,9 +254,10 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
                 const auto z_fac = 1.0 - z;
                 const auto z_fac2 = z_fac * z_fac;
 
+                const auto zk_ptRs = (ptRs != 0.0) ? zk_ptRs_interp(ptRs) : 0.0;
+
                 // neccessary to store these? only called once so maybe not
-                const auto zk_ptRs = zk_ptRs_interp(ptRs); // see ptRs_min/max if domain issues arise
-                // const auto zk_ptRs = 1.0;
+                // const auto zk_ptRs = zk_ptRs_interp(ptRs); // see ptRs_min/max if domain issues arise
                 const auto dlta = delta[m][i][j];
 
                 integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs * dlta;
@@ -419,6 +421,24 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
     const auto np = p_vals.size();
     const auto nz = z_vals.size();
 
+    // interpolation function for Si, Ci
+    const auto nx = 500;
+    const auto n = 1000;
+    const auto x_vals = linspace(-1e+5, 1e+5, nx);
+    std::vector<double> Si_vals(nx), Ci_vals(nx);
+
+    // could make this bit faster by moving spline interp and Si(x), Ci(x) 
+    // calculation into one function (collapse loops)
+    #pragma omp parallel for
+    for (int i = 0; i < x_vals.size(); i++) {
+        const auto x = x_vals[i];
+        const auto [Si, Ci] = SiCi(x, n);
+        Si_vals[i] = Si;
+        Ci_vals[i] = Ci;
+    }
+    const auto Si_interp = CubicSpline(x_vals, Si_vals);
+    const auto Ci_interp = CubicSpline(x_vals, Ci_vals);
+
     // reserve memory for integration
     std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
     const std::vector<double> sum_vals = {-1.0, 1.0};
@@ -452,11 +472,13 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
                     // Im(Ci(x))=pi (x<0), 0 (x>0)
                     // Taking difference dCi -> imaginary part cancels since sign of x1, x2 always the same
 
-                    const auto [Si_x1, Ci_x1] = SiCi(x1);
-                    const auto [Si_x2, Ci_x2] = SiCi(x2);
+                    // const auto [Si_x1, Ci_x1] = SiCi(x1, 200);
+                    // const auto [Si_x2, Ci_x2] = SiCi(x2, 200);
+                    // const auto dSi = Si_x1 - Si_x2;
+                    // const auto dCi = Ci_x1 - Ci_x2;
 
-                    const auto dSi = Si_x1 - Si_x2;
-                    const auto dCi = Ci_x1 - Ci_x2;
+                    const auto dSi = Si_interp(x1) - Si_interp(x2);
+                    const auto dCi = Ci_interp(x1) - Ci_interp(x2);
 
                     // dlt_temp[thread_id] += 0.25 * (dCi * dCi + dSi * dSi);
                     dlt_temp += 0.25 * (dCi * dCi + dSi * dSi);
