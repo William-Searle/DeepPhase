@@ -200,7 +200,7 @@ double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
 
 double Si(double x);
 double Ci(double x);
-std::pair<double, double> SiCi(double x);
+std::pair<double, double> SiCi(double x, const size_t n=200);
 
 using state_type = std::vector<double>;
 using deriv_func = std::function<state_type(double, const state_type&)>;

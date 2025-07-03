@@ -16,6 +16,17 @@ TO DO:
 - make vector class for vector arithmetic and include print_vector() function there so i can use vec.print()
 */
 
+// void plot(std::vector<double> x_vals, std::vector<double> y_vals, const std::string& filename) {
+//     namespace plt = matplotlibcpp;
+
+//     plt::figure_size(800, 600);
+//     plt::plot(x_vals, y_vals);
+//     plt::grid(true);
+//     plt::save("../" + filename);
+
+//     return;
+// }
+
 std::vector<double> linspace(double start, double end, std::size_t num) {
     std::vector<double> result;
 
@@ -580,7 +591,7 @@ double Ci(double x) {
     return gamma_euler + std::log(abs(x)) + simpson_integrate(t_vals, cos_integrand_vals);
 }
 
-std::pair<double, double> SiCi(double x) {
+std::pair<double, double> SiCi(double x, const size_t n) {
     if (x == 0.0) return {0.0, -INFINITY};
 
     auto sin_integrand = [](double t) {
@@ -592,12 +603,11 @@ std::pair<double, double> SiCi(double x) {
         return (std::cos(t) - 1.0) / t;
     };
 
-    const int nt = 200; // integration steps
-    std::vector<double> t_vals = linspace(0.0, x, nt);
-    std::vector<double> sin_integrand_vals(nt);
-    std::vector<double> cos_integrand_vals(nt);
+    std::vector<double> t_vals = linspace(0.0, x, n);
+    std::vector<double> sin_integrand_vals(n);
+    std::vector<double> cos_integrand_vals(n);
     
-    for (int j = 0; j < nt; j++) {
+    for (int j = 0; j < n; j++) {
         const auto t = t_vals[j];
         sin_integrand_vals[j] = sin_integrand(t);
         cos_integrand_vals[j] = cos_integrand(t);

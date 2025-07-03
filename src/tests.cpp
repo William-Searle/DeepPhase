@@ -142,62 +142,33 @@ void test_PowerSpec() {
     using std::endl;
     using namespace Spectrum;
 
-    // Scalar tests
-    PowerSpec s1(1.0, 10.0);
-    PowerSpec s2(1.0, 5.0);
+    std::vector<double> k_vals{0.1, 0.2, 0.3};
+    std::vector<double> P_vals{1.0, 2.0, 3.0};
 
-    assert(s1.k() == 1.0);
-    assert(s1.P() == 10.0);
-    assert(s1.max() == 10.0);
-    assert(s1.is_scalar());
-
-    // Scalar arithmetic
-    PowerSpec s3 = s1 + 2.0;
-    assert(s3.P() == 12.0);
-
-    s3 -= 2.0;
-    assert(s3.P() == 10.0);
-
-    PowerSpec s4 = s1 + s2;
-    assert(s4.P() == 15.0);
-
-    // Vector tests
-    std::vector<double> kvec{0.1, 0.2, 0.3};
-    std::vector<double> Pvec{1.0, 2.0, 3.0};
-
-    PowerSpec v1(kvec, Pvec);
-    assert(!v1.is_scalar());
-    assert(v1.kvec().size() == 3);
-    assert(v1.Pvec()[2] == 3.0);
+    PowerSpec v1(k_vals, P_vals);
+    assert(v1.k().size() == 3);
+    assert(v1.P()[2] == 3.0);
     assert(v1.max() == 3.0);
 
     PowerSpec v2 = v1 * 2.0;
-    assert(v2.Pvec()[0] == 2.0);
-    assert(v2.Pvec()[1] == 4.0);
-    assert(v2.Pvec()[2] == 6.0);
+    assert(v2.P()[0] == 2.0);
+    assert(v2.P()[1] == 4.0);
+    assert(v2.P()[2] == 6.0);
 
     PowerSpec v3 = v1 + v1;
-    assert(v3.Pvec()[1] == 4.0);
+    assert(v3.P()[1] == 4.0);
 
     v3 *= 0.5;
-    assert(v3.Pvec()[1] == 2.0);
+    assert(v3.P()[1] == 2.0);
 
     // Error case: mismatched k-vector sizes
     try {
-        std::vector<double> bad_kvec{0.1, 0.2}; // shorter
-        std::vector<double> bad_Pvec{1.0, 2.0};
-        PowerSpec vbad(bad_kvec, Pvec); // size mismatch!
+        std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
+        std::vector<double> bad_P_vals{1.0, 2.0};
+        PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
         assert(false); // Should not reach here
     } catch (const std::invalid_argument &e) {
         cout << "Caught expected size mismatch error: " << e.what() << endl;
-    }
-
-    // Error case: mixing scalar and vector
-    try {
-        PowerSpec bad = s1 + v1;
-        assert(false); // Should not reach here
-    } catch (const std::invalid_argument &e) {
-        cout << "Caught expected scalar/vector mix error: " << e.what() << endl;
     }
 
     cout << "All tests passed successfully!\n";
@@ -355,8 +326,8 @@ void test_Ekin(bool plot) {
     
     if (plot) {
         plt::figure_size(800, 600);
-        plt::loglog(Eks1.kvec(), Eks1.Pvec(), "k-");
-        plt::loglog(Eks2.kvec(), Eks2.Pvec(), "r-");
+        plt::loglog(Eks1.k(), Eks1.P(), "k-");
+        plt::loglog(Eks2.k(), Eks2.P(), "r-");
         plt::xlabel("K=kRs");
         plt::ylabel("Ekin(K)");
         plt::xlim(1e-1, 1e+3);
@@ -383,8 +354,8 @@ void test_GWSpec(bool plot) {
     
     if (plot) {
         plt::figure_size(800, 600);
-        plt::loglog(OmegaGW1.kvec(), OmegaGW1.Pvec(), "k-");
-        plt::loglog(OmegaGW2.kvec(), OmegaGW2.Pvec(), "r-");
+        plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
+        plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
         plt::xlabel("K=kRs");
         plt::ylabel("Omega_GW(K)");
         plt::xlim(1e-3, 1e+3);

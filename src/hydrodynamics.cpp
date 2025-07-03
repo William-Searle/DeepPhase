@@ -19,8 +19,13 @@ TO DO:
 #include <functional>
 #include <chrono>
 #include <omp.h>
+#include <matplotlibcpp.h>
+
+#include <fstream>
 
 #include "profile.hpp"
+
+namespace plt = matplotlibcpp;
 
 namespace Hydrodynamics {
 
@@ -125,7 +130,7 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
             l[j] = simpson_integrate(xi_vals, l_integrand);
         }
     }
-    
+
     return {fd, l}; // {f', l}
 }
 
@@ -139,6 +144,7 @@ std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfil
     for (int j = 0; j < m; j++) {
         const auto f = fd_int[j];
         const auto l = l_int[j];
+
         Apsq[j] = 0.25 * (f*f + csq * l*l);
     }
 
