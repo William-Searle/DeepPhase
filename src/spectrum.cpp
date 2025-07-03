@@ -12,6 +12,9 @@
 #include <chrono>
 // #include <Eigen/Dense>
 
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
+
 #include "maths_ops.hpp"
 #include "PhaseTransition.hpp"
 #include "hydrodynamics.hpp"
@@ -23,7 +26,7 @@ TO DO:
 - update prefac to allow for non-bag model
 - update prefac to do actual calculation of TGW, OmegaK_KK
 - remove instances of std::pow when possible - it is slow
-- change throw exception for P() and k() so that it uses Pvec() and kvec() when wrong one is called
+- change throw exception for P() and k() so that it uses P() and k() when wrong one is called
 - update Ekin to pass in Profile class (or maybe just PTParams?)
 - implement adaptive step-size in Ekin integration (and dlt later too)
 - add write/plot for GWSpec
@@ -34,64 +37,27 @@ namespace Spectrum {
 /***** PowerSpec class *****/
 
 // Define ctors
-PowerSpec::PowerSpec(double k, double P)
-    : data_(Spectrum{k, P}) {}
-
-PowerSpec::PowerSpec(const std::vector<double> &kvec, std::vector<double> &Pvec)
-    : data_(SpectrumVec{kvec, Pvec}) {
-        if (kvec.size() != Pvec.size()) {
+PowerSpec::PowerSpec(const std::vector<double>& k_vals, std::vector<double>& P_vals)
+    : data_(Spectrum{k_vals, P_vals}) {
+        if (k_vals.size() != P_vals.size()) {
             throw std::invalid_argument("PowerSpec: k and P vectors must be the same size!");
         }
     }
 
 // Public functions
-bool PowerSpec::is_scalar() const {
-    return std::holds_alternative<Spectrum>(data_);
-}
-
-double PowerSpec::k() const {
-    if (!is_scalar()) 
-        throw std::runtime_error("PowerSpec: Called k() on vector PowerSpec, use kvec() instead!");
-    return std::get<Spectrum>(data_).first;
-}
-
-double PowerSpec::P() const {
-    if (!is_scalar())
-        throw std::runtime_error("PowerSpec: Called P() on vector PowerSpec, use Pvec() instead!");
-    return std::get<Spectrum>(data_).second;
-}
-
-const std::vector<double>& PowerSpec::kvec() const {
-    if (is_scalar())
-        throw std::runtime_error("PowerSpec: Called kvec() on scalar PowerSpec, use k() instead!");
-    return std::get<SpectrumVec>(data_).first;
-}
-
-const std::vector<double>& PowerSpec::Pvec() const {
-    if (is_scalar())
-        throw std::runtime_error("PowerSpec: Called Pvec() on scalar PowerSpec, use P() instead!");
-    return std::get<SpectrumVec>(data_).second;
-}
 
 double PowerSpec::max() const {
-    if (is_scalar()) {
-        // std::cerr << "Warning: Called max() on scalar PowerSpec. Returning scalar value.\n";
-        return P();
-    }
-    const auto &Pv = Pvec();
+    const auto &Pv = P();
     return *std::max_element(Pv.begin(), Pv.end());
 }
 
 void PowerSpec::write(const std::string& filename) const {
-    // if (typeid(data_).name ) {
-    //     throw std::invalid_argument("Power spectrum is not a vector, cannot write to disk.")
-    // }
     std::cout << "Writing power spectrum to disk... ";
     std::ofstream file("../" + filename);
     file << "k,P\n";
 
-    const auto k_vals = std::get<SpectrumVec>(data_).first;
-    const auto P_vals = std::get<SpectrumVec>(data_).second;
+    const auto k_vals = data_.first;
+    const auto P_vals = data_.second;
     for (size_t i = 0; i < k_vals.size(); ++i) {
         file << k_vals[i] << "," << P_vals[i] << "\n";
     }
@@ -101,11 +67,28 @@ void PowerSpec::write(const std::string& filename) const {
     return;
 }
 
+// void FluidProfile::plot(const std::string& filename) const {
+//     std::cout << "Saving power spectrum plot to disk... ";
+
+//     plt::figure_size(800, 600);
+//     plt::loglog(k(), P(), "k-");
+//     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
+//     plt::xlabel("K=kRs");
+//     plt::ylabel("Omega_GW(K)");
+//     plt::xlim(1e-3, 1e+3);
+//     plt::grid(true);
+//     plt::save("../GW_spectrum.png");
+
+//     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
+//     plt::save("../" + filename);
+
+//     std::cout << "Saved to '" << filename << "'" << std::endl;
+
+//     return;
+// }
+
 CubicSpline<double> PowerSpec::interpolate() const {
-    if (is_scalar()) {
-        throw std::runtime_error("PowerSpec: Cannot interpolate scalar spectrum!");
-    }
-    return CubicSpline(kvec(), Pvec());
+    return CubicSpline(k(), P());
 }
 
 // PowerSpec [op] Scalar arithmetic
@@ -230,16 +213,18 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     // profile.plot();
 
     const auto zk_pRs_spec = zetaKin(pRs_vals, profile);
-    const auto zk_pRs_vals = zk_pRs_spec.Pvec(); // store zetaKin(pRs) vals (quicker than calling interpolator)
+    const auto zk_pRs_vals = zk_pRs_spec.P(); // store zetaKin(pRs) vals (quicker than calling interpolator)
 
     const auto zk_ptRs_spec = zetaKin(ptRs_vals_tmp, profile);    
     const auto zk_ptRs_interp = zk_ptRs_spec.interpolate(); // interpolating function for zetaKin(ptRs)
     /************************************************************/
 
+    std::cout << "Calculating gravitational wave power spectrum...\n";
+
     // precompute dlt
-    // const int nt = 50;
-    // const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
-    const auto delta = dlt_SSM(k_vals, p_vals, z_vals, params);
+    const int nt = 50;
+    const auto delta = dlt(nt, k_vals, p_vals, z_vals, params);
+    // const auto delta = dlt_SSM(k_vals, p_vals, z_vals, params);
 
     const auto nk = kRs_vals.size();
     std::vector<double> GW_P_vals(nk);
@@ -280,6 +265,8 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
         GW_P_vals[m] = simpson_2d_integrate(pRs_vals, z_vals, integrand);
     }
 
+    std::cout << "Gravitational power spectrum constructed!\n";
+
     return PowerSpec(kRs_vals, GW_P_vals);
 }
 /***************************/
@@ -301,7 +288,8 @@ double dtau_fin(double tau_fin, double tau_s) {
 
 // tau_vals is the same for each call of dlt() -> redundance when calling dlt() in a loop since it recalculates tau_m each time
 // best to store dlt as a nk x np x npt tensor to avoid this
-// WARNING: dlt takes in k, NOT K=kRs
+// NOTE: dlt takes in k, NOT K=kRs
+// generic dlt (not just SSM) - very slow!
 std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     /***************************** CLOCK ******************************/
     const auto ti = std::chrono::high_resolution_clock::now();
@@ -416,63 +404,6 @@ std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vecto
     return result;
 }
 
-// adaptive integration (very slow)
-std::vector<std::vector<std::vector<double>>> dlt_adaptive(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
-    /***************************** CLOCK ******************************/
-    const auto ti = std::chrono::high_resolution_clock::now();
-    /******************************************************************/
-
-    const auto cs = std::sqrt(params.csq());
-
-    const auto tau_s = params.tau_s();
-    const auto tau_fin = params.tau_fin();
-
-    const auto nk = k_vals.size();
-    const auto np = p_vals.size();
-    const auto nz = z_vals.size();
-
-    // lambda function for integrand
-    auto integrand = [cs](const double k, const double p, const double pt, double tau1, double tau2) {
-        const auto tau_m = tau2 - tau1;
-
-        const auto ff1 = std::cos(p * cs * tau_m);
-        const auto ff2 = std::cos(pt * cs * tau_m);
-        const auto ff3 = std::cos(k * tau_m);
-
-        return ff1 * ff2 * ff3 / (tau1 * tau2);
-    };
-
-    // reserve memory for integration
-    std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
-    #pragma om parallel
-    {
-        #pragma omp for collapse(3) schedule(dynamic)
-        for (int kk = 0; kk < nk; kk++)
-        for (int pp = 0; pp < np; pp++)
-        for (int zz = 0; zz < nz; zz++) {
-            const auto k = k_vals[kk];
-            const auto p = p_vals[pp];
-            const auto z = z_vals[zz];
-
-            const auto pt = ptilde(k, p, z); // collapsing loops a lot quicker than breaking up ptilde calc so redundancy here is ok!
-
-            auto integrand_temp = [k, p, pt, &integrand](double tau1, double tau2) { // eval integrand at each k,p,z
-                return integrand(k, p, pt, tau1, tau2);
-            };
-
-            result[kk][pp][zz] = adaptive_simpson_2d(integrand_temp, tau_s, tau_fin, tau_s, tau_fin, 1e-4, 5);
-        }
-    }
-
-    /***************************** CLOCK ******************************/
-    const auto tf = std::chrono::high_resolution_clock::now();
-    std::chrono::duration<double> duration = tf - ti;
-    std::cout << "Timer (dlt-adaptive): " << duration.count() << " s" << std::endl;
-    /******************************************************************/
-
-    return result;
-}
-
 // change call to Ci(), Si() to interpolating functions for these integrals (avoids calculating them on the fly and can just use function call)
 std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     /***************************** CLOCK ******************************/
@@ -548,39 +479,6 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
 /***************************/
 
 /*** Kinetic spectrum ***/
-PowerSpec Ekin(double kRs, const Hydrodynamics::FluidProfile& prof) {
-    const auto csq = prof.params().csq(); // better way of doing this?
-    const auto beta = prof.params().beta();
-    const auto Rs = prof.params().Rs();
-    const auto nuc_type = prof.params().nuc_type();
-
-    const auto k = kRs / Rs; // make this better so less * and / in function call
-    const auto fac1 = beta / k;
-    const auto fac2 = k / M_PI;
-    const auto fac3 = fac2 * fac2 / (2.0 * power3(beta * beta * Rs));
-
-    auto lt_dist = Hydrodynamics::lifetime_dist_func(nuc_type);
-
-    // define Ttilde from chi = Ttilde * k / beta (makes calling Apsq simpler)
-    // Ap_sq = inf at 0
-    const auto chi_vals = logspace(1e-2, 100, 100); // bad to hard code?
-    const auto n = chi_vals.size();
-
-    const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, prof);
-
-    std::vector<double> Ttilde_vals(n), integrand(n);
-    for (int i = 0; i < n; i++) {
-        const auto Ttilde = fac1 * chi_vals[i];
-        Ttilde_vals[i] = Ttilde;
-        integrand[i] = fac3 * lt_dist(Ttilde) * power6(Ttilde) * Apsq[i];
-    }
-
-    double P = simpson_integrate(Ttilde_vals, integrand);
-
-    return PowerSpec(k, P);
-}
-
-// takes in K=k*Rs
 PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof) {
     const auto csq = prof.params().csq();
     const auto beta = prof.params().beta();
@@ -625,28 +523,11 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
             for (int i = 0; i < n; i++) {
                 const auto chi = chi_vals[i];
                 integrand[i] = fac2 * lt_dist(fac3 * chi) * power(chi, 6) * Apsq[i];
-                
             }
 
             P_vals[kk] = simpson_integrate(chi_vals, integrand);
         }
     }
-
-    // for (const auto kRs : kRs_vals) {
-    //     const auto kRs_inv = 1.0 / kRs;
-    //     const auto fac2 = fac1 * power(kRs_inv, 5);
-    //     const auto fac3 = beta * Rs * kRs_inv;
-
-    //     std::vector<double> integrand(n);
-    //     for (int i = 0; i < n; i++) {
-    //         const auto chi = chi_vals[i];
-    //         integrand[i] = fac2 * lt_dist(fac3 * chi) * power(chi, 6) * Apsq[i];
-            
-    //     }
-
-    //     const auto P = simpson_integrate(chi_vals, integrand);
-    //     P_vals.push_back(P);
-    // }
 
     return PowerSpec(kRs_vals, P_vals);
 }

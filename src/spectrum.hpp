@@ -31,22 +31,20 @@ namespace Spectrum {
  */
 class PowerSpec {
   public:
-    using Spectrum = std::pair<double, double>;
-    using SpectrumVec = std::pair<std::vector<double>, std::vector<double>>;
+    // using Spectrum = std::pair<double, double>;
+    using Spectrum = std::pair<std::vector<double>, std::vector<double>>;
 
     // ctors - pass in momentum (k) and spectrum (P) since P is calculated differently for kinetic/GW
-    PowerSpec(double k, double P);
+    // PowerSpec(double k, double P);
     PowerSpec(const std::vector<double>& kvec, std::vector<double>& Pvec);
 
-    double k() const; // Momentum
-    const std::vector<double>& kvec() const;
-
-    double P() const; // Power spectrum
-    const std::vector<double>& Pvec() const;
+    const std::vector<double>& k() const { return data_.first; }; // Momentum
+    const std::vector<double>& P() const { return data_.second; }; // Power spectrum
 
     double max() const; // Max value of power spectrum
-    bool is_scalar() const; // Move to private after testing?
-    void write(const std::string& filename) const;
+
+    void write(const std::string& filename="spectrum.csv") const;
+    // void plot(const std::string& filename="spectrum.png") const;
 
     CubicSpline<double> interpolate() const; // generate cubic spline interpolation of P vals
 
@@ -81,7 +79,8 @@ class PowerSpec {
     PowerSpec &operator*=(PowerSpec &spec);
 
   private:
-    std::variant<Spectrum, SpectrumVec> data_;
+    // std::variant<Spectrum, SpectrumVec> data_;
+    Spectrum data_;
 
 };
 #include "spectrum.tpp"
@@ -92,8 +91,6 @@ double ff(double tau_m, double kcs);
 double dtau_fin(double tau_fin, double tau_s);
 
 std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
-std::vector<std::vector<std::vector<double>>> dlt2(const int nt, const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
-std::vector<std::vector<std::vector<double>>> dlt_adaptive(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
 std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params);
 
 /**
@@ -106,17 +103,6 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
  *
  * @return Kinetic power spectrum
  */
-PowerSpec Ekin(double k, double csq, double beta, double Rs, const std::string& nuc_type);
-
-/**
- * @brief Calculates kinetic (velocity) power spectrum
- *
- * @param k Momentum
- * @param params Phase transition parameters
- *
- * @return Kinetic power spectrum
- */
-PowerSpec Ekin(double k, const Hydrodynamics::FluidProfile& prof);
 PowerSpec Ekin(const std::vector<double>& k_vec, const Hydrodynamics::FluidProfile& prof);
 
 /*
