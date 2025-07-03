@@ -107,7 +107,7 @@ void generate_streamplot_data(const PhaseTransition::PTParams& params) {
 
 /****************************** FluidProfile class ******************************/
 // Define ctor
-FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
+FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t n)
     : params_(params),
       cpsq_(params.cpsq()), cmsq_(params.cmsq()),
       vw_(params.vw()), alN_(params.alphaN()),
@@ -143,10 +143,8 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params)
             throw std::invalid_argument("Hydrodynamic mode must be: 0 (deflagration), 1 (hybrid) or 2 (detonation)");
         }
 
-        // calculate fluid profiles v(xi), w(xi), la(xi)     
-        const size_t n = 10000;
+        // calculate fluid profiles v(xi), w(xi), la(xi)
         const auto prof = solve_profile(n);
-        // const auto prof = read("input_profile.csv");
 
         xi_vals_ = prof[0];
         v_vals_ = prof[1];
@@ -551,24 +549,17 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
     
 
     // define start & end points where profile=const (outside integration)
-    const int m = 100;
-    state_type xi_start, xi_end;
-    if (xi0_ < xif_) { // forwards integration
-        xi_start = linspace(0.0, xi0_, m);
-        xi_end = linspace(xif_, 1.0, m);
-    } else { // backwards integration
-        xi_start = linspace(1.0, xi0_, m);
-        xi_end = linspace(xif_, 0.0, m);
-    }
+    const auto xi_start = linspace(0.99, xi0_, n); // backwards integration
+    const auto xi_end = linspace(xif_, 0.01, n);
 
-    const state_type v_start(m, 0.0);
+    const state_type v_start(n, 0.0);
     const state_type v_end = v_start;
 
-    const state_type w_start(m, w_start_val);
-    const state_type w_end(m, w_end_val);
+    const state_type w_start(n, w_start_val);
+    const state_type w_end(n, w_end_val);
 
-    const state_type la_start(m, la_start_val);
-    const state_type la_end(m, la_end_val);
+    const state_type la_start(n, la_start_val);
+    const state_type la_end(n, la_end_val);
 
     state_type xi_sol, v_sol, w_sol, la_sol;
 
@@ -587,13 +578,16 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
     w_sol.insert(w_sol.end(), w_sol_tmp.begin(), w_sol_tmp.end());
     w_sol.insert(w_sol.end(), w_end.begin(), w_end.end());
 
-    // concatenate w(xi) vals
+    // concatenate la(xi) vals
     la_sol.insert(la_sol.end(), la_start.begin(), la_start.end());
     la_sol.insert(la_sol.end(), la_sol_tmp.begin(), la_sol_tmp.end());
     la_sol.insert(la_sol.end(), la_end.begin(), la_end.end());
 
-    // calculate la(xi)
-    // const auto la_sol = calc_lambda_vals(w_sol);
+    // reformat from backwards integration
+    std::reverse(xi_sol.begin(), xi_sol.end());
+    std::reverse(v_sol.begin(), v_sol.end());
+    std::reverse(w_sol.begin(), w_sol.end());
+    std::reverse(la_sol.begin(), la_sol.end());
 
     return {xi_sol, v_sol, w_sol, la_sol};
 }

@@ -68,7 +68,7 @@ using state_type = std::vector<double>;
  */
 class FluidProfile {
   public:
-    FluidProfile(const PhaseTransition::PTParams& params); // ctor
+    FluidProfile(const PhaseTransition::PTParams& params, const size_t n=5000); // ctor
     // write dflt ctor?
 
     // are these needed?
