@@ -253,6 +253,7 @@ std::vector<state_type> FluidProfile::read(const std::string& filename) const {
     return {xi_vals, v_vals, w_vals, la_vals};
 }
 
+// done
 int FluidProfile::get_mode(double vw, double cmsq, double alN) const {
     const auto vwsq = vw * vw;
 
@@ -271,47 +272,70 @@ int FluidProfile::get_mode(double vw, double cmsq, double alN) const {
     // return 2;
 }
 
-// unused
+// generic for Veff
 double FluidProfile::vJ_det(double alp) const {
-    const auto sgn = 1.0; // when is sgn = -1?
-    return (1.0 / std::sqrt(3.0)) * (1.0 + sgn * std::sqrt(alp + 3.0 * alp * alp)) / (1.0 + alp);
+    // const auto sgn = 1.0; // when is sgn = -1?
+    // return (1.0 / std::sqrt(3.0)) * (1.0 + sgn * std::sqrt(alp + 3.0 * alp * alp)) / (1.0 + alp);
+    return calc_vp(std::sqrt(cmsq_), alp); // vJ(alp) = vp(|vm|=cm, alp)
 }
 
-double FluidProfile::calc_vm(double vp, double alp) const { // vm from vp
+// generic for Veff (not sure when to use which sign though)
+double FluidProfile::calc_vp(double vm, double alp) const { // vp(vm,alp) from matching eqs
+    const auto sgn = 1.0;
+    const auto fac1 = 1.0 / (2.0 * (1.0 + alp));
+    const auto fac2 = 1.0 / (3.0 * vm);
+
+    return fac1 * (fac2 + vm + sgn * std::sqrt((fac2 - vm) * (fac2 - vm) + 4.0 * alp * alp + 8.0 * alp / 3.0));
+}
+
+// generic for Veff (not sure when to use which sign though)
+double FluidProfile::calc_vm(double vp, double alp) const { // inverse of vp(vm,alp)
     // sgn=1 for detonation, not sure what condition specifically fixes this though
     // sgn=-1 for deflag/hybrid?
-    // this is for bag model only, generalise for any EoS?
     const auto vp_abs = abs(vp);
     const auto sgn = 1.0;
-    const auto fac = vp_abs * (1.0 + alp) / 2.0 + (1./3. - alp) / (2.0 * vp_abs);
-    return fac + sgn * std::sqrt(fac * fac - 1./3.);
+    const auto fac = (1.0 + alp) * vp_abs + (1.0 - 3.0 * alp) / (3.0 * vp_abs);
+
+    return 0.5 * (fac + sgn * std::sqrt(fac * fac - 4.0 / 3.0));
 }
 
-double FluidProfile::calc_vp(double vm, double alp) const { // vp from vm
-    const auto sgn = 1.0;
-    const auto fac = vm / 2.0 + 1.0 / (6.0 * vm);
-    return (fac + sgn * std::sqrt(fac * fac + alp * alp + (2./3.) * alp - 1./3.)) / (1.0 + alp);
-}
-
+// generic for Veff
+// from matching condition w+*v+*gamma+^2=w-*v-*gamma-^2
+// generic for all EoS and hydrodynamic models using perfect fluid EM tensor
 double FluidProfile::calc_wm(double wp, double vp, double vm) const {
-    // from matching condition w+*v+*gamma+^2=w-*v-*gamma-^2
-    // generic for all EoS and hydrodynamic models using perfect fluid EM tensor
-
     return wp * abs(vp) * (1.0 - vm * vm) / (abs(vm) * (1.0 - vp * vp));
 }
 
-double FluidProfile::calc_w1wN(double xi_sh) const {
+// bag model only
+double FluidProfile::calc_w1wN(double xi_sh) const { // w1/wN
     // alpha_1 w1 = alpha_N wN
-    // This is for bag model only
     const auto xi_sh_sq = xi_sh * xi_sh;
     return (9.0 * xi_sh_sq - 1.0) / (3.0 * (1.0 - xi_sh_sq));
 }
 
 double FluidProfile::xi_shock(double v1UF) const {
-    const auto fac = 0.5 * (1.0 - cpsq_) * v1UF;
-    return fac + std::sqrt(fac * fac + cpsq_);
+    if (model_ == "bag") { // add one for mu nu model too?
+        // const auto fac = 0.5 * (1.0 - cpsq_) * v1UF;
+        // return fac + std::sqrt(fac * fac + cpsq_);
+        const auto fac = v1UF / 3.0;
+        return fac + std::sqrt(fac * fac - 1.0 / 3.0);
+    } else { // generic EoS
+        throw std::runtime_error("Veff support not fully implemented yet");
+
+        // pressure/energy density at shock
+        // p1 = p(T(xi_sh))
+        const auto p1 = 0.0; // behind shock
+        const auto e1 = 0.0;
+
+        const auto p2 = 0.0; // in front of shock
+        const auto e2 = 0.0;
+
+        const auto v2v1 = (p2 - p1) / (e2 - e1); // v2*v1 from matching cond.
+        const auto v2v1_rat = (e1 + p2) / (e2 + p1); // v2/v1
+    }
 }
 
+// generic for Veff
 std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double cmsq) const {
     // same as get_alp_wall but using vp, vm
     const auto cp = std::sqrt(cpsq);
@@ -331,13 +355,14 @@ std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double 
     return {al_min, al_max};
 }
 
+// generic for Veff
+// alpha_+ from wall condition
 double FluidProfile::get_alp_wall(double vpUF, double vw) const {
-    // alpha_+ from wall condition
     return gammaSq(vpUF) * vpUF * (2.0 * vw * vpUF + 1.0 - 3.0 * vw * vw) / (3.0 * vw);
 }
 
+// alpha_+ from shock condition
 double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
-    // alpha_+ from shock condition
     const auto xi_sh = xi_shock(v1UF);
     const auto alpha1 = alN * 3.0 * (1.0 - xi_sh * xi_sh) / (9.0 * xi_sh * xi_sh - 1.0);
     // const auto alpha1 = alN * gammaSq(v1UF) * (3.0 + 5.0 * v1UF - 4.0 * v1UF * std::sqrt(3.0 + v1UF * v1UF)) / 3.0;
@@ -346,7 +371,7 @@ double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
         return 4.0 * gammaSq(v) * mu(xi, v);
     };
 
-    const int n = 100;
+    const int n = 1000;
     const auto v_vals = linspace(vpUF, v1UF, n);
     std::vector<double> integrand_vals(n);
     for (int i = 0; i < integrand_vals.size(); i++) {
@@ -380,11 +405,13 @@ double FluidProfile::v1UF_residual_func(double v1UF, const deriv_func& dydxi) {
     }
 }
 
+// generic for Veff
 double FluidProfile::get_la_behind_wall(double w) const {
     // la(xi) behind bubble wall (detonations)
     return 0.75 * (w - 1.0 - alN_);
 }
 
+// generic for Veff
 double FluidProfile::get_la_front_wall(double w) const {
     // la(xi) in front of bubble wall (deflagrations)
     return 0.75 * (w - 1.0);
