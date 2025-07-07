@@ -274,8 +274,6 @@ int FluidProfile::get_mode(double vw, double cmsq, double alN) const {
 
 // generic for Veff
 double FluidProfile::vJ_det(double alp) const {
-    // const auto sgn = 1.0; // when is sgn = -1?
-    // return (1.0 / std::sqrt(3.0)) * (1.0 + sgn * std::sqrt(alp + 3.0 * alp * alp)) / (1.0 + alp);
     return calc_vp(std::sqrt(cmsq_), alp); // vJ(alp) = vp(|vm|=cm, alp)
 }
 
@@ -314,25 +312,24 @@ double FluidProfile::calc_w1wN(double xi_sh) const { // w1/wN
 }
 
 double FluidProfile::xi_shock(double v1UF) const {
-    if (model_ == "bag") { // add one for mu nu model too?
-        // const auto fac = 0.5 * (1.0 - cpsq_) * v1UF;
-        // return fac + std::sqrt(fac * fac + cpsq_);
+    // if (model_ == "bag") { // add one for mu nu model too?
         const auto fac = v1UF / 3.0;
-        return fac + std::sqrt(fac * fac - 1.0 / 3.0);
-    } else { // generic EoS
-        throw std::runtime_error("Veff support not fully implemented yet");
+        return fac + std::sqrt(fac * fac + 1.0 / 3.0);
 
-        // pressure/energy density at shock
-        // p1 = p(T(xi_sh))
-        const auto p1 = 0.0; // behind shock
-        const auto e1 = 0.0;
+    // } else { // generic EoS
+    //     throw std::runtime_error("Veff support not fully implemented yet");
 
-        const auto p2 = 0.0; // in front of shock
-        const auto e2 = 0.0;
+    //     // pressure/energy density at shock
+    //     // p1 = p(T(xi_sh))
+    //     const auto p1 = 0.0; // behind shock
+    //     const auto e1 = 0.0;
 
-        const auto v2v1 = (p2 - p1) / (e2 - e1); // v2*v1 from matching cond.
-        const auto v2v1_rat = (e1 + p2) / (e2 + p1); // v2/v1
-    }
+    //     const auto p2 = 0.0; // in front of shock
+    //     const auto e2 = 0.0;
+
+    //     const auto v2v1 = (p2 - p1) / (e2 - e1); // v2*v1 from matching cond.
+    //     const auto v2v1_rat = (e1 + p2) / (e2 + p1); // v2/v1
+    // }
 }
 
 // generic for Veff
