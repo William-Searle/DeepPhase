@@ -16,7 +16,7 @@
 namespace plt = matplotlibcpp;
 
 #include "maths_ops.hpp"
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "physics.hpp"

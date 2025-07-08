@@ -1,4 +1,6 @@
 // spectrum.tpp
+#ifndef INCLUDE_SPECTRUM_TPP_H
+#define INCLUDE_SPECTRUM_TPP_H
 
 namespace Spectrum {
 
@@ -36,3 +38,5 @@ inline PowerSpec spec_arith(const PowerSpec& spec1, const PowerSpec& spec2, Op o
 }
 
 } // namespace Spectrum
+
+#endif // INCLUDE_SPECTRUM_TPP_H

@@ -1,5 +1,6 @@
 // hydrodynamics.hpp
-#pragma once
+#ifndef INCLUDE_HYDRODYNAMICS_HPP_H
+#define INCLUDE_HYDRODYNAMICS_HPP_H
 
 /*
 TO DO:
@@ -56,3 +57,5 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
 std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfile& prof);
 
 } // namespace Hydrodynamics
+
+#endif // INCLUDE_HYDRODYNAMICS_HPP_H

@@ -8,7 +8,7 @@
 #include <iomanip>
 
 #include "profile.hpp"
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
 #include "physics.hpp"
 #include "matplotlibcpp.h"

@@ -1,52 +1,55 @@
 cmake_minimum_required(VERSION 3.11)
-project(ISSMGW)
+project(DeepPhase)
+
+set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${CMAKE_SOURCE_DIR}/bin)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
-set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -O2 -march=native")
 
-# omp parallelisation
+add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
+
+# Find packages
 find_package(OpenMP REQUIRED)
-
-# Find GSL
 find_package(GSL REQUIRED)
-include_directories(${GSL_INCLUDE_DIRS})
-
-# Find Python
 find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-include_directories(${Python3_INCLUDE_DIRS})
 
-# Find numpy
+# Get NumPy include path
 execute_process(
     COMMAND ${Python3_EXECUTABLE} -c "import numpy; print(numpy.get_include())"
     OUTPUT_VARIABLE NumPy_INCLUDE_DIR
     OUTPUT_STRIP_TRAILING_WHITESPACE
 )
-include_directories(${NumPy_INCLUDE_DIR})
 message(STATUS "Found NumPy at: ${NumPy_INCLUDE_DIR}")
 
-# Create executable
-include_directories(src)
+# Gather sources
 file(GLOB SOURCES "src/*.cpp")
-add_executable(deepphase ${SOURCES})
+file(GLOB HEADERS "include/*.h")
 
-message(STATUS "Sources: ${SOURCES}")
+# Create a library target
+add_library(DeepPhaseLib STATIC ${SOURCES} ${HEADERS})
 
-# profiler - add dev version so it doesn't always run
-find_library(PROFILER_LIB profiler)
-
-target_link_libraries(deepphase PRIVATE 
-    OpenMP::OpenMP_CXX
-    gsl 
-    gslcblas 
-    m
-    ${Python3_LIBRARIES}
-    ${PROFILER_LIB}
+target_include_directories(DeepPhaseLib PUBLIC
+    ${PROJECT_SOURCE_DIR}/include
+    ${GSL_INCLUDE_DIRS}
+    ${Python3_INCLUDE_DIRS}
+    ${NumPy_INCLUDE_DIR}
 )
-message(STATUS "Successfully linked to dependent libraries")
 
-# setting warning compiler flags
-add_compile_options(-Wall -Wextra -Wpedantic)
+target_link_libraries(DeepPhaseLib PUBLIC
+    OpenMP::OpenMP_CXX
+    GSL::gsl
+    GSL::gslcblas
+    Python3::Python
+)
 
-# specify install rules
-install(TARGETS deepphase DESTINATION bin)
+# Optional profiler linking
+find_library(PROFILER_LIB profiler)
+if(PROFILER_LIB)
+    target_link_libraries(DeepPhaseLib PUBLIC ${PROFILER_LIB})
+else()
+    message(WARNING "Profiler library not found.")
+endif()
+
+# Create the standalone executable using the library
+add_executable(deepphase_exe ${SOURCES})
+target_link_libraries(deepphase_exe PRIVATE DeepPhaseLib)

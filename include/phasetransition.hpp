@@ -1,5 +1,6 @@
 // PhaseTransition.hpp
-#pragma once
+#ifndef INCLUDE_PHASETRANSITION_HPP_H
+#define INCLUDE_PHASETRANSITION_HPP_H
 
 #include <string>
 #include <iostream>
@@ -111,3 +112,5 @@ struct dflt_PTParams {
 };
 
 } // namespace PhaseTransition
+
+#endif // INCLUDE_PHASETRANSITION_HPP_H

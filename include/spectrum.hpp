@@ -1,12 +1,13 @@
 // spectrum.hpp
-#pragma once
+#ifndef INCLUDE_SPECTRUM_HPP_H
+#define INCLUDE_SPECTRUM_HPP_H
 
 #include <vector>
 #include <string>
 #include <variant>
 #include <algorithm>
 
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 #include "maths_ops.hpp"
 
 /*
@@ -140,3 +141,5 @@ double prefac(double csq, double T0, double H0, double g0, double gs);
 double prefac(double csq, const PhaseTransition::Universe &u);
 
 } // namespace Spectrum
+
+#endif // INCLUDE_SPECTRUM_HPP_H

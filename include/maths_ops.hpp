@@ -1,4 +1,6 @@
 // maths_ops.hpp
+#ifndef INCLUDE_MATHS_OPS_HPP_H
+#define INCLUDE_MATHS_OPS_HPP_H
 
 /**
  * @file maths_ops.hpp
@@ -8,7 +10,6 @@
  * Includes a `CubicSpline<T>` class for 1D spline interpolation and utility functions like `linspace`.
  */
 
-#pragma once
 
 #include <vector>
 #include <iostream>
@@ -214,3 +215,5 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
 );
 
 double root_finder(std::function<double(double)> f, double a, double b, double tol = 1e-8, int max_iter = 100);
+
+#endif // INCLUDE_MATHS_OPS_HPP_H

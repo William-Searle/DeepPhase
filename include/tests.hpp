@@ -1,11 +1,12 @@
 // tests.hpp
+#ifndef INCLUDE_TESTS_HPP_H
+#define INCLUDE_TESTS_HPP_H
 
 /**
  * @file tests.hpp
  * @brief Contains test functions and plotting utilities for various components of the codebase.
 */
 
-#pragma once
 
 #include <vector>
 #include <string>
@@ -128,3 +129,5 @@ void plot_func(Func f, double xmin, double xmax, int points=100) {
  * @param filename Path to the data file (CSV or plain text).
  */
 void plot_pts(std::string& filename);
+
+#endif // INCLUDE_TESTS_HPP_H

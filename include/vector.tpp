@@ -1,5 +1,6 @@
 // vector.tpp
-#pragma once
+#ifndef INCLUDE_VECTOR_TPP_H
+#define INCLUDE_VECTOR_TPP_H
 
 #include "maths_ops.hpp"
 
@@ -87,3 +88,5 @@ void vec<T>::print() const {
     for (const auto& val : data_) std::cout << val << " ";
     std::cout << "]\n";
 }
+
+#endif // INCLUDE_VECTOR_TPP_H

@@ -1,5 +1,6 @@
 // physics.hpp
-#pragma once
+#ifndef INCLUDE_PHYSICS_HPP_H
+#define INCLUDE_PHYSICS_HPP_H
 
 /**
  * @file physics.hpp
@@ -22,3 +23,5 @@ double gamma(double v);
  * @return The square of the Lorentz factor γ².
  */
 double gammaSq(double v);
+
+#endif // INCLUDE_PHYSICS_HPP_H

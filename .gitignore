@@ -33,6 +33,7 @@
 
 # Build directory
 /build/
+/bin/
 
 # Output files
 *.csv

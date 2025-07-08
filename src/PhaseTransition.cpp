@@ -7,7 +7,7 @@
 #include <unordered_set>
 #include <cassert>
 
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 
 /*
 TO DO:

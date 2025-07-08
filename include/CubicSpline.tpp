@@ -1,4 +1,5 @@
-#pragma once
+#ifndef INCLUDE_CUBICSPLINE_TPP_H
+#define INCLUDE_CUBICSPLINE_TPP_H
 
 #include <algorithm>
 #include <vector>
@@ -198,3 +199,5 @@ template <typename T>
 CubicSpline<T> operator*(T scalar, const CubicSpline<T>& spline) { // scalar * spline
     return spline * scalar;
 }
+
+#endif // INCLUDE_CUBICSPLINE_TPP_H

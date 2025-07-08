@@ -9,7 +9,7 @@
 
 // modify include list when testing of program finished - currently includes everything
 #include "hydrodynamics.hpp"
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 #include "spectrum.hpp"
 #include "profile.hpp"
 #include "physics.hpp"
@@ -73,7 +73,7 @@ int main() {
     Hydrodynamics::FluidProfile prof1(params1);
     // Hydrodynamics::FluidProfile prof2(params2);
     // prof.write("fluid_prof.csv");
-    prof1.plot("fluid_prof.png");
+    // prof1.plot("fluid_prof.png");
 
     // Ex 2: Construct kinetic power spectrum
     // const auto kRs_vals = logspace(1e-1, 1e+3, 500);

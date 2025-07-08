@@ -1,11 +1,12 @@
 // profile.hpp
-#pragma once
+#ifndef INCLUDE_PROFILE_HPP_H
+#define INCLUDE_PROFILE_HPP_H
 
 #include <vector>
 #include <string>
 
 #include "maths_ops.hpp"
-#include "PhaseTransition.hpp"
+#include "phasetransition.hpp"
 
 /*
 TO DO:
@@ -127,3 +128,5 @@ class FluidProfile {
 };
 
 } // namespace Hydrodynamics
+
+#endif // INCLUDE_PROFILE_HPP_H
