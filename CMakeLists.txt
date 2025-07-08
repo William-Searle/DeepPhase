@@ -49,7 +49,3 @@ if(PROFILER_LIB)
 else()
     message(WARNING "Profiler library not found.")
 endif()
-
-# Create the standalone executable using the library
-add_executable(deepphase_exe ${SOURCES})
-target_link_libraries(deepphase_exe PRIVATE DeepPhaseLib)
