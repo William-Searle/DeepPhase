@@ -707,6 +707,10 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
 }
 
 double root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
+    if (a >= b) {
+        throw std::invalid_argument("root-finding interval [a,b] must have a < b!");
+    }
+
     double fa = f(a);
     double fb = f(b);
 
@@ -734,7 +738,8 @@ double root_finder(std::function<double(double)> f, double a, double b, double t
         // Bisection fallback if needed
         if ((s < (3*a + b)/4 || s > b) || 
             (std::abs(s - b) >= std::abs(b - c)/2) ||
-            (std::abs(b - c) < tol)) {
+            (std::abs(b - c) < tol) || 
+            (!std::isfinite(s))) {
             s = (a + b)/2;
         }
 
@@ -756,4 +761,80 @@ double root_finder(std::function<double(double)> f, double a, double b, double t
     }
 
     throw std::runtime_error("Root finder method did not converge.");
+}
+
+double bisection_root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
+    double fa = f(a);
+    double fb = f(b);
+
+    std::cout << "Starting bisection method...\n";
+
+    if (!std::isfinite(fa) || !std::isfinite(fb)) {
+        throw std::runtime_error("f(a) or f(b) is not finite.");
+    }
+
+    for (int i = 0; i < max_iter; ++i) {
+        double c = 0.5 * (a + b);
+        double fc = f(c);
+
+        if (!std::isfinite(fc)) {
+            // throw std::runtime_error("f(c) is not finite during bisection.");
+        }
+
+        // Check convergence
+        // since interval is not necessarily bracketed, need to remove second condition
+        // otherwise it thinks it successfully found the root once it has gone through 
+        // the entire interval
+        // if (std::abs(fc) < tol || 0.5 * (b - a) < tol) {
+        if (std::abs(fc) < tol) {
+            return c;
+        }
+
+        if (fc > 0.0) {
+        // if (std::abs(fa) < std::abs(fb)) {
+            b = c;
+            fb = fc;
+        } else {
+            a = c;
+            fa = fc;
+        }
+    }
+
+    // std::cout << "Bisection method failed, finding minimum of residual instead.\n";
+    // return find_minimum(f, a, b);
+    throw std::runtime_error("Bisection method did not converge.");
+}
+
+double find_minimum(const std::function<double(double)>& f, double a, double b, double tol, int max_iter) {
+     std::function<double(double)> fsq = [&f] (double x) {
+            const auto val = f(x);
+            return val * val;
+        };
+    const double phi = (1.0 + std::sqrt(5.0)) / 2.0;  // ≈ 1.618
+    const double resphi = 2.0 - phi;                 // ≈ 0.382
+
+    double x1 = b - resphi * (b - a);
+    double x2 = a + resphi * (b - a);
+    double f1 = fsq(x1);
+    double f2 = fsq(x2);
+
+    int iter = 0;
+    while ((b - a) > tol && iter < max_iter) {
+        if (f1 < f2) {
+            b = x2;
+            x2 = x1;
+            f2 = f1;
+            x1 = b - resphi * (b - a);
+            f1 = fsq(x1);
+        } else {
+            a = x1;
+            x1 = x2;
+            f1 = f2;
+            x2 = a + resphi * (b - a);
+            f2 = fsq(x2);
+        }
+        ++iter;
+    }
+
+    return (f1 < f2) ? x1 : x2;
 }
