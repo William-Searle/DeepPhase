@@ -54,7 +54,7 @@ message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
 # Source and header files
 # --------------------------
 file(GLOB SOURCES "src/*.cpp")
-file(GLOB HEADERS "include/*.h")
+file(GLOB HEADERS "include/*.hpp" "include/*.tpp" "include/*.h") 
 
 # --------------------------
 # Library target
