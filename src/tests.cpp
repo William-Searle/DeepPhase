@@ -12,9 +12,9 @@
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
-#include "matplotlibcpp.h"
+// #include "matplotlibcpp.h"
 
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -86,28 +86,28 @@ void test_rk4_coupled_odes() {
         std::cout << "Convergence test failed! (err > " << tol << ")\n";
     }
 
-    std::cout << "Plotting solution and exact result... ";
+    // std::cout << "Plotting solution and exact result... ";
 
-    plt::figure_size(2400, 600);
+    // plt::figure_size(2400, 600);
 
-    plt::subplot2grid(1, 2, 0, 0);
-    plt::plot(x_vals, y1_vals, "k-");
-    plt::plot(x_vals, y1_exact, "r--");
-    plt::xlabel("x");
-    plt::ylabel("y0(x)");
-    plt::grid(true);
+    // plt::subplot2grid(1, 2, 0, 0);
+    // plt::plot(x_vals, y1_vals, "k-");
+    // plt::plot(x_vals, y1_exact, "r--");
+    // plt::xlabel("x");
+    // plt::ylabel("y0(x)");
+    // plt::grid(true);
 
-    plt::subplot2grid(1, 2, 0, 1);
-    plt::plot(x_vals, y2_vals, "k-");
-    plt::plot(x_vals, y2_exact, "r--");
-    plt::xlabel("x");
-    plt::ylabel("y1(x)");
-    plt::grid(true);
+    // plt::subplot2grid(1, 2, 0, 1);
+    // plt::plot(x_vals, y2_vals, "k-");
+    // plt::plot(x_vals, y2_exact, "r--");
+    // plt::xlabel("x");
+    // plt::ylabel("y1(x)");
+    // plt::grid(true);
 
-    const std::string filename = "test_solver.png";
-    plt::save("../" + filename);
+    // const std::string filename = "test_solver.png";
+    // plt::save("../" + filename);
 
-    std::cout << "Saved to file '" << filename << "'\n";
+    // std::cout << "Saved to file '" << filename << "'\n";
 }
 
 void test_rk4_solver() {
@@ -205,7 +205,7 @@ void test_FluidProfile() { // not finished
         // also test if v,w are non-zero behind bubble wall or in front of shock
     }
 
-    profile.plot("fluid_profile_test.png");
+    // profile.plot("fluid_profile_test.png");
 
     std::cout << "FluidProfile test passed.\n";
 }
@@ -247,17 +247,17 @@ void test_interpolator() {
     }
 
     // Plot and save figure
-    plt::figure_size(800, 600);
-    plt::plot(x_dense, y_interp, {{"label", "Spline"}});
-    plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
-    plt::xlabel("x");
-    plt::ylabel("y");
-    plt::title("CubicSpline Interpolation of f(x) = x^3");
-    plt::legend();
-    plt::grid(true);
-    plt::save("interpolator_test.png");
+    // plt::figure_size(800, 600);
+    // plt::plot(x_dense, y_interp, {{"label", "Spline"}});
+    // plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
+    // plt::xlabel("x");
+    // plt::ylabel("y");
+    // plt::title("CubicSpline Interpolation of f(x) = x^3");
+    // plt::legend();
+    // plt::grid(true);
+    // plt::save("interpolator_test.png");
 
-    std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
+    // std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
 }
 
 void test_prof_ints(bool plot) { // test profile integrals f' and l
@@ -267,25 +267,25 @@ void test_prof_ints(bool plot) { // test profile integrals f' and l
     const auto chi_vals = linspace(0.0, 100.0, 200);
     const auto [fd_vals, l_vals] = prof_ints_fl(chi_vals, profile);
 
-    if (plot) {
-        plt::figure_size(1600, 600);
+    // if (plot) {
+    //     plt::figure_size(1600, 600);
 
-        // f'(chi)
-        plt::subplot2grid(1, 2, 0, 0);
-        plt::plot(chi_vals, fd_vals);
-        plt::xlabel("chi");
-        plt::ylabel("f'(chi)");
-        plt::grid(true);
+    //     // f'(chi)
+    //     plt::subplot2grid(1, 2, 0, 0);
+    //     plt::plot(chi_vals, fd_vals);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("f'(chi)");
+    //     plt::grid(true);
 
-        // l(chi)
-        plt::subplot2grid(1, 2, 0, 1);
-        plt::plot(chi_vals, l_vals);
-        plt::xlabel("chi");
-        plt::ylabel("l(chi)");
-        plt::grid(true);
+    //     // l(chi)
+    //     plt::subplot2grid(1, 2, 0, 1);
+    //     plt::plot(chi_vals, l_vals);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("l(chi)");
+    //     plt::grid(true);
 
-        plt::save("fd_l_profile.png");
-    }
+    //     plt::save("fd_l_profile.png");
+    // }
     return;
 }
 
@@ -296,14 +296,14 @@ void test_Apsq(bool plot) { // test Ap_sq
     const auto chi_vals = logspace(1e-3, 100, 1000);
     const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, profile);
 
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::plot(chi_vals, Apsq);
-        plt::xlabel("chi");
-        plt::ylabel("Ap_sq(chi)");
-        plt::grid(true);
-        plt::save("Ap_sq_profile.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::plot(chi_vals, Apsq);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("Ap_sq(chi)");
+    //     plt::grid(true);
+    //     plt::save("Ap_sq_profile.png");
+    // }
     return;
 }
 
@@ -324,17 +324,17 @@ void test_Ekin(bool plot) {
     const auto Ek2 = Spectrum::Ekin(kRs_vals, profile2);
     const auto Eks2 = Spectrum::zetaKin(Ek2);
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(Eks1.k(), Eks1.P(), "k-");
-        plt::loglog(Eks2.k(), Eks2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Ekin(K)");
-        plt::xlim(1e-1, 1e+3);
-        plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("Ekin_spectrum.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::loglog(Eks1.k(), Eks1.P(), "k-");
+    //     plt::loglog(Eks2.k(), Eks2.P(), "r-");
+    //     plt::xlabel("K=kRs");
+    //     plt::ylabel("Ekin(K)");
+    //     plt::xlim(1e-1, 1e+3);
+    //     plt::ylim(1e-4, 1e+0);
+    //     plt::grid(true);
+    //     plt::save("Ekin_spectrum.png");
+    // }
 
     return;
 }
@@ -352,17 +352,17 @@ void test_GWSpec(bool plot) {
     const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
     const auto OmegaGW2 = Spectrum::GWSpec(kRs_vec, params2);
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
-        plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Omega_GW(K)");
-        plt::xlim(1e-3, 1e+3);
-        // plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("GW_spectrum.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
+    //     plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
+    //     plt::xlabel("K=kRs");
+    //     plt::ylabel("Omega_GW(K)");
+    //     plt::xlim(1e-3, 1e+3);
+    //     // plt::ylim(1e-4, 1e+0);
+    //     plt::grid(true);
+    //     plt::save("GW_spectrum.png");
+    // }
 
     return;
 }

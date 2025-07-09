@@ -12,8 +12,8 @@
 #include <chrono>
 // #include <Eigen/Dense>
 
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
+// #include "matplotlibcpp.h"
+// namespace plt = matplotlibcpp;
 
 #include "maths_ops.hpp"
 #include "phasetransition.hpp"

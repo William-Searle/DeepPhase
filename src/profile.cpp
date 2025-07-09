@@ -6,15 +6,16 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <cassert>
 
 #include "profile.hpp"
 #include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
 #include "physics.hpp"
-#include "matplotlibcpp.h"
+// #include "matplotlibcpp.h"
 #include "maths_ops.hpp"
 
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -177,43 +178,6 @@ void FluidProfile::write(const std::string& filename) const {
     file.close();
 
     std::cout << "Fluid profile saved to " << filename << "!\n";
-
-    return;
-}
-
-void FluidProfile::plot(const std::string& filename) const {
-    namespace plt = matplotlibcpp;
-
-    plt::figure_size(2400, 600);
-
-    // v(xi)
-    plt::subplot2grid(1, 3, 0, 0);
-    plt::plot(xi_vals_, v_vals_);
-    plt::xlabel("xi");
-    plt::ylabel("v(xi)");
-    plt::xlim(0.0, 1.0);
-    plt::grid(true);
-
-    // w(xi)
-    plt::subplot2grid(1, 3, 0, 1);
-    plt::plot(xi_vals_, w_vals_);
-    plt::xlabel("xi");
-    plt::ylabel("w(xi)");
-    plt::xlim(0.0, 1.0);
-    plt::grid(true);
-
-    // la(xi)
-    plt::subplot2grid(1, 3, 0, 2);
-    plt::plot(xi_vals_, la_vals_);
-    plt::xlabel("xi");
-    plt::ylabel("la(xi)");
-    plt::xlim(0.0, 1.0);
-    plt::grid(true);
-
-    plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-    plt::save("../" + filename);
-
-    std::cout << "Bubble profile plot saved to '" << filename << "'." << std::endl;
 
     return;
 }

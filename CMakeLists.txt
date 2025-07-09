@@ -40,15 +40,15 @@ add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
 # --------------------------
 find_package(OpenMP REQUIRED)
 find_package(GSL REQUIRED)
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+# find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
 
 # Get NumPy include directory
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-  OUTPUT_VARIABLE NumPy_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
+# execute_process(
+#   COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+#   OUTPUT_VARIABLE NumPy_INCLUDE_DIR
+#   OUTPUT_STRIP_TRAILING_WHITESPACE
+# )
+# message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
 
 # --------------------------
 # Source and header files
@@ -66,8 +66,8 @@ target_include_directories(DeepPhaseLib
     $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
     $<INSTALL_INTERFACE:include>
     ${GSL_INCLUDE_DIRS}
-    ${Python3_INCLUDE_DIRS}
-    ${NumPy_INCLUDE_DIR}
+    # ${Python3_INCLUDE_DIRS}
+    # ${NumPy_INCLUDE_DIR}
 )
 
 target_link_libraries(DeepPhaseLib
@@ -75,7 +75,7 @@ target_link_libraries(DeepPhaseLib
     OpenMP::OpenMP_CXX
     GSL::gsl
     GSL::gslcblas
-    Python3::Python
+    # Python3::Python
 )
 
 # Optional profiler library
