@@ -34,6 +34,7 @@
 # Build directory
 /build/
 /bin/
+/lib/
 
 # Output files
 *.csv
