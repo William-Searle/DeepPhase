@@ -214,5 +214,3 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
 );
 
 double root_finder(std::function<double(double)> f, double a, double b, double tol = 1e-8, int max_iter = 100);
-double bisection_root_finder(std::function<double(double)> f, double a, double b, double tol = 1e-8, int max_iter = 100);
-double find_minimum(const std::function<double(double)>& f, double a, double b, double tol = 1e-6, int max_iter = 100);

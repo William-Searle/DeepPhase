@@ -706,68 +706,14 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
     return {x_vals, y_vals};
 }
 
+// modified bisection method only to be used for functions with exactly one root!
 double root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
-    if (a >= b) {
-        throw std::invalid_argument("root-finding interval [a,b] must have a < b!");
-    }
-
     double fa = f(a);
     double fb = f(b);
 
-    // if (fa * fb >= 0.0) {
-    //     std::cout << "f(a)=" << fa << ", f(b)=" << fb << "\n";
-    //     throw std::runtime_error("Root is not bracketed. Must have f(a)*f(b)>=0.");
-    // }
-
-    double c = a;
-    double fc = fa;
-    double s = b;
-    double fs = fb;
-
-    for (int iter = 0; iter < max_iter; ++iter) {
-        if (fa != fc && fb != fc) {
-            // inverse quadratic interpolation
-            s = (a * fb * fc) / ((fa - fb) * (fa - fc)) +
-                (b * fa * fc) / ((fb - fa) * (fb - fc)) +
-                (c * fa * fb) / ((fc - fa) * (fc - fb));
-        } else {
-            // secant method
-            s = b - fb * (b - a) / (fb - fa);
-        }
-
-        // Bisection fallback if needed
-        if ((s < (3*a + b)/4 || s > b) || 
-            (std::abs(s - b) >= std::abs(b - c)/2) ||
-            (std::abs(b - c) < tol) || 
-            (!std::isfinite(s))) {
-            s = (a + b)/2;
-        }
-
-        fs = f(s);
-        c = b;
-        fc = fb;
-
-        if (fa * fs < 0) {
-            b = s;
-            fb = fs;
-        } else {
-            a = s;
-            fa = fs;
-        }
-
-        if (std::abs(b - a) < tol) {
-            return s;
-        }
+    if (fa * fb > 0.0) {
+        throw std::runtime_error("Bisection method interval not bracketed!");
     }
-
-    throw std::runtime_error("Root finder method did not converge.");
-}
-
-double bisection_root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
-    double fa = f(a);
-    double fb = f(b);
-
-    std::cout << "Starting bisection method...\n";
 
     if (!std::isfinite(fa) || !std::isfinite(fb)) {
         throw std::runtime_error("f(a) or f(b) is not finite.");
@@ -785,13 +731,11 @@ double bisection_root_finder(std::function<double(double)> f, double a, double b
         // since interval is not necessarily bracketed, need to remove second condition
         // otherwise it thinks it successfully found the root once it has gone through 
         // the entire interval
-        // if (std::abs(fc) < tol || 0.5 * (b - a) < tol) {
         if (std::abs(fc) < tol) {
             return c;
         }
 
         if (fc > 0.0) {
-        // if (std::abs(fa) < std::abs(fb)) {
             b = c;
             fb = fc;
         } else {
