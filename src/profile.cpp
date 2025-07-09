@@ -341,7 +341,9 @@ double FluidProfile::xi_shock(double v1UF) const {
 }
 
 double FluidProfile::v1UF_from_shock(double xi_sh) const {
-    if (xi_sh <= std::sqrt(cpsq_) || xi_sh >= 1.0) {
+    if (xi_sh < std::sqrt(cpsq_) || xi_sh > 1.0) {
+        // condition relaxed in if statement since for some vw & alN, xi_shock VERY close to bounds
+        // so root-finder takes xi_sh_min = cp, xi_sh_max = 1
         throw std::invalid_argument("shock must be supersonic and less than speed of light (cp < xi_sh < 1)");
     }
     return (3.0 * xi_sh * xi_sh - 1.0) / (2.0 * xi_sh);
@@ -375,6 +377,8 @@ double FluidProfile::get_alp_wall(double vpUF, double vw) const {
 }
 
 // alpha_+ from shock condition
+// i think small numerical errors in vpUF and v1UF add up a lot here (taking exp probably does this)
+// which is why get_alp_wall slightly different to get_alp_shock - best not to use this
 double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
     const auto xi_sh = xi_shock(v1UF);
     const auto alpha1 = alN * 3.0 * (1.0 - xi_sh * xi_sh) / (9.0 * xi_sh * xi_sh - 1.0);
@@ -396,6 +400,7 @@ double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
     return w1wp_rat * alpha1;
 }
 
+// unused - too numerically unstable & doesn't always converge
 double FluidProfile::alp_residual_func(double xi_sh, const deriv_func& dydxi) const {
     // initial conditions
     const auto xi0 = xi_sh - 0.001;
@@ -421,8 +426,8 @@ double FluidProfile::alp_residual_func(double xi_sh, const deriv_func& dydxi) co
     // std::cout << "alp_wall=" << alp_wall << ", alp_sh=" << alp_shock << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
     
     // try taking log(alp_wall / alp_shock)? has well defined zero for root and is monotonic
-    // return alp_wall - alp_shock;
-    return std::log(std::abs(alp_wall / alp_shock));
+    return alp_wall - alp_shock;
+    // return std::log(std::abs(alp_wall / alp_shock));
 }
 
 double FluidProfile::alN_residual_func(double xi_sh, const deriv_func& dydxi) const {
@@ -444,8 +449,9 @@ double FluidProfile::alN_residual_func(double xi_sh, const deriv_func& dydxi) co
 
     // std::cout << "alN_rat=" << alN_wall / alN_ << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
     
-    return alN_wall - alN_;
-    // return std::log(std::abs(alN_wall / alN_));
+    // these seem to both work equally as well (still doesn't work for some small vw)
+    // return alN_wall - alN_;
+    return std::log(std::abs(alN_wall / alN_));
 }
 
 
@@ -458,31 +464,16 @@ double FluidProfile::get_la_behind_wall(double w) const {
 double FluidProfile::find_shock(const deriv_func& dydxi) const {
     // Root-finding algorithm for initial condition v0 = v(xi_sh) = v1UF
 
-    // residual function f(xi_sh) = alp_wall - alp_shock
+    // residual function f(xi_sh) = alN_calc - alN_actual
     std::function<double(double)> residual = [this, &dydxi] (double xi_sh) {
-        // return alp_residual_func(xi_sh, dydxi);
         return alN_residual_func(xi_sh, dydxi);
     };
 
     // cp < xi_sh < 1 (shock must be supersonic and less than speed of light)
-    // use xi_sh rather than v1UF for root finding since it is more tightly bound (better convergence)
-    const double xi_sh_min = std::sqrt(cpsq_) + 0.001;
-    const double xi_sh_max = 1.0 - 0.001;
+    const double xi_sh_min = std::sqrt(cpsq_);
+    const double xi_sh_max = 1.0 - 1e-5; // need to make this closer to 1 for extreme case of hybrids with xi_sh very close to 1
 
-    const auto test_xis = linspace(xi_sh_min, xi_sh_max, 100);
-    std::vector<double> test_res;
-    for (const auto xi_sh : test_xis) {
-        test_res.push_back(residual(xi_sh));
-    }
-
-    plt::figure_size(800, 600);
-    plt::plot(test_xis, test_res, "k-");
-    plt::xlim(xi_sh_min-0.01, xi_sh_max+0.01);
-    // plt::ylim(-1.0, 1.0);
-    plt::grid(true);
-    plt::save("../residual.png");
-
-    return bisection_root_finder(residual, xi_sh_min, xi_sh_max);
+    return root_finder(residual, xi_sh_min, xi_sh_max);
 }
 
 // generic for Veff
@@ -567,8 +558,8 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         if (alp > alp_minmax[1]) throw std::invalid_argument("alpha_+ too large for shock");
 
         // fail safe for root-finding method
-        const auto alp_sh = get_alp_shock(vpUF, v1UF, alN_);
-        std::cout << "alp_wall=" << alp << ", alp_sh=" << alp_sh << "\n";
+        // const auto alp_sh = get_alp_shock(vpUF, v1UF, alN_);
+        // std::cout << "alp_wall=" << alp << ", alp_sh=" << alp_sh << "\n";
         // if (std::abs(alp - alp_sh) > 1e-6) throw std::runtime_error("alp_wall != alp_shock");
 
         if (mode_ == 0) {
