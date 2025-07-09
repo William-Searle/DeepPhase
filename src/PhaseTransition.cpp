@@ -74,6 +74,14 @@ PTParams::PTParams(double vw, double alpha, double beta, double dtau, double wN,
       vcj_(), cpsq_(), cmsq_(),
       universe_(un)
     {
+      // check vw
+      if (vw < 0.0 ) {
+        std::cout << "Warning: vw < 0. Taking |vw| as input instead.";
+        vw_ = std::abs(vw);
+      } else if (vw == 0.0 || vw >= 1.0) {
+        throw std::invalid_argument("Unphysical wall velocity passed into PTParams. Must have 0 < vw < 1.");
+      }
+      
       // defaults to bag model if input model is not in valid_models
       // write something that indicates other ctor should be called for Veff
       static const std::unordered_set<const char*> valid_models = {"bag"};//, "improved bag"};
