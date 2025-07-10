@@ -175,3 +175,8 @@ install(FILES
   "${CMAKE_CURRENT_BINARY_DIR}/DeepPhaseConfigVersion.cmake"
   DESTINATION ${CMAKE_INSTALL_LIBDIR}/cmake/DeepPhase
 )
+
+# --------------------------
+# unit tests
+# --------------------------
+add_subdirectory(unit_tests)
