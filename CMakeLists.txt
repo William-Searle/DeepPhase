@@ -60,6 +60,7 @@ file(GLOB HEADERS "include/*.hpp" "include/*.tpp" "include/*.h")
 # Library target
 # --------------------------
 add_library(DeepPhaseLib STATIC ${SOURCES} ${HEADERS})
+add_library(DeepPhase::DeepPhaseLib ALIAS DeepPhaseLib)
 
 target_include_directories(DeepPhaseLib
   PUBLIC
