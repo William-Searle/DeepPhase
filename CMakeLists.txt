@@ -33,12 +33,10 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-option(ENABLE_MATPLOTLIB "Enable Matploblib support" OFF)
-option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" OFF) # Default to OFF to avoid warnings in production builds
-
 # --------------------------
 # Compiler Warnings
 # --------------------------
+option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" OFF) # Default to OFF to avoid warnings in production builds
 if(ENABLE_COMPILER_WARNINGS)
   add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
 endif(ENABLE_COMPILER_WARNINGS)
@@ -67,6 +65,17 @@ set(HEADERS
   include/tests.hpp
   include/vector.tpp
 )
+
+# --------------------------
+# Check for matplotlibcpp header
+# --------------------------
+if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/matplotlibcpp.h")
+  set(ENABLE_MATPLOTLIB ON)
+  list(APPEND HEADERS include/matplotlibcpp.h)
+else()
+  set(ENABLE_MATPLOTLIB OFF)
+  message(STATUS "Matplotlib header not found. ENABLE_MATPLOTLIB is OFF.")
+endif()
 
 # --------------------------
 # Library target
