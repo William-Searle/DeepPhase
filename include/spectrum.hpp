@@ -45,7 +45,10 @@ class PowerSpec {
     double max() const; // Max value of power spectrum
 
     void write(const std::string& filename="spectrum.csv") const;
-    // void plot(const std::string& filename="spectrum.png") const;
+
+    #ifdef ENABLE_MATPLOTLIB
+    void plot(const std::string& filename="spectrum.png") const;
+    #endif
 
     CubicSpline<double> interpolate() const; // generate cubic spline interpolation of P vals
 

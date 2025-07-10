@@ -6,15 +6,13 @@
 #include <string>
 #include <fstream>
 #include <iomanip>
+#include <cassert>
 
 #include "profile.hpp"
 #include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
 #include "physics.hpp"
-#include "matplotlibcpp.h"
 #include "maths_ops.hpp"
-
-namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -181,6 +179,9 @@ void FluidProfile::write(const std::string& filename) const {
     return;
 }
 
+#ifdef ENABLE_MATPLOTLIB
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
 void FluidProfile::plot(const std::string& filename) const {
     namespace plt = matplotlibcpp;
 
@@ -217,6 +218,8 @@ void FluidProfile::plot(const std::string& filename) const {
 
     return;
 }
+#endif
+
 
 // Private functions
 std::vector<state_type> FluidProfile::read(const std::string& filename) const {

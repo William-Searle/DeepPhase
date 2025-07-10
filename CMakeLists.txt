@@ -33,52 +33,91 @@ set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
-add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
+option(ENABLE_MATPLOTLIB "Enable Matploblib support" OFF)
+option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" OFF) # Default to OFF to avoid warnings in production builds
+
+# --------------------------
+# Compiler Warnings
+# --------------------------
+if(ENABLE_COMPILER_WARNINGS)
+  add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
+endif(ENABLE_COMPILER_WARNINGS)
 
 # --------------------------
 # Dependencies
 # --------------------------
 find_package(OpenMP REQUIRED)
 find_package(GSL REQUIRED)
-find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
-
-# Get NumPy include directory
-execute_process(
-  COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
-  OUTPUT_VARIABLE NumPy_INCLUDE_DIR
-  OUTPUT_STRIP_TRAILING_WHITESPACE
-)
-message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
 
 # --------------------------
 # Source and header files
 # --------------------------
 file(GLOB SOURCES "src/*.cpp")
-file(GLOB HEADERS "include/*.hpp" "include/*.tpp" "include/*.h") 
+set(HEADERS 
+  include/constants.hpp
+  include/CubicSpline.tpp
+  include/deepphase.hpp
+  include/hydrodynamics.hpp
+  include/maths_ops.hpp
+  include/phasetransition.hpp
+  include/physics.hpp
+  include/profile.hpp
+  include/spectrum.hpp
+  include/spectrum.tpp
+  include/tests.hpp
+  include/vector.tpp
+)
 
 # --------------------------
 # Library target
 # --------------------------
 add_library(DeepPhaseLib STATIC ${SOURCES} ${HEADERS})
+add_library(DeepPhase::DeepPhaseLib ALIAS DeepPhaseLib)
 
 target_include_directories(DeepPhaseLib
   PUBLIC
-    $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
-    $<INSTALL_INTERFACE:include>
-    ${GSL_INCLUDE_DIRS}
-    ${Python3_INCLUDE_DIRS}
-    ${NumPy_INCLUDE_DIR}
+  $<BUILD_INTERFACE:${PROJECT_SOURCE_DIR}/include>
+  $<INSTALL_INTERFACE:${CMAKE_INSTALL_INCLUDEDIR}/DeepPhase>
+  ${GSL_INCLUDE_DIRS}
 )
 
 target_link_libraries(DeepPhaseLib
   PUBLIC
-    OpenMP::OpenMP_CXX
-    GSL::gsl
-    GSL::gslcblas
-    Python3::Python
+  OpenMP::OpenMP_CXX
+  GSL::gsl
+  GSL::gslcblas
 )
 
+# --------------------------
+# Optional Matplotlib (Python/Numpy) integration
+# --------------------------
+if(ENABLE_MATPLOTLIB)
+  find_package(Python3 COMPONENTS Interpreter Development REQUIRED)
+
+  execute_process(
+    COMMAND "${Python3_EXECUTABLE}" -c "import numpy; print(numpy.get_include())"
+    OUTPUT_VARIABLE NumPy_INCLUDE_DIR
+    OUTPUT_STRIP_TRAILING_WHITESPACE
+  )
+  message(STATUS "Found NumPy include directory: ${NumPy_INCLUDE_DIR}")
+
+  target_include_directories(DeepPhaseLib
+    PUBLIC
+      ${Python3_INCLUDE_DIRS}
+      ${NumPy_INCLUDE_DIR}
+  )
+
+  target_link_libraries(DeepPhaseLib
+    PUBLIC
+      Python3::Python
+  )
+
+  target_compile_definitions(DeepPhaseLib PUBLIC ENABLE_MATPLOTLIB)
+endif()
+
+# --------------------------
 # Optional profiler library
+# --------------------------
 find_library(PROFILER_LIB profiler)
 if(PROFILER_LIB)
   target_link_libraries(DeepPhaseLib PUBLIC ${PROFILER_LIB})
@@ -97,7 +136,7 @@ install(TARGETS DeepPhaseLib
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/DeepPhase)
 
 install(EXPORT DeepPhaseTargets
   FILE DeepPhaseTargets.cmake

@@ -12,9 +12,6 @@
 #include <chrono>
 // #include <Eigen/Dense>
 
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
-
 #include "maths_ops.hpp"
 #include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
@@ -66,25 +63,29 @@ void PowerSpec::write(const std::string& filename) const {
     return;
 }
 
-// void FluidProfile::plot(const std::string& filename) const {
-//     std::cout << "Saving power spectrum plot to disk... ";
+#ifdef ENABLE_MATPLOTLIB
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
+void FluidProfile::plot(const std::string& filename) const {
+    std::cout << "Saving power spectrum plot to disk... ";
 
-//     plt::figure_size(800, 600);
-//     plt::loglog(k(), P(), "k-");
-//     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
-//     plt::xlabel("K=kRs");
-//     plt::ylabel("Omega_GW(K)");
-//     plt::xlim(1e-3, 1e+3);
-//     plt::grid(true);
-//     plt::save("../GW_spectrum.png");
+    plt::figure_size(800, 600);
+    plt::loglog(k(), P(), "k-");
+    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
+    plt::xlabel("K=kRs");
+    plt::ylabel("Omega_GW(K)");
+    plt::xlim(1e-3, 1e+3);
+    plt::grid(true);
+    plt::save("../GW_spectrum.png");
 
-//     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-//     plt::save("../" + filename);
+    plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
+    plt::save("../" + filename);
 
-//     std::cout << "Saved to '" << filename << "'" << std::endl;
+    std::cout << "Saved to '" << filename << "'" << std::endl;
 
-//     return;
-// }
+    return;
+}
+#endif
 
 CubicSpline<double> PowerSpec::interpolate() const {
     return CubicSpline(k(), P());

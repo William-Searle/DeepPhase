@@ -19,13 +19,13 @@ TO DO:
 #include <functional>
 #include <chrono>
 #include <omp.h>
-#include <matplotlibcpp.h>
+// #include <matplotlibcpp.h>
 
 #include <fstream>
 
 #include "profile.hpp"
 
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
 namespace Hydrodynamics {
 
