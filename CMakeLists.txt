@@ -98,7 +98,7 @@ install(TARGETS DeepPhaseLib
   INCLUDES DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}
 )
 
-install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR})
+install(DIRECTORY include/ DESTINATION ${CMAKE_INSTALL_INCLUDEDIR}/DeepPhase)
 
 install(EXPORT DeepPhaseTargets
   FILE DeepPhaseTargets.cmake
