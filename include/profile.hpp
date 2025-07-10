@@ -85,7 +85,10 @@ class FluidProfile {
     state_type la_vals() const { return la_vals_; }; // la(xi)
 
     void write(const std::string& filename = "bubble_prof.csv") const; // write bubble profile to disk
-    // void plot(const std::string& filename = "bubble_prof.png") const; // Plots bubble profiles
+    
+    #ifdef ENABLE_MATPLOTLIB
+    void plot(const std::string& filename = "bubble_prof.png") const; // Plots bubble profiles
+    #endif
 
   private:
     const PhaseTransition::PTParams params_; // local copy of PT parameters
