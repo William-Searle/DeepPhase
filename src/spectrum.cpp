@@ -364,7 +364,6 @@ std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vecto
     return result;
 }
 
-// change call to Ci(), Si() to interpolating functions for these integrals (avoids calculating them on the fly and can just use function call)
 std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     /***************************** CLOCK ******************************/
     const auto ti = std::chrono::high_resolution_clock::now();
@@ -380,20 +379,24 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
     const auto nz = z_vals.size();
 
     // interpolation function for Si, Ci
-    const auto nx = 500;
-    const auto n = 1000;
-    const auto x_vals = linspace(-1e+5, 1e+5, nx);
-    std::vector<double> Si_vals(nx), Ci_vals(nx);
+    // const auto n = 10000;
+    // const auto x_vals = linspace(-1e+5, 1e+5, n); // better way for choosing bounds here
+    // std::vector<double> Si_vals(n), Ci_vals(n);
 
     // could make this bit faster by moving spline interp and Si(x), Ci(x) 
     // calculation into one function (collapse loops)
-    #pragma omp parallel for
-    for (int i = 0; i < x_vals.size(); i++) {
-        const auto x = x_vals[i];
-        const auto [Si, Ci] = SiCi(x, n);
-        Si_vals[i] = Si;
-        Ci_vals[i] = Ci;
-    }
+    // #pragma omp parallel for
+    // for (int i = 0; i < x_vals.size(); i++) {
+    //     const auto x = x_vals[i];
+    //     const auto [Si, Ci] = SiCi(x, n);
+    //     Si_vals[i] = Si;
+    //     Ci_vals[i] = Ci;
+    // }
+
+    // temporary fix for Si(x), Ci(x)
+    std::vector<double> x_vals, Si_vals, Ci_vals;
+    read_sici_csv("../sici_table.csv", x_vals, Si_vals, Ci_vals);
+
     const auto Si_interp = CubicSpline(x_vals, Si_vals);
     const auto Ci_interp = CubicSpline(x_vals, Ci_vals);
 
@@ -401,14 +404,14 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
     std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
     const std::vector<double> sum_vals = {-1.0, 1.0};
 
-    #pragma omp parallel
-    {
-        const auto num_threads = omp_get_num_threads();
-        const auto thread_id = omp_get_thread_num();
+    // #pragma omp parallel
+    // {
+    //     const auto num_threads = omp_get_num_threads();
+    //     const auto thread_id = omp_get_thread_num();
 
         // std::vector<double> dlt_temp(num_threads, 0.0);
 
-        #pragma omp for collapse(3) schedule(dynamic)
+        // #pragma omp for collapse(3) schedule(dynamic)
         for (int kk = 0; kk < nk; kk++)
         for (int pp = 0; pp < np; pp++)
         for (int zz = 0; zz < nz; zz++) {
@@ -418,6 +421,8 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
 
             const auto pt = ptilde(k, p, z);
             auto dlt_temp = 0.0;
+
+            std::cout << "k,p,z=" << k_vals[kk] << "," << p_vals[pp] << "," << z_vals[zz] << "\n";
 
             for (const auto m : sum_vals) { // fill pmn, dlt
                 const auto pmn_1 = (p + m * pt) * cs;
@@ -438,15 +443,21 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
                     const auto dSi = Si_interp(x1) - Si_interp(x2);
                     const auto dCi = Ci_interp(x1) - Ci_interp(x2);
 
+                    // std::cout << "(m,n)=(" << m << "," << n << ")\n"
+                    //           << "x1=" << x1 << ", x2=" << x2 << "\n"
+                    //           << "dSi1=" << Si_interp(x1) << ", dSi2=" << Si_interp(x2) << ", dCi1=" << Ci_interp(x1) << ", dCi2=" << Ci_interp(x2) << "\n";
+
                     // dlt_temp[thread_id] += 0.25 * (dCi * dCi + dSi * dSi);
                     dlt_temp += 0.25 * (dCi * dCi + dSi * dSi);
                 }
             }
 
+            std::cout << "\n";
+
             // result[kk][pp][zz] = dlt_temp[thread_id];
             result[kk][pp][zz] = dlt_temp;
         }
-    }
+    // }
 
     /***************************** CLOCK ******************************/
     const auto tf = std::chrono::high_resolution_clock::now();

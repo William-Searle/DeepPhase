@@ -15,7 +15,6 @@ TO DO:
 
 #include <cmath>
 #include <complex>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <functional>
 #include <chrono>
 #include <omp.h>

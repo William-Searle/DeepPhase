@@ -114,6 +114,8 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
       mode_(),
       xi0_(), xif_(),
       y0_(),
+      alp_min_(std::numeric_limits<double>::quiet_NaN()), 
+      alp_max_(std::numeric_limits<double>::quiet_NaN()),
       xi_vals_(), v_vals_(), w_vals_(), la_vals_()
     {
         /********************** Notation for fluid parameters **********************/
@@ -130,13 +132,27 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
         /*   As above, but ending with 'UF'                                        */
         /***************************************************************************/
 
-        // check bad alN
         if (alN_ <= 0.0) {
-            throw std::invalid_argument("alN must be >= 0");
+            throw std::invalid_argument("alN must be > 0");
         }
 
         // define hydrodynamic mode
         mode_ = get_mode(vw_, cmsq_, alN_);
+
+        // check alN large enough for shock (deflag/hybrid only)
+        if (mode_ == 0 || mode_ == 1) {
+            const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
+            alp_min_ = alp_minmax[0];
+            alp_max_ = alp_minmax[1];
+
+            // std::cout << "alp_min=" << alp_min_ << ", alp_max=" << alp_max_ << "\n";
+
+            // alN > alp > alp_min (can't properly constrain from above since we need alp)
+            if (alN_ <= alp_min_) throw std::invalid_argument("alN too small for shock!");
+            // if (alN_ > alp_max_) {
+            //     std::cout << "Warning: alN > alp_max\n";
+            // }
+        }
 
         // need this?
         if (mode_ < 0 || mode_ > 2) {
@@ -144,7 +160,8 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
         }
 
         // calculate fluid profiles v(xi), w(xi), la(xi)
-        const auto prof = solve_profile(n);
+        // const auto prof = solve_profile(n);
+        const auto prof = read("../input_profile_def.csv");
 
         xi_vals_ = prof[0];
         v_vals_ = prof[1];
@@ -168,7 +185,7 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
 void FluidProfile::write(const std::string& filename) const {
     std::cout << "Writing fluid profile to disk... ";
 
-    std::ofstream file("../" + filename);
+    std::ofstream file(filename);
     file << "xi,v,w,la\n";
 
     for (size_t i = 0; i < xi_vals_.size(); ++i) {
@@ -211,7 +228,7 @@ void FluidProfile::plot(const std::string& filename) const {
     plt::grid(true);
 
     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-    plt::save("../" + filename);
+    plt::save(filename);
 
     std::cout << "Bubble profile plot saved to '" << filename << "'." << std::endl;
 
@@ -222,7 +239,7 @@ void FluidProfile::plot(const std::string& filename) const {
 std::vector<state_type> FluidProfile::read(const std::string& filename) const {
     std::cout << "Warning: Read fluid profile does not check PT parameters of input file. Manual entry of PT parameters required!\n";
 
-    std::ifstream file("../" + filename);
+    std::ifstream file(filename);
     if (!file) {
         throw std::runtime_error("Could not open file " + filename);
     }
@@ -346,6 +363,8 @@ double FluidProfile::v1UF_from_shock(double xi_sh) const {
         // so root-finder takes xi_sh_min = cp, xi_sh_max = 1
         throw std::invalid_argument("shock must be supersonic and less than speed of light (cp < xi_sh < 1)");
     }
+
+    if (xi_sh == std::sqrt(cpsq_)) return 1e-10; // avoid numerical precision errors
     return (3.0 * xi_sh * xi_sh - 1.0) / (2.0 * xi_sh);
 }
 
@@ -355,9 +374,9 @@ std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double 
     // same as get_alp_wall but using vp, vm
     const auto cp = std::sqrt(cpsq);
 
-    const auto vm = (mode_ == 0) ? vw : cp; // |vm|=vw (deflag), cp (hybrid)
+    const auto vm = std::min(cp, vw); // vw for deflag (vw < cm), cm for hybrid (cp < vw)
     const auto vp_min = 0.0;
-    const auto vp_max = std::min(cp, vw); // vw for deflag (vw < cp), cp for hybrid (cp < vw)
+    const auto vp_max = vm; // |v+| < |v-|
     
 
     auto get_alp = [] (double vp, double vm) {
@@ -447,11 +466,10 @@ double FluidProfile::alN_residual_func(double xi_sh, const deriv_func& dydxi) co
     // calc alpha_N from wall constraint
     const auto alN_wall = wpwN * get_alp_wall(vpUF, vw_);
 
-    // std::cout << "alN_rat=" << alN_wall / alN_ << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
+    // std::cout << "log(alN_rat)=" << std::log(std::abs(alN_wall / alN_)) << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
     
-    // these seem to both work equally as well (still doesn't work for some small vw)
     // return alN_wall - alN_;
-    return std::log(std::abs(alN_wall / alN_));
+    return std::log(std::abs(alN_wall / alN_)); // doesn't always work for some vw, alN
 }
 
 
@@ -470,10 +488,30 @@ double FluidProfile::find_shock(const deriv_func& dydxi) const {
     };
 
     // cp < xi_sh < 1 (shock must be supersonic and less than speed of light)
-    const double xi_sh_min = std::sqrt(cpsq_);
+    const double xi_sh_min = std::max(std::sqrt(cpsq_), vw_); // xi_sh > cp > xi_w (deflag), xi_sh > xi_w > cp (hybrid)
     const double xi_sh_max = 1.0 - 1e-5; // need to make this closer to 1 for extreme case of hybrids with xi_sh very close to 1
 
-    return root_finder(residual, xi_sh_min, xi_sh_max);
+    // const auto xi_sh_vals = linspace(xi_sh_min, xi_sh_max, 500);
+    // const auto xi_sh_vals = linspace(xi_sh_min, xi_sh_min + 0.03, 500);
+    // std::vector<double> res_vals;
+    // for (int i = 0; i < xi_sh_vals.size(); i++) {
+    //     const auto val = residual(xi_sh_vals[i]);
+    //     res_vals.push_back(val);
+    //     // if (val < 0.0) {
+    //     //     std::cout << "res<0 for xi_sh[" << i << "]=" << xi_sh_vals[i] << "\n";
+    //     // }
+    // }
+
+    // plt::figure_size(800, 600);
+    // plt::plot(xi_sh_vals, res_vals, "k-");
+    // // plt::xlim(xi_sh_min - 0.01, xi_sh_max + 0.01);
+    // plt::xlim(xi_sh_min - 0.01, xi_sh_min + 0.04);
+    // // plt::ylim(-1.0, 1.0);
+    // plt::grid(true);
+    // plt::save("../residual.png");
+
+    return root_finder(residual, xi_sh_min, xi_sh_max, 1e-7, 100);
+    // return find_smallest_root(residual, xi_sh_min, xi_sh_max); // very slow
 }
 
 // generic for Veff
@@ -531,6 +569,8 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         const auto w1wN = calc_w1wN(xi0_);
         y0_.push_back(w1wN);
 
+        // std::cout << "v1UF=" << v1UF << ", w1wN=" << w1wN << "\n";
+
         // solver
         const auto sol = rk4_solver(dydxi, xi0_, xif_, y0_, n);
         xi_sol_tmp = sol.first;
@@ -551,16 +591,13 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         // check alp okay
         // Note: need alp for this so must do root-finding BEFORE determining if alp is good/bad
         const auto alp = get_alp_wall(vpUF, vw_);
-        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
+
+        std::cout << "alp=" << alp << ", alp_min=" << alp_min_ << ", alp_max=" << alp_max_ << ", alN=" << alN_ << "\n";
+        std::cout << std::setprecision(10) << "xi_sh=" << xi_sh << "\n";
         
         if (alp >= alN_) throw std::invalid_argument("alpha_+ must be < alpha_N");
-        if (alp < alp_minmax[0]) throw std::invalid_argument("alpha_+ too small for shock");
-        if (alp > alp_minmax[1]) throw std::invalid_argument("alpha_+ too large for shock");
-
-        // fail safe for root-finding method
-        // const auto alp_sh = get_alp_shock(vpUF, v1UF, alN_);
-        // std::cout << "alp_wall=" << alp << ", alp_sh=" << alp_sh << "\n";
-        // if (std::abs(alp - alp_sh) > 1e-6) throw std::runtime_error("alp_wall != alp_shock");
+        if (alp < alp_min_) throw std::invalid_argument("alpha_+ too small for shock");
+        if (alp > alp_max_) throw std::invalid_argument("alpha_+ too large for shock");
 
         if (mode_ == 0) {
             // fix end-value for enthalpy

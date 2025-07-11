@@ -89,6 +89,7 @@ class FluidProfile {
   private:
     const PhaseTransition::PTParams params_; // local copy of PT parameters
     const double cpsq_, cmsq_, vw_, alN_;
+    double alp_min_, alp_max_;
     
     int mode_; // hydrodynamic mode (deflagration=0, hybrid=1, detonation=2)
     double xi0_, xif_; // initial/final xi

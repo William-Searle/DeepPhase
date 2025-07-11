@@ -41,73 +41,45 @@ int main() {
     // const auto z_vals = linspace(-1.0, 1.0, 1000);
     // takes 2-4mins to run
     /****************************/
+    
+    // example_Kin_Spec("Ekin_spectrum");
+    // example_GW_Spec("../GW_spectrum");
 
-    /***************************** Define PT Parameters *****************************/
-    const auto vw = 0.7;
+    // test_SiCi_spline();
+
+    const auto vw = 0.5;
     const auto alN = 0.1;
     const auto beta = PhaseTransition::dflt_PTParams::beta;
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
     const auto model = PhaseTransition::dflt_PTParams::model;
-    // const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    PhaseTransition::Universe un;
-    PhaseTransition::PTParams params1(vw, alN, beta, dtau, wN, model, "exp", un);
-    // PhaseTransition::PTParams params2(vw, alN, beta, dtau, wN, model, "sim", un);
-    
+    const PhaseTransition::Universe un;
+    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+
     un.print();
-    params1.print();
-    /********************************************************************************/
+    params.print();
 
-    // const auto k_vals = logspace(1e-3, 1e+3, 5);
-    // const auto p_vals = logspace(1e-2, 1e+3, 200);
-    // const auto z_vals = linspace(-1.0, 1.0, 200);
+    int n = 2;
+    const auto k_vals = linspace(1e-3, 1e+3, n);
+    const auto p_vals = linspace(1e-2, 1e+3, n);
+    const auto z_vals = linspace(-1.0, 1.0, n);
 
-    // const auto dlt2 = Spectrum::dlt_SSM(k_vals, p_vals, z_vals, params1);
+    const auto dlt = Spectrum::dlt_SSM(k_vals, p_vals, z_vals, params);
 
-    // for (int kk = 0; kk < k_vals.size(); kk++) {
-    //     std::cout << "dlt(" << k_vals[kk] << ")=" << dlt2[kk][0][0] << "\n";
-    // }
-    
-    // Ex 1: Construct fluid profile
-    Hydrodynamics::FluidProfile prof1(params1);
-    // Hydrodynamics::FluidProfile prof2(params2);
-    // prof.write("fluid_prof.csv");
-    prof1.plot("fluid_prof.png");
+    for (int kk = 0; kk < k_vals.size(); kk++) {
+        const auto k = k_vals[kk];
+        for (int pp = 0; pp < p_vals.size(); pp++) {
+            const auto p = p_vals[pp];
+            for (int zz = 0; zz < z_vals.size(); zz++) {
+                const auto z = z_vals[zz];
+                std::cout << "k,p,z=" << k_vals[kk] << "," << p_vals[pp] << "," << z_vals[zz] << "\n"
+                          << "dlt=" << dlt[kk][pp][zz] << "\n\n";
 
-    // Ex 2: Construct kinetic power spectrum
-    // const auto kRs_vals = logspace(1e-1, 1e+3, 500);
-
-    // const auto Ek1 = Spectrum::Ekin(kRs_vals, prof1);
-    // const auto Eks1 = Spectrum::zetaKin(Ek1);
-
-    // const auto Ek2 = Spectrum::Ekin(kRs_vals, prof2);
-    // const auto Eks2 = Spectrum::zetaKin(Ek2);
-    
-    // plt::figure_size(800, 600);
-    // plt::loglog(Eks1.k(), Eks1.P(), "k-");
-    // plt::loglog(Eks2.k(), Eks2.P(), "r-");
-    // plt::xlabel("K=kRs");
-    // plt::ylabel("Ekin(K)");
-    // plt::xlim(1e-1, 1e+3);
-    // plt::ylim(1e-5, 1e+0);
-    // plt::grid(true);
-    // plt::save("../Ekin_spectrum.png");
-
-    // Ex 3: Construct GW Spectrum
-    // const auto kRs_vals = logspace(1e-3, 1e+3, 100);
-    // const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params1);
-    
-    // // add .plot() function for GWSpec (also include vw and alpha used in title)!!
-    // plt::figure_size(800, 600);
-    // plt::loglog(OmegaGW.k(), OmegaGW.P(), "k-");
-    // plt::suptitle("vw = " + to_string_with_precision(vw) + ", alN = " + to_string_with_precision(alN));
-    // plt::xlabel("K=kRs");
-    // plt::ylabel("Omega_GW(K)");
-    // plt::xlim(1e-3, 1e+3);
-    // // plt::ylim(1e-5, 1e+0);
-    // plt::grid(true);
-    // plt::save("../GW_spectrum.png");
+            }
+        }
+    }
     
 
     /************************ CLOCK / PROFILER *************************/

@@ -43,7 +43,10 @@ void test_all() {
 }
 
 // Kinetic power spectrum
-void example_Kin_Spec() {
+void example_Kin_Spec(const std::string& filename) {
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
+    const PhaseTransition::Universe un;
+
     // define PT parameters
     const auto vw = PhaseTransition::dflt_PTParams::vw;
     const auto alN = PhaseTransition::dflt_PTParams::alpha;
@@ -51,48 +54,66 @@ void example_Kin_Spec() {
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
     const auto model = PhaseTransition::dflt_PTParams::model;
-    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
-    const PhaseTransition::Universe un;
+    const PhaseTransition::PTParams params1(vw, alN, beta, dtau, wN, model, "exp", un);
+    const PhaseTransition::PTParams params2(vw, alN, beta, dtau, wN, model, "sim", un);
 
     // Momentum values
     const auto kRs_vals = logspace(1e-1, 1e+3, 500);
 
-    // Create hydrodynamic profile of bubble
-    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
+    // Kinetic spectrum (exponential bubble nucleation)
+    const auto Ek1 = Spectrum::Ekin(kRs_vals, params1);
+    const auto Eks1 = Spectrum::zetaKin(Ek1); // Normalised spectrum
+    // Eks1.write(filename + ".csv");
 
-    // Kinetic spectrum
-    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
-    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
+    // Kinetic spectrum (simultaneous bubble nucleation)
+    const auto Ek2 = Spectrum::Ekin(kRs_vals, params2);
+    const auto Eks2 = Spectrum::zetaKin(Ek2); // Normalised spectrum
+    // Eks2.write(filename + ".csv");
     
-    // Save spectrum to disk
-    Eks.write("example_kin_spectrum.csv");
-    Eks.plot("example_kin_spectrum.png");
+    // Plot spectrum (alternatively, use Ek.plot())
+    plt::figure_size(800, 600);
+    plt::loglog(Eks1.K(), Eks1.P(), "k-"); // exp
+    plt::loglog(Eks2.K(), Eks2.P(), "r-"); // sim
+    plt::suptitle("vw = " + to_string_with_precision(vw) + ", alN = " + to_string_with_precision(alN));
+    plt::xlabel("K=kRs");
+    plt::ylabel("Ekin(K)");
+    plt::xlim(kRs_vals.front(), kRs_vals.back());
+    plt::ylim(1e-5, 1e+0);
+    plt::grid(true);
+    plt::save(filename + ".png");
 
     return;
 }
 
 // Gravitational wave power spectrum
-void example_GW_Spec() {
-    const auto vw = PhaseTransition::dflt_PTParams::vw;
-    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+void example_GW_Spec(const std::string& filename) {
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
+    const PhaseTransition::Universe un;
+
+    // define PT parameters
+    const auto vw = 0.5;
+    const auto alN = 0.1;
+    // const auto vw = PhaseTransition::dflt_PTParams::vw;
+    // const auto alN = PhaseTransition::dflt_PTParams::alpha;
     const auto beta = PhaseTransition::dflt_PTParams::beta;
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
     const auto model = PhaseTransition::dflt_PTParams::model;
     const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    const PhaseTransition::Universe un;
     const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
 
+    un.print();
+    params.print();
+
+    // Define GW spectrum
     const auto kRs_vals = logspace(1e-3, 1e+3, 100);
     const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
     
-    OmegaGW.write("example_GW_spectrum.csv");
-    OmegaGW.plot("example_GW_spectrum.png");
+    // Write/plot to disk
+    // OmegaGW.write(filename + ".csv");
+    OmegaGW.plot(filename + ".png");
 
     return;
 }
@@ -154,8 +175,71 @@ void test_PowerSpec() {
     return;
 }
 
+void test_SiCi_spline() {
+    std::cout << "==== Running Si/Ci Spline Interpolator Test ====\n";
 
+    // Step 1: Generate interpolation grid
+    const int n_interp = 1000;
+    const int n_integrate = 1000;
+    const double x_min = -5.0;
+    const double x_max = 5.0;
 
+    std::vector<double> x_vals = linspace(x_min, x_max, n_interp);
+    std::vector<double> Si_vals(n_interp);
+    std::vector<double> Ci_vals(n_interp);
+
+    // Step 2: Evaluate Si and Ci on the grid
+    #pragma omp parallel for
+    for (int i = 0; i < n_interp; ++i) {
+        const auto x = x_vals[i];
+        const auto [Si, Ci] = SiCi(x, n_integrate);  // Use n=30 terms
+        Si_vals[i] = Si;
+        Ci_vals[i] = Ci;
+    }
+
+    // Step 3: Construct interpolators
+    const auto Si_interp = CubicSpline<double>(x_vals, Si_vals);
+    const auto Ci_interp = CubicSpline<double>(x_vals, Ci_vals);
+
+    // Step 4: Define reference values for testing
+    struct TestCase {
+        double x;
+        double expected_si;
+        double expected_ci;
+    };
+
+    std::vector<TestCase> test_cases = {
+        {-5.0, -1.5499312449, -0.19003},
+        {-4.0, -1.7582031389, -0.140982},
+        {-3.0, -1.8486525274, 0.11963},
+        {-2.0, -1.6054129768, 0.422981},
+        {-1.0, -0.9460830704, 0.337404 },
+        {-0.5, -0.4931074180, -0.177784},
+        { 0.5,  0.4931074180, -0.177784},
+        { 1.0,  0.9460830704, 0.337404},
+        { 2.0,  1.6054129768,  0.422981},
+        { 3.0,  1.8486525274,  0.11963},
+        { 4.0,  1.7582031389,  -0.140982},
+        { 5.0,  1.5499312449,  -0.19003}
+    };
+
+    // Step 5: Compare interpolated vs. reference values
+    const auto tol = 1e-6;
+    for (const auto& tc : test_cases) {
+        double si_interp_val = Si_interp(tc.x);
+        double ci_interp_val = Ci_interp(tc.x);
+
+        std::cout << std::fixed << std::setprecision(6)
+                  << "x=" << tc.x
+                  << " | Si_interp=" << si_interp_val << " (ref=" << tc.expected_si << ")"
+                  << " | Ci_interp=" << ci_interp_val << " (ref=" << tc.expected_ci << ")\n";
+
+        assert(std::abs(si_interp_val - tc.expected_si) < tol);
+        assert(std::abs(ci_interp_val - tc.expected_ci) < tol);
+    }
+
+    std::cout << "All Si/Ci interpolation tests passed!\n";
+}
 
 // tests program across a large parameter space
 void test_FluidProfile_params() {
