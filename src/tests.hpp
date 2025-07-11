@@ -14,13 +14,17 @@
 /// @brief Runs all tests
 void test_all();
 
+void test_PowerSpec();
+
+void example_Kin_Spec();
+void example_GW_Spec();
+
+
+
 void test_FluidProfile_params();
 
 void test_rk4_coupled_odes();
 void test_rk4_solver();
-
-/// @brief Tests functionality of the PowerSpec class.
-void test_PowerSpec();
 
 /// @brief Tests arithmetic and operations on the vec<T> class.
 void test_vec();
@@ -53,10 +57,6 @@ void test_interpolator();
 
 void test_prof_ints(bool plot=true);
 void test_Apsq(bool plot=true);
-
-
-void example_Kin_Spec();
-void example_GW_Spec();
 
 void test_SiCi();
 

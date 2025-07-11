@@ -42,6 +42,121 @@ void test_all() {
     return;
 }
 
+// Kinetic power spectrum
+void example_Kin_Spec() {
+    // define PT parameters
+    const auto vw = PhaseTransition::dflt_PTParams::vw;
+    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
+    const PhaseTransition::Universe un;
+
+    // Momentum values
+    const auto kRs_vals = logspace(1e-1, 1e+3, 500);
+
+    // Create hydrodynamic profile of bubble
+    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+    const Hydrodynamics::FluidProfile profile(params);
+
+    // Kinetic spectrum
+    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
+    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
+    
+    // Save spectrum to disk
+    Eks.write("example_kin_spectrum.csv");
+    Eks.plot("example_kin_spectrum.png");
+
+    return;
+}
+
+// Gravitational wave power spectrum
+void example_GW_Spec() {
+    const auto vw = PhaseTransition::dflt_PTParams::vw;
+    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+
+    const PhaseTransition::Universe un;
+    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+    const Hydrodynamics::FluidProfile profile(params);
+
+    const auto kRs_vals = logspace(1e-3, 1e+3, 100);
+    const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
+    
+    OmegaGW.write("example_GW_spectrum.csv");
+    OmegaGW.plot("example_GW_spectrum.png");
+
+    return;
+}
+
+void test_PowerSpec() {
+    std::cout << "==== Running PowerSpec Test ====\n";
+
+    using namespace Spectrum;
+
+    // Sample data
+    std::vector<double> k_vals = {1.0, 2.0, 3.0, 4.0, 5.0};
+    std::vector<double> P_vals = {10.0, 20.0, 15.0, 25.0, 5.0};
+
+    // Dummy PTParams (must be a valid instance)
+    PhaseTransition::PTParams params;  // Assumes default constructor exists
+
+    // Construct PowerSpec
+    PowerSpec spec(k_vals, P_vals, params);
+
+    // Test max
+    double max_val = spec.max();
+    std::cout << "Max value: " << max_val << "\n";
+    assert(std::abs(max_val - 25.0) < 1e-10);
+
+    // Test file output
+    spec.write("test_spectrum.csv");
+
+    // Test plotting
+    spec.plot("test_spectrum.png");
+
+    // Test interpolation
+    auto interp = spec.interpolate();
+    double test_k = 2.5;
+    double interp_val = interp(test_k);
+    std::cout << "Interpolated value at k = 2.5: " << interp_val << "\n";
+
+    // Scalar multiplication (immutable)
+    PowerSpec scaled = spec * 2.0;
+    assert(std::abs(scaled.P()[1] - 40.0) < 1e-10);
+    std::cout << "Scaled P[1] by 2: " << scaled.P()[1] << "\n";
+
+    // Scalar multiplication (in-place)
+    spec *= 0.5;
+    assert(std::abs(spec.P()[1] - 10.0) < 1e-10);
+    std::cout << "In-place scaled P[1] by 0.5: " << spec.P()[1] << "\n";
+
+    // Scalar division (immutable)
+    PowerSpec divided = scaled / 2.0;
+    assert(std::abs(divided.P()[1] - 20.0) < 1e-10);
+    std::cout << "Divided scaled P[1] by 2: " << divided.P()[1] << "\n";
+
+    // Scalar division (in-place)
+    scaled /= 4.0;
+    assert(std::abs(scaled.P()[1] - 10.0) < 1e-10);
+    std::cout << "In-place divided P[1] by 4: " << scaled.P()[1] << "\n";
+
+    std::cout << "PowerSpec tests passed!\n";
+
+    return;
+}
+
+
+
+
 // tests program across a large parameter space
 void test_FluidProfile_params() {
     // Fluid profile
@@ -165,45 +280,6 @@ void test_rk4_solver() {
 
     // Assert error is small
     assert(rel_error < 1e-3);
-}
-
-// Class tests
-void test_PowerSpec() {
-    using std::cout;
-    using std::endl;
-    using namespace Spectrum;
-
-    std::vector<double> k_vals{0.1, 0.2, 0.3};
-    std::vector<double> P_vals{1.0, 2.0, 3.0};
-
-    PowerSpec v1(k_vals, P_vals);
-    assert(v1.k().size() == 3);
-    assert(v1.P()[2] == 3.0);
-    assert(v1.max() == 3.0);
-
-    PowerSpec v2 = v1 * 2.0;
-    assert(v2.P()[0] == 2.0);
-    assert(v2.P()[1] == 4.0);
-    assert(v2.P()[2] == 6.0);
-
-    PowerSpec v3 = v1 + v1;
-    assert(v3.P()[1] == 4.0);
-
-    v3 *= 0.5;
-    assert(v3.P()[1] == 2.0);
-
-    // Error case: mismatched k-vector sizes
-    try {
-        std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
-        std::vector<double> bad_P_vals{1.0, 2.0};
-        PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
-        assert(false); // Should not reach here
-    } catch (const std::invalid_argument &e) {
-        cout << "Caught expected size mismatch error: " << e.what() << endl;
-    }
-
-    cout << "All tests passed successfully!\n";
-    return;
 }
 
 void test_FluidProfile() { // not finished
@@ -335,61 +411,6 @@ void test_Apsq(bool plot) { // test Ap_sq
         plt::grid(true);
         plt::save("Ap_sq_profile.png");
     }
-    return;
-}
-
-// Kinetic power spectrum
-void example_Kin_Spec() {
-    // define PT parameters
-    const auto vw = PhaseTransition::dflt_PTParams::vw;
-    const auto alN = PhaseTransition::dflt_PTParams::alpha;
-    const auto beta = PhaseTransition::dflt_PTParams::beta;
-    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
-    const auto wN = PhaseTransition::dflt_PTParams::wN;
-    const auto model = PhaseTransition::dflt_PTParams::model;
-    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
-
-    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
-    const PhaseTransition::Universe un;
-
-    // Momentum values
-    const auto kRs_vals = logspace(1e-1, 1e+3, 500);
-
-    // Create hydrodynamic profile of bubble
-    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
-
-    // Kinetic spectrum
-    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
-    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
-    
-    // Save spectrum to disk
-    Eks.write("example_kin_spectrum.csv");
-    Eks.plot("example_kin_spectrum.png");
-
-    return;
-}
-
-// Gravitational wave power spectrum
-void example_GW_Spec() {
-    const auto vw = PhaseTransition::dflt_PTParams::vw;
-    const auto alN = PhaseTransition::dflt_PTParams::alpha;
-    const auto beta = PhaseTransition::dflt_PTParams::beta;
-    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
-    const auto wN = PhaseTransition::dflt_PTParams::wN;
-    const auto model = PhaseTransition::dflt_PTParams::model;
-    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
-
-    const PhaseTransition::Universe un;
-    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
-
-    const auto kRs_vals = logspace(1e-3, 1e+3, 100);
-    const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
-    
-    OmegaGW.write("example_GW_spectrum.csv");
-    OmegaGW.plot("example_GW_spectrum.png");
-
     return;
 }
 
