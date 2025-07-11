@@ -72,7 +72,7 @@ void PowerSpec::plot(const std::string& filename) const {
 
     plt::figure_size(800, 600);
     plt::loglog(k(), P(), "k-");
-    // plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alphaN()));
+    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alphaN()));
     plt::xlabel("K=kRs");
     plt::ylabel("Omega_GW(K)");
     plt::xlim(k().front(), k().back());
