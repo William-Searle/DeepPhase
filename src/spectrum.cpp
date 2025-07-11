@@ -66,25 +66,22 @@ void PowerSpec::write(const std::string& filename) const {
     return;
 }
 
-// void FluidProfile::plot(const std::string& filename) const {
-//     std::cout << "Saving power spectrum plot to disk... ";
+void PowerSpec::plot(const std::string& filename) const {
+    std::cout << "Saving power spectrum plot to disk... ";
 
-//     plt::figure_size(800, 600);
-//     plt::loglog(k(), P(), "k-");
-//     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
-//     plt::xlabel("K=kRs");
-//     plt::ylabel("Omega_GW(K)");
-//     plt::xlim(1e-3, 1e+3);
-//     plt::grid(true);
-//     plt::save("../GW_spectrum.png");
+    plt::figure_size(800, 600);
+    plt::loglog(k(), P(), "k-");
+    // plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alphaN()));
+    plt::xlabel("K=kRs");
+    plt::ylabel("Omega_GW(K)");
+    plt::xlim(k().front(), k().back());
+    plt::grid(true);
+    plt::save("../" + filename);
 
-//     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-//     plt::save("../" + filename);
-
-//     std::cout << "Saved to '" << filename << "'" << std::endl;
-
-//     return;
-// }
+    std::cout << "Saved to '" << filename << "'" << std::endl;
+    
+    return;
+}
 
 CubicSpline<double> PowerSpec::interpolate() const {
     return CubicSpline(k(), P());
