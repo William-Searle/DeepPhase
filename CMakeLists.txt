@@ -74,7 +74,7 @@ if(EXISTS "${CMAKE_CURRENT_SOURCE_DIR}/include/matplotlibcpp.h")
   list(APPEND HEADERS include/matplotlibcpp.h)
 else()
   set(ENABLE_MATPLOTLIB OFF)
-  message(STATUS "Matplotlib header not found. ENABLE_MATPLOTLIB is OFF.")
+  message(STATUS "Matplotlib header not found. Plotting functionality will be disabled.")
 endif()
 
 # --------------------------

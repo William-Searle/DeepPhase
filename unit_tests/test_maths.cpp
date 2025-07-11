@@ -1,4 +1,5 @@
 #include "catch/catch.hpp"
+#include <random>
 #include "maths_ops.hpp"
 
 TEST_CASE("Test rk4 Coupled ODEs", "[rk4]") {
@@ -75,4 +76,32 @@ TEST_CASE("Test rk4 Solver", "[rk4]") {
         REQUIRE(rel_err1 <= tol);
     }
     
+}
+
+TEST_CASE("Test cubic spline interpolation", "[cubicSpline]") {
+
+    auto f = [](double x) { return x * x * x; };
+
+    std::vector<double> x_vals = linspace(-2.0, 2.0, 50);
+    std::vector<double> y_vals;
+    for (double x : x_vals) {
+        y_vals.push_back(f(x));
+    }
+
+    CubicSpline<double> spline(x_vals, y_vals);
+
+    std::vector<double> test_points;
+    std::mt19937 gen(0);
+    std::uniform_real_distribution<> dis(-2.0, 2.0);
+    for (int i = 0; i < 50; ++i) {test_points.push_back(dis(gen));}
+
+    double tol = 1e-4;
+    for (double xi : test_points) {
+
+        double yi_exact = f(xi);
+        double yi_interp = spline(xi);
+        double error = std::abs(yi_interp - yi_exact);
+        
+        CHECK(error < tol);
+    }
 }

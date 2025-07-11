@@ -42,73 +42,73 @@ void test_all() {
     return;
 }
 
-void test_rk4_coupled_odes() {
-    // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
-    auto dydx = [](double x, const state_type& y) -> state_type {
-        return { y[1], -y[0] };
-    };
+// void test_rk4_coupled_odes() {
+//     // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
+//     auto dydx = [](double x, const state_type& y) -> state_type {
+//         return { y[1], -y[0] };
+//     };
 
-    const double x0 = 0.0;
-    const double xf = M_PI / 2;  // pi/2, where cos(pi/2) = 0, sin(pi/2) = 1
-    const size_t steps = 5000;
-    const state_type y0 = {1.0, 0.0};  // y0 = cos(0), y1 = -sin(0)
+//     const double x0 = 0.0;
+//     const double xf = M_PI / 2;  // pi/2, where cos(pi/2) = 0, sin(pi/2) = 1
+//     const size_t steps = 5000;
+//     const state_type y0 = {1.0, 0.0};  // y0 = cos(0), y1 = -sin(0)
 
-    auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
+//     auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
 
-    state_type y1_vals, y2_vals, y1_exact, y2_exact;
-    std::vector<double> err1, err2;
+//     state_type y1_vals, y2_vals, y1_exact, y2_exact;
+//     std::vector<double> err1, err2;
     
-    const auto tol = 1e-3;
-    bool test_passed = true;
+//     const auto tol = 1e-3;
+//     bool test_passed = true;
 
-    for (int i = 0; i < x_vals.size(); i++) {
-        // fill solver result
-        y1_vals.push_back(y_vals[i][0]);
-        y2_vals.push_back(y_vals[i][1]);
+//     for (int i = 0; i < x_vals.size(); i++) {
+//         // fill solver result
+//         y1_vals.push_back(y_vals[i][0]);
+//         y2_vals.push_back(y_vals[i][1]);
 
-        // fill exact result
-        const auto x = x_vals[i];
-        y1_exact.push_back(std::cos(x));
-        y2_exact.push_back(-std::sin(x));
+//         // fill exact result
+//         const auto x = x_vals[i];
+//         y1_exact.push_back(std::cos(x));
+//         y2_exact.push_back(-std::sin(x));
 
-        // error estimate
-        err1.push_back(std::abs((y1_vals[i] - y1_exact[i]) / y1_exact[i]));
-        err2.push_back(std::abs((y2_vals[i] - y2_exact[i]) / y2_exact[i]));
+//         // error estimate
+//         err1.push_back(std::abs((y1_vals[i] - y1_exact[i]) / y1_exact[i]));
+//         err2.push_back(std::abs((y2_vals[i] - y2_exact[i]) / y2_exact[i]));
 
-        if (err1[i] > tol || err2[i] > tol) {
-            test_passed = false;
-        }
-    }
+//         if (err1[i] > tol || err2[i] > tol) {
+//             test_passed = false;
+//         }
+//     }
 
-    if (test_passed) {
-        std::cout << "Convergence test passed! (err < " << tol << ")\n";
-    } else {
-        std::cout << "Convergence test failed! (err > " << tol << ")\n";
-    }
+//     if (test_passed) {
+//         std::cout << "Convergence test passed! (err < " << tol << ")\n";
+//     } else {
+//         std::cout << "Convergence test failed! (err > " << tol << ")\n";
+//     }
 
-    // std::cout << "Plotting solution and exact result... ";
+//     // std::cout << "Plotting solution and exact result... ";
 
-    // plt::figure_size(2400, 600);
+//     // plt::figure_size(2400, 600);
 
-    // plt::subplot2grid(1, 2, 0, 0);
-    // plt::plot(x_vals, y1_vals, "k-");
-    // plt::plot(x_vals, y1_exact, "r--");
-    // plt::xlabel("x");
-    // plt::ylabel("y0(x)");
-    // plt::grid(true);
+//     // plt::subplot2grid(1, 2, 0, 0);
+//     // plt::plot(x_vals, y1_vals, "k-");
+//     // plt::plot(x_vals, y1_exact, "r--");
+//     // plt::xlabel("x");
+//     // plt::ylabel("y0(x)");
+//     // plt::grid(true);
 
-    // plt::subplot2grid(1, 2, 0, 1);
-    // plt::plot(x_vals, y2_vals, "k-");
-    // plt::plot(x_vals, y2_exact, "r--");
-    // plt::xlabel("x");
-    // plt::ylabel("y1(x)");
-    // plt::grid(true);
+//     // plt::subplot2grid(1, 2, 0, 1);
+//     // plt::plot(x_vals, y2_vals, "k-");
+//     // plt::plot(x_vals, y2_exact, "r--");
+//     // plt::xlabel("x");
+//     // plt::ylabel("y1(x)");
+//     // plt::grid(true);
 
-    // const std::string filename = "test_solver.png";
-    // plt::save("../" + filename);
+//     // const std::string filename = "test_solver.png";
+//     // plt::save("../" + filename);
 
-    // std::cout << "Saved to file '" << filename << "'\n";
-}
+//     // std::cout << "Saved to file '" << filename << "'\n";
+// }
 
 void test_rk4_solver() {
     // dy/dx = -y with y(0) = 1 => y(x) = exp(-x)
@@ -136,79 +136,79 @@ void test_rk4_solver() {
     assert(rel_error < 1e-3);
 }
 
-// Class tests
-void test_PowerSpec() {
-    using std::cout;
-    using std::endl;
-    using namespace Spectrum;
+// // Class tests
+// void test_PowerSpec() {
+//     using std::cout;
+//     using std::endl;
+//     using namespace Spectrum;
 
-    std::vector<double> k_vals{0.1, 0.2, 0.3};
-    std::vector<double> P_vals{1.0, 2.0, 3.0};
+//     std::vector<double> k_vals{0.1, 0.2, 0.3};
+//     std::vector<double> P_vals{1.0, 2.0, 3.0};
 
-    PowerSpec v1(k_vals, P_vals);
-    assert(v1.k().size() == 3);
-    assert(v1.P()[2] == 3.0);
-    assert(v1.max() == 3.0);
+//     PowerSpec v1(k_vals, P_vals);
+//     assert(v1.k().size() == 3);
+//     assert(v1.P()[2] == 3.0);
+//     assert(v1.max() == 3.0);
 
-    PowerSpec v2 = v1 * 2.0;
-    assert(v2.P()[0] == 2.0);
-    assert(v2.P()[1] == 4.0);
-    assert(v2.P()[2] == 6.0);
+//     PowerSpec v2 = v1 * 2.0;
+//     assert(v2.P()[0] == 2.0);
+//     assert(v2.P()[1] == 4.0);
+//     assert(v2.P()[2] == 6.0);
 
-    PowerSpec v3 = v1 + v1;
-    assert(v3.P()[1] == 4.0);
+//     PowerSpec v3 = v1 + v1;
+//     assert(v3.P()[1] == 4.0);
 
-    v3 *= 0.5;
-    assert(v3.P()[1] == 2.0);
+//     v3 *= 0.5;
+//     assert(v3.P()[1] == 2.0);
 
-    // Error case: mismatched k-vector sizes
-    try {
-        std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
-        std::vector<double> bad_P_vals{1.0, 2.0};
-        PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
-        assert(false); // Should not reach here
-    } catch (const std::invalid_argument &e) {
-        cout << "Caught expected size mismatch error: " << e.what() << endl;
-    }
+//     // Error case: mismatched k-vector sizes
+//     try {
+//         std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
+//         std::vector<double> bad_P_vals{1.0, 2.0};
+//         PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
+//         assert(false); // Should not reach here
+//     } catch (const std::invalid_argument &e) {
+//         cout << "Caught expected size mismatch error: " << e.what() << endl;
+//     }
 
-    cout << "All tests passed successfully!\n";
-    return;
-}
+//     cout << "All tests passed successfully!\n";
+//     return;
+// }
 
-void test_FluidProfile() { // not finished
-    // check read profile (from xiao's code) and solve ODE solutions are consistent
-    // plot profiles
-    using namespace Hydrodynamics;
-    using namespace PhaseTransition;
+// void test_FluidProfile() { // not finished
+//     // check read profile (from xiao's code) and solve ODE solutions are consistent
+//     // plot profiles
+//     using namespace Hydrodynamics;
+//     using namespace PhaseTransition;
 
-    std::cout << "Running FluidProfile class test..." << std::endl;
+//     std::cout << "Running FluidProfile class test..." << std::endl;
 
-    PTParams params;
-    FluidProfile profile(params);
+//     PTParams params;
+//     FluidProfile profile(params);
 
-    auto xi_vals = profile.xi_vals();
-    auto v_vals = profile.v_vals();
-    auto w_vals = profile.w_vals();
-    auto la_vals = profile.la_vals();
+//     auto xi_vals = profile.xi_vals();
+//     auto v_vals = profile.v_vals();
+//     auto w_vals = profile.w_vals();
+//     auto la_vals = profile.la_vals();
 
-    for (int i = 0; i < xi_vals.size(); i++) {
-        const auto xi = xi_vals[i];
-        const auto v = v_vals[i];
-        const auto w = w_vals[i];
-        const auto la = la_vals[i];
+//     for (int i = 0; i < xi_vals.size(); i++) {
+//         const auto xi = xi_vals[i];
+//         const auto v = v_vals[i];
+//         const auto w = w_vals[i];
+//         const auto la = la_vals[i];
 
-        if (isnan(xi) || isnan(v) || isnan(w) || isnan(la)) throw std::runtime_error("NaN detected in fluid profile");
+//         if (isnan(xi) || isnan(v) || isnan(w) || isnan(la)) throw std::runtime_error("NaN detected in fluid profile");
 
-        if (xi < 0.0) throw std::runtime_error("Domain error: xi < 0");
-        if (xi > 1.0) throw std::runtime_error("Domain error: xi > 1");
+//         if (xi < 0.0) throw std::runtime_error("Domain error: xi < 0");
+//         if (xi > 1.0) throw std::runtime_error("Domain error: xi > 1");
 
-        // also test if v,w are non-zero behind bubble wall or in front of shock
-    }
+//         // also test if v,w are non-zero behind bubble wall or in front of shock
+//     }
 
-    // profile.plot("fluid_profile_test.png");
+//     // profile.plot("fluid_profile_test.png");
 
-    std::cout << "FluidProfile test passed.\n";
-}
+//     std::cout << "FluidProfile test passed.\n";
+// }
 
 // update to test other interpolators? or separate one for each used?
 // update to test weirder functions (or input a function to test interpolator?)

@@ -8,6 +8,7 @@
 #include <algorithm>
 
 #include "phasetransition.hpp"
+#include "hydrodynamics.hpp"
 #include "maths_ops.hpp"
 
 /*
