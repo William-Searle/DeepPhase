@@ -108,11 +108,11 @@ std::pair<std::vector<double>, std::vector<double>> prof_ints_fl(const std::vect
         std::vector<double>& l_integrand = l_integrands[tid];
 
         #pragma omp for
-        for (int j = 0; j < m; j++) { // chi
+        for (size_t j = 0; j < m; j++) { // chi
             const auto chi = chi_vals[j];
             const auto inv_chi = 1.0 / chi;
 
-            for (int i = 0; i < n; i++) { // xi
+            for (size_t i = 0; i < n; i++) { // xi
                 const auto xi = xi_vals[i];
                 const auto v_prof = v_vals[i];
                 const auto la_prof = la_vals[i];
@@ -141,7 +141,7 @@ std::vector<double> Ap_sq(const std::vector<double>& chi_vals, const FluidProfil
     const auto m = chi_vals.size();
 
     std::vector<double> Apsq(m);
-    for (int j = 0; j < m; j++) {
+    for (size_t j = 0; j < m; j++) {
         const auto f = fd_int[j];
         const auto l = l_int[j];
 

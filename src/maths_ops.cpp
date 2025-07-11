@@ -607,7 +607,7 @@ std::pair<double, double> SiCi(double x, const size_t n) {
     std::vector<double> sin_integrand_vals(n);
     std::vector<double> cos_integrand_vals(n);
     
-    for (int j = 0; j < n; j++) {
+    for (size_t j = 0; j < n; j++) {
         const auto t = t_vals[j];
         sin_integrand_vals[j] = sin_integrand(t);
         cos_integrand_vals[j] = cos_integrand(t);

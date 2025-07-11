@@ -113,7 +113,7 @@ class FluidProfile {
     double calc_w1wN(double xi_sh) const;
 
     double xi_shock(double v1UF) const; // position of shock front
-    std::vector<double> get_alp_minmax(double vw, double cpsq, double cmsq) const;
+    std::vector<double> get_alp_minmax(double vw, double cpsq) const;
     double get_alp_wall(double vpUF, double vw) const;
     double get_alp_shock(double vpUF, double v1UF, double alphaN) const;
     double v1UF_residual_func(double v1UF, const deriv_func& dydxi);

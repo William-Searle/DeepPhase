@@ -36,7 +36,7 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # --------------------------
 # Compiler Warnings
 # --------------------------
-option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" OFF) # Default to OFF to avoid warnings in production builds
+option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" ON) # Default to OFF to avoid warnings in production builds
 if(ENABLE_COMPILER_WARNINGS)
   add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
 endif(ENABLE_COMPILER_WARNINGS)

@@ -60,19 +60,21 @@ PTParams::PTParams()
     : PTParams(dflt_PTParams::vw, dflt_PTParams::alpha, dflt_PTParams::beta, dflt_PTParams::dtau, dflt_PTParams::wN, dflt_PTParams::model, dflt_PTParams::nuc_type, default_universe()) {}
 
 PTParams::PTParams(double vw, double alpha, double beta, double dtau, double wN, const char* model, const char* nuc_type, const Universe& un)
-    : vw_(vw),
-      alpha_(alpha), 
+    : universe_(un),
+      vw_(vw),
+      alpha_(alpha),
       beta_(beta),
-      dtau_(dtau),
-      wN_(wN),
+      Rs_(),
       tau_s_(),
       tau_fin_(),
+      dtau_(dtau),
+      cpsq_(),
+      cmsq_(),
+      vcj_(),
+      wN_(wN),
       model_(),
       nuc_type_(),
-      wall_type_(),
-      Rs_(),
-      vcj_(), cpsq_(), cmsq_(),
-      universe_(un)
+      wall_type_()
     {
       // defaults to bag model if input model is not in valid_models
       // write something that indicates other ctor should be called for Veff
@@ -102,7 +104,7 @@ PTParams::PTParams(double vw, double alpha, double beta, double dtau, double wN,
       tau_fin_ = tau_s_ + dtau_;
 
       /***** calc model-dependent quantities *****/
-      if (model == "bag") {
+      if (std::string(model) == "bag") {
         cpsq_ = 1.0 / 3.0;
         cmsq_ = cpsq_;
       } else {

@@ -161,10 +161,10 @@ struct SimpsonWeights2D {
     std::vector<double> dy;  // size: ny-2
 };
 
-static void precompute_1d_weights(
-    const std::vector<double>& coords,
-    std::vector<std::vector<double>>& weights,
-    std::vector<double>& intervals);
+// static void precompute_1d_weights(
+//     const std::vector<double>& coords,
+//     std::vector<std::vector<double>>& weights,
+//     std::vector<double>& intervals);
 
 SimpsonWeights2D precompute_simpson_weights_2d(
     const std::vector<double>& x,

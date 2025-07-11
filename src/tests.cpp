@@ -260,7 +260,7 @@ void test_interpolator() {
     // std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
 }
 
-void test_prof_ints(bool plot) { // test profile integrals f' and l
+void test_prof_ints() { // test profile integrals f' and l
     PhaseTransition::PTParams params;
     Hydrodynamics::FluidProfile profile(params);
 
@@ -289,7 +289,7 @@ void test_prof_ints(bool plot) { // test profile integrals f' and l
     return;
 }
 
-void test_Apsq(bool plot) { // test Ap_sq
+void test_Apsq() { // test Ap_sq
     PhaseTransition::PTParams params;
     Hydrodynamics::FluidProfile profile(params);
 
@@ -307,7 +307,7 @@ void test_Apsq(bool plot) { // test Ap_sq
     return;
 }
 
-void test_Ekin(bool plot) {
+void test_Ekin() {
     const PhaseTransition::Universe un;
 
     const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
@@ -339,7 +339,7 @@ void test_Ekin(bool plot) {
     return;
 }
 
-void test_GWSpec(bool plot) {
+void test_GWSpec() {
     const PhaseTransition::Universe un;
 
     const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
@@ -408,39 +408,39 @@ void test_SiCi() {
     std::cout << "All sine/cosine integral tests passed!\n";
 }
 
-void test_dlt_SSM() {
-    const PhaseTransition::PTParams params;
+// void test_dlt_SSM() {
+//     const PhaseTransition::PTParams params;
 
-    const auto k_vals = logspace(1e-3, 1e+3, 5);
-    const auto p_vals = linspace(1e-2, 1e+3, 200);
-    const auto z_vals = linspace(-1.0, 1.0, 200);
+//     const auto k_vals = logspace(1e-3, 1e+3, 5);
+//     const auto p_vals = linspace(1e-2, 1e+3, 200);
+//     const auto z_vals = linspace(-1.0, 1.0, 200);
 
-    const auto nk = k_vals.size();
-    const auto np = p_vals.size();
-    const auto nz = z_vals.size();
+//     const auto nk = k_vals.size();
+//     const auto np = p_vals.size();
+//     const auto nz = z_vals.size();
 
-    const auto dlta1 = Spectrum::dlt(50, k_vals, p_vals, z_vals, params);
-    // const auto dlta2 = Spectrum::dlt_SSM(50, k_vals, p_vals, z_vals, params);
+//     const auto dlta1 = Spectrum::dlt(50, k_vals, p_vals, z_vals, params);
+//     // const auto dlta2 = Spectrum::dlt_SSM(50, k_vals, p_vals, z_vals, params);
 
-    const auto tol = 1e-10;
-    for (int kk = 0; kk < nk; kk++) {
-        for (int pp = 0; pp < np; pp++) {
-            for (int zz = 0; zz < nz; zz++) {
-                const auto dlt1 = dlta1[kk][pp][zz];
-                // const auto dlt2 = dlta2[kk][pp][zz];
+//     const auto tol = 1e-10;
+//     // for (size_t kk = 0; kk < nk; kk++) {
+//     //     for (size_t pp = 0; pp < np; pp++) {
+//     //         for (size_t zz = 0; zz < nz; zz++) {
+//     //             const auto dlt1 = dlta1[kk][pp][zz];
+//     //             // const auto dlt2 = dlta2[kk][pp][zz];
 
-                // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
+//     //             // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
 
-                // const auto error = std::abs(dlt1 - dlt2);
-                // if (error > tol) {
-                //     std::cout << "err=" << error << " for (k,p,z)=(" << kk << "," << pp << "," << zz << ")\n";
-                // }
-            }
-        }
-    }
+//     //             // const auto error = std::abs(dlt1 - dlt2);
+//     //             // if (error > tol) {
+//     //             //     std::cout << "err=" << error << " for (k,p,z)=(" << kk << "," << pp << "," << zz << ")\n";
+//     //             // }
+//     //         }
+//     //     }
+//     // }
 
-    return;
-}
+//     return;
+// }
 
 // probably don't need this
 void test_simpson_integrate() {
@@ -453,7 +453,7 @@ void test_simpson_integrate() {
     {
         const int N = 101;
         const double a = 0.0, b = M_PI;
-        double h = (b - a) / (N - 1);
+        // double h = (b - a) / (N - 1);
 
         const auto x1_vals = linspace(a, b, N);
         std::vector<double> y1_vals;
@@ -585,7 +585,7 @@ void test_power(int num_runs) {
     // Run std::pow multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_std_pow = std::pow(x, exp);
+        std::pow(x, exp);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         std_pow_times.push_back(duration.count());
@@ -594,7 +594,7 @@ void test_power(int num_runs) {
     // Run custom power function multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_power = power(x, exp);
+        power(x, exp);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         power_times.push_back(duration.count());
@@ -603,7 +603,7 @@ void test_power(int num_runs) {
     // Run custom power6 function multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_power6 = power6(x);
+        power6(x);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         power6_times.push_back(duration.count());

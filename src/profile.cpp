@@ -336,7 +336,7 @@ double FluidProfile::xi_shock(double v1UF) const {
 }
 
 // generic for Veff
-std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double cmsq) const {
+std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq) const {
     // same as get_alp_wall but using vp, vm
     const auto cp = std::sqrt(cpsq);
 
@@ -374,7 +374,7 @@ double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
     const int n = 1000;
     const auto v_vals = linspace(vpUF, v1UF, n);
     std::vector<double> integrand_vals(n);
-    for (int i = 0; i < integrand_vals.size(); i++) {
+    for (size_t i = 0; i < integrand_vals.size(); i++) {
         const auto v = v_vals[i];
         integrand_vals[i] = integrand_func(xi_sh, v);
     }
@@ -481,7 +481,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         y_sol_tmp = sol.second;
 
         // fill v, w vectors
-        for (int i = 0; i < xi_sol_tmp.size(); i++) {
+        for (size_t i = 0; i < xi_sol_tmp.size(); i++) {
             v_sol_tmp.push_back(y_sol_tmp[i][0]);
             w_sol_tmp.push_back(y_sol_tmp[i][1]);
             la_sol_tmp.push_back(get_la_front_wall(w_sol_tmp[i]));
@@ -495,7 +495,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         // check alp okay
         // Note: need alp for this so must do root-finding BEFORE determining if alp is good/bad
         const auto alp = get_alp_wall(vpUF, vw_);
-        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
+        const auto alp_minmax = get_alp_minmax(vw_, cpsq_);
 
         if (alp >= alN_) throw std::invalid_argument("alpha_+ must be < alpha_N");
         if (alp < alp_minmax[0]) throw std::invalid_argument("alpha_+ too small for shock");
@@ -531,7 +531,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
             const auto [xi_sol_rf_tmp, y_sol_rf_tmp] = rk4_solver(dydxi, xi0_rf, xif_rf, y0_rf, n);
 
             // combine rarefaction wave with shockwave part of solution
-            for (int i = 0; i < xi_sol_rf_tmp.size(); i++) {
+            for (size_t i = 0; i < xi_sol_rf_tmp.size(); i++) {
                 xi_sol_tmp.push_back(xi_sol_rf_tmp[i]);
                 v_sol_tmp.push_back(y_sol_rf_tmp[i][0]);
                 w_sol_tmp.push_back(y_sol_rf_tmp[i][1]);
@@ -568,7 +568,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         y_sol_tmp = sol.second;
 
         // fill v, w vectors
-        for (int i = 0; i < xi_sol_tmp.size(); i++) {
+        for (size_t i = 0; i < xi_sol_tmp.size(); i++) {
             v_sol_tmp.push_back(y_sol_tmp[i][0]);
             w_sol_tmp.push_back(y_sol_tmp[i][1]);
             la_sol_tmp.push_back(get_la_behind_wall(w_sol_tmp[i]));
