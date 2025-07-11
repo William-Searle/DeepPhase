@@ -42,6 +42,37 @@ void test_all() {
     return;
 }
 
+// tests program across a large parameter space
+void test_FluidProfile_params() {
+    // Fluid profile
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+
+    PhaseTransition::Universe un;
+    
+    const auto vw_vals = linspace(1e-5, 1.0 - 1e-5, 10);
+    const auto alN_vals = linspace(1e-5, 1.0, 10);
+
+    for (const auto vw : vw_vals) {
+        for (const auto alN : alN_vals) {
+            PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+            try {
+                Hydrodynamics::FluidProfile prof(params);
+            } catch (std::runtime_error& e) {
+                std::cout << "Failed for vw=" << vw << ", alN=" << alN << ":\n";
+                std::cout << e.what() << "\n";
+            } catch (std::invalid_argument& e) {
+                std::cout << e.what() << "\n";
+            }
+        }
+    }
+
+    std::cout << "Parameter test for FluidProfile passed!\n";    
+}
+
 void test_rk4_coupled_odes() {
     // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
     auto dydx = [](double x, const state_type& y) -> state_type {
@@ -307,62 +338,57 @@ void test_Apsq(bool plot) { // test Ap_sq
     return;
 }
 
-void test_Ekin(bool plot) {
+// Kinetic power spectrum
+void example_Kin_Spec() {
+    // define PT parameters
+    const auto vw = PhaseTransition::dflt_PTParams::vw;
+    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
     const PhaseTransition::Universe un;
 
-    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
-    const Hydrodynamics::FluidProfile profile1(params1);
-
-    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "sim", un);
-    const Hydrodynamics::FluidProfile profile2(params2);
-
+    // Momentum values
     const auto kRs_vals = logspace(1e-1, 1e+3, 500);
 
-    const auto Ek1 = Spectrum::Ekin(kRs_vals, profile1);
-    const auto Eks1 = Spectrum::zetaKin(Ek1);
+    // Create hydrodynamic profile of bubble
+    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+    const Hydrodynamics::FluidProfile profile(params);
 
-    const auto Ek2 = Spectrum::Ekin(kRs_vals, profile2);
-    const auto Eks2 = Spectrum::zetaKin(Ek2);
+    // Kinetic spectrum
+    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
+    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(Eks1.k(), Eks1.P(), "k-");
-        plt::loglog(Eks2.k(), Eks2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Ekin(K)");
-        plt::xlim(1e-1, 1e+3);
-        plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("Ekin_spectrum.png");
-    }
+    // Save spectrum to disk
+    Eks.write("example_kin_spectrum.csv");
+    Eks.plot("example_kin_spectrum.png");
 
     return;
 }
 
-void test_GWSpec(bool plot) {
+// Gravitational wave power spectrum
+void example_GW_Spec() {
+    const auto vw = PhaseTransition::dflt_PTParams::vw;
+    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+    const auto beta = PhaseTransition::dflt_PTParams::beta;
+    const auto dtau = PhaseTransition::dflt_PTParams::dtau;
+    const auto wN = PhaseTransition::dflt_PTParams::wN;
+    const auto model = PhaseTransition::dflt_PTParams::model;
+    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
+
     const PhaseTransition::Universe un;
+    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
+    const Hydrodynamics::FluidProfile profile(params);
 
-    const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
-    const Hydrodynamics::FluidProfile profile1(params1);
-
-    const PhaseTransition::PTParams params2(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "sim", un);
-    const Hydrodynamics::FluidProfile profile2(params2);
-
-    const auto kRs_vec = logspace(1e-3, 1e+3, 50);
-    const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
-    const auto OmegaGW2 = Spectrum::GWSpec(kRs_vec, params2);
+    const auto kRs_vals = logspace(1e-3, 1e+3, 100);
+    const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
-        plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Omega_GW(K)");
-        plt::xlim(1e-3, 1e+3);
-        // plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("GW_spectrum.png");
-    }
+    OmegaGW.write("example_GW_spectrum.csv");
+    OmegaGW.plot("example_GW_spectrum.png");
 
     return;
 }

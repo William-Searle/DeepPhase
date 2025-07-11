@@ -14,6 +14,8 @@
 /// @brief Runs all tests
 void test_all();
 
+void test_FluidProfile_params();
+
 void test_rk4_coupled_odes();
 void test_rk4_solver();
 
@@ -52,9 +54,9 @@ void test_interpolator();
 void test_prof_ints(bool plot=true);
 void test_Apsq(bool plot=true);
 
-void test_Ekin(bool plot=true);
 
-void test_GWSpec(bool plot=true);
+void example_Kin_Spec();
+void example_GW_Spec();
 
 void test_SiCi();
 
