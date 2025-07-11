@@ -26,7 +26,7 @@ TO DO:
 - update prefac to allow for non-bag model
 - update prefac to do actual calculation of TGW, OmegaK_KK
 - remove instances of std::pow when possible - it is slow
-- change throw exception for P() and k() so that it uses P() and k() when wrong one is called
+- change throw exception for P() and K() so that it uses P() and K() when wrong one is called
 - update Ekin to pass in Profile class (or maybe just PTParams?)
 - implement adaptive step-size in Ekin integration (and dlt later too)
 - add write/plot for GWSpec
@@ -71,11 +71,11 @@ void PowerSpec::plot(const std::string& filename) const {
     std::cout << "Saving power spectrum plot to disk... ";
 
     plt::figure_size(800, 600);
-    plt::loglog(k(), P(), "k-");
+    plt::loglog(K(), P(), "k-");
     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alphaN()));
     plt::xlabel("K=kRs");
     plt::ylabel("Omega_GW(K)");
-    plt::xlim(k().front(), k().back());
+    plt::xlim(K().front(), K().back());
     plt::grid(true);
     plt::save(filename);
 
@@ -85,7 +85,7 @@ void PowerSpec::plot(const std::string& filename) const {
 }
 
 CubicSpline<double> PowerSpec::interpolate() const {
-    return CubicSpline(k(), P());
+    return CubicSpline(K(), P());
 }
 
 // PowerSpec [op] Scalar arithmetic (can't use copy/move assignments if passing in PTParams to PowerSpec)
@@ -97,7 +97,7 @@ PowerSpec operator*(const PowerSpec& spec, double scalar) {
         scaled_P.push_back(p * scalar);
     }
 
-    return PowerSpec(spec.k(), scaled_P, spec.params());
+    return PowerSpec(spec.K(), scaled_P, spec.params());
 }
 
 PowerSpec operator*(double scalar, const PowerSpec& spec) {

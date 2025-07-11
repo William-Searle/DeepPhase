@@ -16,7 +16,7 @@ TO DO:
 - update operator overload to use type traits (for int, unsigned int, etc. scalar)
 - PowerSpec class documentation
 - PowerSpec dflt ctor create it's own instance of params and profile so i don't have to keep calling it
-- store k_vals adn P_vals in PowerSpec rather than calling with k(), P()? might be quicker
+- store k_vals adn P_vals in PowerSpec rather than calling with K(), P()? might be quicker
 - simplify powerspec class to just take std::vector (not called for single k,P and these can just be stored in a vec anyway)
 */
 
@@ -38,7 +38,7 @@ class PowerSpec {
     // PowerSpec(double k, double P);
     PowerSpec(const std::vector<double>& kvec, std::vector<double>& Pvec, const PhaseTransition::PTParams& params);
 
-    const std::vector<double>& k() const { return data_.first; }; // Momentum
+    const std::vector<double>& K() const { return data_.first; }; // Momentum
     const std::vector<double>& P() const { return data_.second; }; // Power spectrum
     const PhaseTransition::PTParams params() const { return params_; }; // PT parameters
 
