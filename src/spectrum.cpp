@@ -53,7 +53,7 @@ double PowerSpec::max() const {
 
 void PowerSpec::write(const std::string& filename) const {
     std::cout << "Writing power spectrum to disk... ";
-    std::ofstream file("../" + filename);
+    std::ofstream file(filename);
     file << "k,P\n";
 
     const auto k_vals = data_.first;
@@ -77,7 +77,7 @@ void PowerSpec::plot(const std::string& filename) const {
     plt::ylabel("Omega_GW(K)");
     plt::xlim(k().front(), k().back());
     plt::grid(true);
-    plt::save("../" + filename);
+    plt::save(filename);
 
     std::cout << "Saved to '" << filename << "'" << std::endl;
     
