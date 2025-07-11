@@ -36,10 +36,11 @@ class PowerSpec {
 
     // ctors - pass in momentum (k) and spectrum (P) since P is calculated differently for kinetic/GW
     // PowerSpec(double k, double P);
-    PowerSpec(const std::vector<double>& kvec, std::vector<double>& Pvec);
+    PowerSpec(const std::vector<double>& kvec, std::vector<double>& Pvec, const PhaseTransition::PTParams& params);
 
     const std::vector<double>& k() const { return data_.first; }; // Momentum
     const std::vector<double>& P() const { return data_.second; }; // Power spectrum
+    const PhaseTransition::PTParams params() const { return params_; }; // PT parameters
 
     double max() const; // Max value of power spectrum
 
@@ -49,41 +50,18 @@ class PowerSpec {
     CubicSpline<double> interpolate() const; // generate cubic spline interpolation of P vals
 
     // Scalar arithmetic
-    // Note: += changes an object in the class, but + creates a new object, 
-    // so + is not a member function and we therefore define it as a friend 
-    // (non-member function that can access private/protected parts of the object)
-    friend PowerSpec operator+(const PowerSpec &spec, double scalar);
-    friend PowerSpec operator+(double scalar, const PowerSpec &spec);
-    PowerSpec &operator+=(double scalar);
-
-    friend PowerSpec operator-(const PowerSpec &spec, double scalar);
-    friend PowerSpec operator-(double scalar, const PowerSpec &spec);
-    PowerSpec &operator-=(double scalar);
-
     friend PowerSpec operator*(const PowerSpec &spec, double scalar);
     friend PowerSpec operator*(double scalar, const PowerSpec &spec);
     PowerSpec &operator*=(double scalar);
 
     friend PowerSpec operator/(const PowerSpec& spec, double scalar);
-    PowerSpec &operator/=(double scalar);
-    // define "/" for PowerSpec on demoninator? Probably not needed...    
-
-    // PowerSpec arithmetic
-    friend PowerSpec operator+(const PowerSpec &spec1, const PowerSpec &spec2);
-    PowerSpec &operator+=(PowerSpec& spec);
-
-    friend PowerSpec operator-(const PowerSpec &spec1, const PowerSpec &spec2);
-    PowerSpec &operator-=(PowerSpec &spec);
-
-    friend PowerSpec operator*(const PowerSpec &spec1, const PowerSpec &spec2);
-    PowerSpec &operator*=(PowerSpec &spec);
+    PowerSpec &operator/=(double scalar);  
 
   private:
-    // std::variant<Spectrum, SpectrumVec> data_;
     Spectrum data_;
+    const PhaseTransition::PTParams params_;
 
 };
-#include "spectrum.tpp"
 
 double ptilde(double k, double p, double z);
 
@@ -104,6 +82,7 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
  * @return Kinetic power spectrum
  */
 PowerSpec Ekin(const std::vector<double>& k_vec, const Hydrodynamics::FluidProfile& prof);
+PowerSpec Ekin(const std::vector<double>& k_vec, const PhaseTransition::PTParams& params);
 
 /*
  * @brief Calculates normalised kinetic power spectrum from Ekin(k)
@@ -114,6 +93,8 @@ PowerSpec Ekin(const std::vector<double>& k_vec, const Hydrodynamics::FluidProfi
  */
 PowerSpec zetaKin(const PowerSpec& Ekin);
 PowerSpec zetaKin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof);
+PowerSpec zetaKin(const std::vector<double>& kRs_vals, const PhaseTransition::PTParams& params);
+
 
 PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTParams& params);
 /**

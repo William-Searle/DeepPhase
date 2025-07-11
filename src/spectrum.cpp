@@ -37,8 +37,9 @@ namespace Spectrum {
 /***** PowerSpec class *****/
 
 // Define ctors
-PowerSpec::PowerSpec(const std::vector<double>& k_vals, std::vector<double>& P_vals)
-    : data_(Spectrum{k_vals, P_vals}) {
+PowerSpec::PowerSpec(const std::vector<double>& k_vals, std::vector<double>& P_vals, const PhaseTransition::PTParams& params)
+    : data_(Spectrum{k_vals, P_vals}),
+      params_(params) {
         if (k_vals.size() != P_vals.size()) {
             throw std::invalid_argument("PowerSpec: k and P vectors must be the same size!");
         }
@@ -87,35 +88,16 @@ CubicSpline<double> PowerSpec::interpolate() const {
     return CubicSpline(k(), P());
 }
 
-// PowerSpec [op] Scalar arithmetic
-PowerSpec operator+(const PowerSpec& spec, double scalar) {
-    return Spectrum::scalar_arith(spec, scalar, std::plus<>());
-}
-
-PowerSpec operator+(double scalar, const PowerSpec& spec) {
-    return spec + scalar;
-}
-
-PowerSpec& PowerSpec::operator+=(double scalar) {
-    *this = *this + scalar;
-    return *this;
-}
-
-PowerSpec operator-(const PowerSpec& spec, double scalar) {
-    return Spectrum::scalar_arith(spec, scalar, std::minus<>());
-}
-
-PowerSpec operator-(double scalar, const PowerSpec& spec) {
-    return scalar + (-1.0) * spec;
-}
-
-PowerSpec& PowerSpec::operator-=(double scalar) {
-    *this = *this - scalar;
-    return *this;
-}
-
+// PowerSpec [op] Scalar arithmetic (can't use copy/move assignments if passing in PTParams to PowerSpec)
 PowerSpec operator*(const PowerSpec& spec, double scalar) {
-    return Spectrum::scalar_arith(spec, scalar, std::multiplies<>());
+    std::vector<double> scaled_P;
+    scaled_P.reserve(spec.P().size());
+
+    for (double p : spec.P()) {
+        scaled_P.push_back(p * scalar);
+    }
+
+    return PowerSpec(spec.k(), scaled_P, spec.params());
 }
 
 PowerSpec operator*(double scalar, const PowerSpec& spec) {
@@ -123,7 +105,9 @@ PowerSpec operator*(double scalar, const PowerSpec& spec) {
 }
 
 PowerSpec& PowerSpec::operator*=(double scalar) {
-    *this = *this * scalar;
+    for (auto& p : data_.second) {
+        p *= scalar;
+    }
     return *this;
 }
 
@@ -134,35 +118,12 @@ PowerSpec operator/(const PowerSpec& spec, double scalar) {
 }
 
 PowerSpec& PowerSpec::operator/=(double scalar) {
-    *this = *this / scalar;
-    return *this;
-}
+    if (scalar == 0.0)
+        throw std::invalid_argument("PowerSpec: Division by zero!");
 
-// PowerSpec [op] PowerSpec arithmetic
-PowerSpec operator+(const PowerSpec& spec1, const PowerSpec& spec2) {
-    return Spectrum::spec_arith(spec1, spec2, std::plus<>());
-}
-
-PowerSpec& PowerSpec::operator+=(PowerSpec& spec) {
-    *this = *this + spec;
-    return *this;
-}
-
-PowerSpec operator-(const PowerSpec& spec1, const PowerSpec& spec2) {
-    return Spectrum::spec_arith(spec1, spec2, std::minus<>());
-}
-
-PowerSpec& PowerSpec::operator-=(PowerSpec& spec) {
-    *this = *this - spec;
-    return *this;
-}
-
-PowerSpec operator*(const PowerSpec& spec1, const PowerSpec& spec2) {
-    return Spectrum::spec_arith(spec1, spec2, std::multiplies<>());
-}
-
-PowerSpec& PowerSpec::operator*=(PowerSpec& spec) {
-    *this = *this * spec;
+    for (auto& p : data_.second) {
+        p /= scalar;
+    }
     return *this;
 }
 /***************************/
@@ -266,7 +227,7 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
 
     std::cout << "Gravitational power spectrum constructed!\n";
 
-    return PowerSpec(kRs_vals, GW_P_vals);
+    return PowerSpec(kRs_vals, GW_P_vals, params);
 }
 /***************************/
 
@@ -498,6 +459,11 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
 /***************************/
 
 /*** Kinetic spectrum ***/
+// avoids duplicating fluid profile in GWSpec
+PowerSpec Ekin(const std::vector<double>& kRs_vals, const PhaseTransition::PTParams& params) {
+    return Ekin(kRs_vals, Hydrodynamics::FluidProfile(params));
+}
+
 PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof) {
     const auto csq = prof.params().csq();
     const auto beta = prof.params().beta();
@@ -548,7 +514,7 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
         }
     }
 
-    return PowerSpec(kRs_vals, P_vals);
+    return PowerSpec(kRs_vals, P_vals, prof.params());
 }
 
 PowerSpec zetaKin(const PowerSpec& Ekin) {
@@ -565,6 +531,11 @@ PowerSpec zetaKin(const PowerSpec& Ekin) {
     }
 
     return zk;
+}
+
+PowerSpec zetaKin(const std::vector<double>& kRs_vals, const PhaseTransition::PTParams& params) {
+    const auto Ek = Ekin(kRs_vals, params);
+    return zetaKin(Ek);
 }
 
 PowerSpec zetaKin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof) {
