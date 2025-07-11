@@ -10,7 +10,7 @@
 
 #include <vector>
 #include <string>
-#include <matplotlibcpp.h>
+// #include <matplotlibcpp.h>
 
 /// @brief Runs all tests
 void test_all();
@@ -50,16 +50,16 @@ void test_gsl_integration();
 */
 void test_interpolator();
 
-void test_prof_ints(bool plot=true);
-void test_Apsq(bool plot=true);
+void test_prof_ints();
+void test_Apsq();
 
-void test_Ekin(bool plot=true);
+void test_Ekin();
 
-void test_GWSpec(bool plot=true);
+void test_GWSpec();
 
 void test_SiCi();
 
-void test_dlt_SSM();
+// void test_dlt_SSM();
 
 void test_simpson_integrate();
 
@@ -104,23 +104,23 @@ void test_power(int num_runs = 1000);
  * @param points Number of sample points (default: 100).
  */
 template<typename Func> // only takes in function of 1 variable at this stage
-void plot_func(Func f, double xmin, double xmax, int points=100) {
-    namespace plt = matplotlibcpp;
+// void plot_func(Func f, double xmin, double xmax, int points=100) {
+//     namespace plt = matplotlibcpp;
     
-    std::vector<double> xs, ys;
-    for (int i = 0; i <= points; ++i) {
-        double x = xmin + i * (xmax - xmin) / points;
-        xs.push_back(x);
-        ys.push_back(f(x));
-    }
+//     std::vector<double> xs, ys;
+//     for (int i = 0; i <= points; ++i) {
+//         double x = xmin + i * (xmax - xmin) / points;
+//         xs.push_back(x);
+//         ys.push_back(f(x));
+//     }
     
-    plt::plot(xs, ys);
-    plt::xlabel("x");
-    plt::ylabel("f(x)");
-    plt::grid(true);
-    // plt::show();
-    plt::save("plot.png");
-}
+//     plt::plot(xs, ys);
+//     plt::xlabel("x");
+//     plt::ylabel("f(x)");
+//     plt::grid(true);
+//     // plt::show();
+//     plt::save("plot.png");
+// }
 
 // move this to a more appropriate file
 /**

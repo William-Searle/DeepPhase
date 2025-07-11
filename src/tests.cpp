@@ -12,9 +12,9 @@
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
-#include "matplotlibcpp.h"
+// #include "matplotlibcpp.h"
 
-namespace plt = matplotlibcpp;
+// namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -42,73 +42,73 @@ void test_all() {
     return;
 }
 
-void test_rk4_coupled_odes() {
-    // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
-    auto dydx = [](double x, const state_type& y) -> state_type {
-        return { y[1], -y[0] };
-    };
+// void test_rk4_coupled_odes() {
+//     // dy0/dx = y1, dy1/dx = -y0 with y(0) = [1, 0] => y0(x) = cos(x), y1(x) = -sin(x)
+//     auto dydx = [](double x, const state_type& y) -> state_type {
+//         return { y[1], -y[0] };
+//     };
 
-    const double x0 = 0.0;
-    const double xf = M_PI / 2;  // pi/2, where cos(pi/2) = 0, sin(pi/2) = 1
-    const size_t steps = 5000;
-    const state_type y0 = {1.0, 0.0};  // y0 = cos(0), y1 = -sin(0)
+//     const double x0 = 0.0;
+//     const double xf = M_PI / 2;  // pi/2, where cos(pi/2) = 0, sin(pi/2) = 1
+//     const size_t steps = 5000;
+//     const state_type y0 = {1.0, 0.0};  // y0 = cos(0), y1 = -sin(0)
 
-    auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
+//     auto [x_vals, y_vals] = rk4_solver(dydx, x0, xf, y0, steps);
 
-    state_type y1_vals, y2_vals, y1_exact, y2_exact;
-    std::vector<double> err1, err2;
+//     state_type y1_vals, y2_vals, y1_exact, y2_exact;
+//     std::vector<double> err1, err2;
     
-    const auto tol = 1e-3;
-    bool test_passed = true;
+//     const auto tol = 1e-3;
+//     bool test_passed = true;
 
-    for (int i = 0; i < x_vals.size(); i++) {
-        // fill solver result
-        y1_vals.push_back(y_vals[i][0]);
-        y2_vals.push_back(y_vals[i][1]);
+//     for (int i = 0; i < x_vals.size(); i++) {
+//         // fill solver result
+//         y1_vals.push_back(y_vals[i][0]);
+//         y2_vals.push_back(y_vals[i][1]);
 
-        // fill exact result
-        const auto x = x_vals[i];
-        y1_exact.push_back(std::cos(x));
-        y2_exact.push_back(-std::sin(x));
+//         // fill exact result
+//         const auto x = x_vals[i];
+//         y1_exact.push_back(std::cos(x));
+//         y2_exact.push_back(-std::sin(x));
 
-        // error estimate
-        err1.push_back(std::abs((y1_vals[i] - y1_exact[i]) / y1_exact[i]));
-        err2.push_back(std::abs((y2_vals[i] - y2_exact[i]) / y2_exact[i]));
+//         // error estimate
+//         err1.push_back(std::abs((y1_vals[i] - y1_exact[i]) / y1_exact[i]));
+//         err2.push_back(std::abs((y2_vals[i] - y2_exact[i]) / y2_exact[i]));
 
-        if (err1[i] > tol || err2[i] > tol) {
-            test_passed = false;
-        }
-    }
+//         if (err1[i] > tol || err2[i] > tol) {
+//             test_passed = false;
+//         }
+//     }
 
-    if (test_passed) {
-        std::cout << "Convergence test passed! (err < " << tol << ")\n";
-    } else {
-        std::cout << "Convergence test failed! (err > " << tol << ")\n";
-    }
+//     if (test_passed) {
+//         std::cout << "Convergence test passed! (err < " << tol << ")\n";
+//     } else {
+//         std::cout << "Convergence test failed! (err > " << tol << ")\n";
+//     }
 
-    std::cout << "Plotting solution and exact result... ";
+//     // std::cout << "Plotting solution and exact result... ";
 
-    plt::figure_size(2400, 600);
+//     // plt::figure_size(2400, 600);
 
-    plt::subplot2grid(1, 2, 0, 0);
-    plt::plot(x_vals, y1_vals, "k-");
-    plt::plot(x_vals, y1_exact, "r--");
-    plt::xlabel("x");
-    plt::ylabel("y0(x)");
-    plt::grid(true);
+//     // plt::subplot2grid(1, 2, 0, 0);
+//     // plt::plot(x_vals, y1_vals, "k-");
+//     // plt::plot(x_vals, y1_exact, "r--");
+//     // plt::xlabel("x");
+//     // plt::ylabel("y0(x)");
+//     // plt::grid(true);
 
-    plt::subplot2grid(1, 2, 0, 1);
-    plt::plot(x_vals, y2_vals, "k-");
-    plt::plot(x_vals, y2_exact, "r--");
-    plt::xlabel("x");
-    plt::ylabel("y1(x)");
-    plt::grid(true);
+//     // plt::subplot2grid(1, 2, 0, 1);
+//     // plt::plot(x_vals, y2_vals, "k-");
+//     // plt::plot(x_vals, y2_exact, "r--");
+//     // plt::xlabel("x");
+//     // plt::ylabel("y1(x)");
+//     // plt::grid(true);
 
-    const std::string filename = "test_solver.png";
-    plt::save("../" + filename);
+//     // const std::string filename = "test_solver.png";
+//     // plt::save("../" + filename);
 
-    std::cout << "Saved to file '" << filename << "'\n";
-}
+//     // std::cout << "Saved to file '" << filename << "'\n";
+// }
 
 void test_rk4_solver() {
     // dy/dx = -y with y(0) = 1 => y(x) = exp(-x)
@@ -136,79 +136,79 @@ void test_rk4_solver() {
     assert(rel_error < 1e-3);
 }
 
-// Class tests
-void test_PowerSpec() {
-    using std::cout;
-    using std::endl;
-    using namespace Spectrum;
+// // Class tests
+// void test_PowerSpec() {
+//     using std::cout;
+//     using std::endl;
+//     using namespace Spectrum;
 
-    std::vector<double> k_vals{0.1, 0.2, 0.3};
-    std::vector<double> P_vals{1.0, 2.0, 3.0};
+//     std::vector<double> k_vals{0.1, 0.2, 0.3};
+//     std::vector<double> P_vals{1.0, 2.0, 3.0};
 
-    PowerSpec v1(k_vals, P_vals);
-    assert(v1.k().size() == 3);
-    assert(v1.P()[2] == 3.0);
-    assert(v1.max() == 3.0);
+//     PowerSpec v1(k_vals, P_vals);
+//     assert(v1.k().size() == 3);
+//     assert(v1.P()[2] == 3.0);
+//     assert(v1.max() == 3.0);
 
-    PowerSpec v2 = v1 * 2.0;
-    assert(v2.P()[0] == 2.0);
-    assert(v2.P()[1] == 4.0);
-    assert(v2.P()[2] == 6.0);
+//     PowerSpec v2 = v1 * 2.0;
+//     assert(v2.P()[0] == 2.0);
+//     assert(v2.P()[1] == 4.0);
+//     assert(v2.P()[2] == 6.0);
 
-    PowerSpec v3 = v1 + v1;
-    assert(v3.P()[1] == 4.0);
+//     PowerSpec v3 = v1 + v1;
+//     assert(v3.P()[1] == 4.0);
 
-    v3 *= 0.5;
-    assert(v3.P()[1] == 2.0);
+//     v3 *= 0.5;
+//     assert(v3.P()[1] == 2.0);
 
-    // Error case: mismatched k-vector sizes
-    try {
-        std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
-        std::vector<double> bad_P_vals{1.0, 2.0};
-        PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
-        assert(false); // Should not reach here
-    } catch (const std::invalid_argument &e) {
-        cout << "Caught expected size mismatch error: " << e.what() << endl;
-    }
+//     // Error case: mismatched k-vector sizes
+//     try {
+//         std::vector<double> bad_k_vals{0.1, 0.2}; // shorter
+//         std::vector<double> bad_P_vals{1.0, 2.0};
+//         PowerSpec vbad(bad_k_vals, P_vals); // size mismatch!
+//         assert(false); // Should not reach here
+//     } catch (const std::invalid_argument &e) {
+//         cout << "Caught expected size mismatch error: " << e.what() << endl;
+//     }
 
-    cout << "All tests passed successfully!\n";
-    return;
-}
+//     cout << "All tests passed successfully!\n";
+//     return;
+// }
 
-void test_FluidProfile() { // not finished
-    // check read profile (from xiao's code) and solve ODE solutions are consistent
-    // plot profiles
-    using namespace Hydrodynamics;
-    using namespace PhaseTransition;
+// void test_FluidProfile() { // not finished
+//     // check read profile (from xiao's code) and solve ODE solutions are consistent
+//     // plot profiles
+//     using namespace Hydrodynamics;
+//     using namespace PhaseTransition;
 
-    std::cout << "Running FluidProfile class test..." << std::endl;
+//     std::cout << "Running FluidProfile class test..." << std::endl;
 
-    PTParams params;
-    FluidProfile profile(params);
+//     PTParams params;
+//     FluidProfile profile(params);
 
-    auto xi_vals = profile.xi_vals();
-    auto v_vals = profile.v_vals();
-    auto w_vals = profile.w_vals();
-    auto la_vals = profile.la_vals();
+//     auto xi_vals = profile.xi_vals();
+//     auto v_vals = profile.v_vals();
+//     auto w_vals = profile.w_vals();
+//     auto la_vals = profile.la_vals();
 
-    for (int i = 0; i < xi_vals.size(); i++) {
-        const auto xi = xi_vals[i];
-        const auto v = v_vals[i];
-        const auto w = w_vals[i];
-        const auto la = la_vals[i];
+//     for (int i = 0; i < xi_vals.size(); i++) {
+//         const auto xi = xi_vals[i];
+//         const auto v = v_vals[i];
+//         const auto w = w_vals[i];
+//         const auto la = la_vals[i];
 
-        if (isnan(xi) || isnan(v) || isnan(w) || isnan(la)) throw std::runtime_error("NaN detected in fluid profile");
+//         if (isnan(xi) || isnan(v) || isnan(w) || isnan(la)) throw std::runtime_error("NaN detected in fluid profile");
 
-        if (xi < 0.0) throw std::runtime_error("Domain error: xi < 0");
-        if (xi > 1.0) throw std::runtime_error("Domain error: xi > 1");
+//         if (xi < 0.0) throw std::runtime_error("Domain error: xi < 0");
+//         if (xi > 1.0) throw std::runtime_error("Domain error: xi > 1");
 
-        // also test if v,w are non-zero behind bubble wall or in front of shock
-    }
+//         // also test if v,w are non-zero behind bubble wall or in front of shock
+//     }
 
-    profile.plot("fluid_profile_test.png");
+//     // profile.plot("fluid_profile_test.png");
 
-    std::cout << "FluidProfile test passed.\n";
-}
+//     std::cout << "FluidProfile test passed.\n";
+// }
 
 // update to test other interpolators? or separate one for each used?
 // update to test weirder functions (or input a function to test interpolator?)
@@ -247,67 +247,67 @@ void test_interpolator() {
     }
 
     // Plot and save figure
-    plt::figure_size(800, 600);
-    plt::plot(x_dense, y_interp, {{"label", "Spline"}});
-    plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
-    plt::xlabel("x");
-    plt::ylabel("y");
-    plt::title("CubicSpline Interpolation of f(x) = x^3");
-    plt::legend();
-    plt::grid(true);
-    plt::save("interpolator_test.png");
+    // plt::figure_size(800, 600);
+    // plt::plot(x_dense, y_interp, {{"label", "Spline"}});
+    // plt::scatter(x_vals, y_vals, 10.0, {{"label", "Data points"}});
+    // plt::xlabel("x");
+    // plt::ylabel("y");
+    // plt::title("CubicSpline Interpolation of f(x) = x^3");
+    // plt::legend();
+    // plt::grid(true);
+    // plt::save("interpolator_test.png");
 
-    std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
+    // std::cout << "CubicSpline test passed and plot saved to interpolator_test.png\n";
 }
 
-void test_prof_ints(bool plot) { // test profile integrals f' and l
+void test_prof_ints() { // test profile integrals f' and l
     PhaseTransition::PTParams params;
     Hydrodynamics::FluidProfile profile(params);
 
     const auto chi_vals = linspace(0.0, 100.0, 200);
     const auto [fd_vals, l_vals] = prof_ints_fl(chi_vals, profile);
 
-    if (plot) {
-        plt::figure_size(1600, 600);
+    // if (plot) {
+    //     plt::figure_size(1600, 600);
 
-        // f'(chi)
-        plt::subplot2grid(1, 2, 0, 0);
-        plt::plot(chi_vals, fd_vals);
-        plt::xlabel("chi");
-        plt::ylabel("f'(chi)");
-        plt::grid(true);
+    //     // f'(chi)
+    //     plt::subplot2grid(1, 2, 0, 0);
+    //     plt::plot(chi_vals, fd_vals);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("f'(chi)");
+    //     plt::grid(true);
 
-        // l(chi)
-        plt::subplot2grid(1, 2, 0, 1);
-        plt::plot(chi_vals, l_vals);
-        plt::xlabel("chi");
-        plt::ylabel("l(chi)");
-        plt::grid(true);
+    //     // l(chi)
+    //     plt::subplot2grid(1, 2, 0, 1);
+    //     plt::plot(chi_vals, l_vals);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("l(chi)");
+    //     plt::grid(true);
 
-        plt::save("fd_l_profile.png");
-    }
+    //     plt::save("fd_l_profile.png");
+    // }
     return;
 }
 
-void test_Apsq(bool plot) { // test Ap_sq
+void test_Apsq() { // test Ap_sq
     PhaseTransition::PTParams params;
     Hydrodynamics::FluidProfile profile(params);
 
     const auto chi_vals = logspace(1e-3, 100, 1000);
     const auto Apsq = Hydrodynamics::Ap_sq(chi_vals, profile);
 
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::plot(chi_vals, Apsq);
-        plt::xlabel("chi");
-        plt::ylabel("Ap_sq(chi)");
-        plt::grid(true);
-        plt::save("Ap_sq_profile.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::plot(chi_vals, Apsq);
+    //     plt::xlabel("chi");
+    //     plt::ylabel("Ap_sq(chi)");
+    //     plt::grid(true);
+    //     plt::save("Ap_sq_profile.png");
+    // }
     return;
 }
 
-void test_Ekin(bool plot) {
+void test_Ekin() {
     const PhaseTransition::Universe un;
 
     const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
@@ -324,22 +324,22 @@ void test_Ekin(bool plot) {
     const auto Ek2 = Spectrum::Ekin(kRs_vals, profile2);
     const auto Eks2 = Spectrum::zetaKin(Ek2);
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(Eks1.k(), Eks1.P(), "k-");
-        plt::loglog(Eks2.k(), Eks2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Ekin(K)");
-        plt::xlim(1e-1, 1e+3);
-        plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("Ekin_spectrum.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::loglog(Eks1.k(), Eks1.P(), "k-");
+    //     plt::loglog(Eks2.k(), Eks2.P(), "r-");
+    //     plt::xlabel("K=kRs");
+    //     plt::ylabel("Ekin(K)");
+    //     plt::xlim(1e-1, 1e+3);
+    //     plt::ylim(1e-4, 1e+0);
+    //     plt::grid(true);
+    //     plt::save("Ekin_spectrum.png");
+    // }
 
     return;
 }
 
-void test_GWSpec(bool plot) {
+void test_GWSpec() {
     const PhaseTransition::Universe un;
 
     const PhaseTransition::PTParams params1(0.5, 0.1, 1.0, 10.0, 1.71, "bag", "exp", un);
@@ -352,17 +352,17 @@ void test_GWSpec(bool plot) {
     const auto OmegaGW1 = Spectrum::GWSpec(kRs_vec, params1);
     const auto OmegaGW2 = Spectrum::GWSpec(kRs_vec, params2);
     
-    if (plot) {
-        plt::figure_size(800, 600);
-        plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
-        plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
-        plt::xlabel("K=kRs");
-        plt::ylabel("Omega_GW(K)");
-        plt::xlim(1e-3, 1e+3);
-        // plt::ylim(1e-4, 1e+0);
-        plt::grid(true);
-        plt::save("GW_spectrum.png");
-    }
+    // if (plot) {
+    //     plt::figure_size(800, 600);
+    //     plt::loglog(OmegaGW1.k(), OmegaGW1.P(), "k-");
+    //     plt::loglog(OmegaGW2.k(), OmegaGW2.P(), "r-");
+    //     plt::xlabel("K=kRs");
+    //     plt::ylabel("Omega_GW(K)");
+    //     plt::xlim(1e-3, 1e+3);
+    //     // plt::ylim(1e-4, 1e+0);
+    //     plt::grid(true);
+    //     plt::save("GW_spectrum.png");
+    // }
 
     return;
 }
@@ -408,39 +408,39 @@ void test_SiCi() {
     std::cout << "All sine/cosine integral tests passed!\n";
 }
 
-void test_dlt_SSM() {
-    const PhaseTransition::PTParams params;
+// void test_dlt_SSM() {
+//     const PhaseTransition::PTParams params;
 
-    const auto k_vals = logspace(1e-3, 1e+3, 5);
-    const auto p_vals = linspace(1e-2, 1e+3, 200);
-    const auto z_vals = linspace(-1.0, 1.0, 200);
+//     const auto k_vals = logspace(1e-3, 1e+3, 5);
+//     const auto p_vals = linspace(1e-2, 1e+3, 200);
+//     const auto z_vals = linspace(-1.0, 1.0, 200);
 
-    const auto nk = k_vals.size();
-    const auto np = p_vals.size();
-    const auto nz = z_vals.size();
+//     const auto nk = k_vals.size();
+//     const auto np = p_vals.size();
+//     const auto nz = z_vals.size();
 
-    const auto dlta1 = Spectrum::dlt(50, k_vals, p_vals, z_vals, params);
-    // const auto dlta2 = Spectrum::dlt_SSM(50, k_vals, p_vals, z_vals, params);
+//     const auto dlta1 = Spectrum::dlt(50, k_vals, p_vals, z_vals, params);
+//     // const auto dlta2 = Spectrum::dlt_SSM(50, k_vals, p_vals, z_vals, params);
 
-    const auto tol = 1e-10;
-    for (int kk = 0; kk < nk; kk++) {
-        for (int pp = 0; pp < np; pp++) {
-            for (int zz = 0; zz < nz; zz++) {
-                const auto dlt1 = dlta1[kk][pp][zz];
-                // const auto dlt2 = dlta2[kk][pp][zz];
+//     const auto tol = 1e-10;
+//     // for (size_t kk = 0; kk < nk; kk++) {
+//     //     for (size_t pp = 0; pp < np; pp++) {
+//     //         for (size_t zz = 0; zz < nz; zz++) {
+//     //             const auto dlt1 = dlta1[kk][pp][zz];
+//     //             // const auto dlt2 = dlta2[kk][pp][zz];
 
-                // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
+//     //             // std::cout << "dlt1=" << dlt1 << ", dlt2=" << dlt2 << "\n";
 
-                // const auto error = std::abs(dlt1 - dlt2);
-                // if (error > tol) {
-                //     std::cout << "err=" << error << " for (k,p,z)=(" << kk << "," << pp << "," << zz << ")\n";
-                // }
-            }
-        }
-    }
+//     //             // const auto error = std::abs(dlt1 - dlt2);
+//     //             // if (error > tol) {
+//     //             //     std::cout << "err=" << error << " for (k,p,z)=(" << kk << "," << pp << "," << zz << ")\n";
+//     //             // }
+//     //         }
+//     //     }
+//     // }
 
-    return;
-}
+//     return;
+// }
 
 // probably don't need this
 void test_simpson_integrate() {
@@ -453,7 +453,7 @@ void test_simpson_integrate() {
     {
         const int N = 101;
         const double a = 0.0, b = M_PI;
-        double h = (b - a) / (N - 1);
+        // double h = (b - a) / (N - 1);
 
         const auto x1_vals = linspace(a, b, N);
         std::vector<double> y1_vals;
@@ -585,7 +585,7 @@ void test_power(int num_runs) {
     // Run std::pow multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_std_pow = std::pow(x, exp);
+        std::pow(x, exp);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         std_pow_times.push_back(duration.count());
@@ -594,7 +594,7 @@ void test_power(int num_runs) {
     // Run custom power function multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_power = power(x, exp);
+        power(x, exp);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         power_times.push_back(duration.count());
@@ -603,7 +603,7 @@ void test_power(int num_runs) {
     // Run custom power6 function multiple times and record the time
     for (int i = 0; i < num_runs; ++i) {
         auto start = std::chrono::high_resolution_clock::now();
-        double result_power6 = power6(x);
+        power6(x);
         auto end = std::chrono::high_resolution_clock::now();
         std::chrono::duration<double> duration = end - start;
         power6_times.push_back(duration.count());

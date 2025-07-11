@@ -12,9 +12,6 @@
 #include <chrono>
 // #include <Eigen/Dense>
 
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
-
 #include "maths_ops.hpp"
 #include "phasetransition.hpp"
 #include "hydrodynamics.hpp"
@@ -66,25 +63,29 @@ void PowerSpec::write(const std::string& filename) const {
     return;
 }
 
-// void FluidProfile::plot(const std::string& filename) const {
-//     std::cout << "Saving power spectrum plot to disk... ";
+#ifdef ENABLE_MATPLOTLIB
+#include "matplotlibcpp.h"
+namespace plt = matplotlibcpp;
+void FluidProfile::plot(const std::string& filename) const {
+    std::cout << "Saving power spectrum plot to disk... ";
 
-//     plt::figure_size(800, 600);
-//     plt::loglog(k(), P(), "k-");
-//     plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
-//     plt::xlabel("K=kRs");
-//     plt::ylabel("Omega_GW(K)");
-//     plt::xlim(1e-3, 1e+3);
-//     plt::grid(true);
-//     plt::save("../GW_spectrum.png");
+    plt::figure_size(800, 600);
+    plt::loglog(k(), P(), "k-");
+    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
+    plt::xlabel("K=kRs");
+    plt::ylabel("Omega_GW(K)");
+    plt::xlim(1e-3, 1e+3);
+    plt::grid(true);
+    plt::save("../GW_spectrum.png");
 
-//     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-//     plt::save("../" + filename);
+    plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
+    plt::save("../" + filename);
 
-//     std::cout << "Saved to '" << filename << "'" << std::endl;
+    std::cout << "Saved to '" << filename << "'" << std::endl;
 
-//     return;
-// }
+    return;
+}
+#endif
 
 CubicSpline<double> PowerSpec::interpolate() const {
     return CubicSpline(k(), P());
@@ -231,21 +232,21 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     std::vector<double> GW_P_vals(nk);
 
     #pragma omp parallel for
-    for (int m = 0; m < nk; m++ ) {
+    for (size_t m = 0; m < nk; m++ ) {
         const auto kRs = kRs_vals[m];
         const auto k = kRs * Rs_inv;
 
         const auto kRs3 = kRs * kRs * kRs;
 
         std::vector<std::vector<double>> integrand(np, std::vector<double>(nz));
-        for (int i = 0; i < np; i++) {
+        for (size_t i = 0; i < np; i++) {
             const auto p = p_vals[i];
-            const auto pRs = pRs_vals[i];
+            // const auto pRs = pRs_vals[i];
             const auto pRs2 = pRs2_vals[i];
 
             const auto zk_pRs_fac = kRs3 * zk_pRs_vals[i] * pRs2; // kRs^3 * zetaKin(pRs) * pRs^2
 
-            for (int j = 0; j < nz; j++) {
+            for (size_t j = 0; j < nz; j++) {
                 const auto z = z_vals[j];
                 const auto pt = ptilde(k, p, z);
                 const auto ptRs = pt * Rs;
@@ -334,12 +335,12 @@ std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vecto
     for (int idx = 0; idx < ntsq; idx++) {
         const auto tau_minus = tau_m[idx];
         // fill ff3
-        for (int kk = 0; kk < nk; kk++) {
+        for (size_t kk = 0; kk < nk; kk++) {
             const auto k = k_vals[kk];
             ff3_cache[idx][kk] = std::cos(k * tau_minus);
         }
         // fill ff1
-        for (int pp = 0; pp < np; pp++) {
+        for (size_t pp = 0; pp < np; pp++) {
             const auto p = p_vals[pp];
             ff1_cache[idx][pp] = ff(tau_minus, p*cs); // redundancy computing p*cs here - change?
         }
@@ -363,7 +364,7 @@ std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vecto
         std::vector<double>& integrand = integrands[tid]; // local thread copy of integrand
 
         #pragma omp for
-        for (int idx = 0; idx < nk * np * nz; idx++) {
+        for (size_t idx = 0; idx < nk * np * nz; idx++) {
             const int kk = idx / (np * nz);
             const int pp = (idx / nz) % np;
             const int zz = idx % nz;
@@ -430,7 +431,7 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
     // could make this bit faster by moving spline interp and Si(x), Ci(x) 
     // calculation into one function (collapse loops)
     #pragma omp parallel for
-    for (int i = 0; i < x_vals.size(); i++) {
+    for (size_t i = 0; i < x_vals.size(); i++) {
         const auto x = x_vals[i];
         const auto [Si, Ci] = SiCi(x, n);
         Si_vals[i] = Si;
@@ -445,15 +446,15 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
 
     #pragma omp parallel
     {
-        const auto num_threads = omp_get_num_threads();
-        const auto thread_id = omp_get_thread_num();
+        // const auto num_threads = omp_get_num_threads();
+        // const auto thread_id = omp_get_thread_num();
 
         // std::vector<double> dlt_temp(num_threads, 0.0);
 
         #pragma omp for collapse(3) schedule(dynamic)
-        for (int kk = 0; kk < nk; kk++)
-        for (int pp = 0; pp < np; pp++)
-        for (int zz = 0; zz < nz; zz++) {
+        for (size_t kk = 0; kk < nk; kk++)
+        for (size_t pp = 0; pp < np; pp++)
+        for (size_t zz = 0; zz < nz; zz++) {
             const auto k = k_vals[kk];
             const auto p = p_vals[pp];
             const auto z = z_vals[zz];
@@ -502,7 +503,7 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
 
 /*** Kinetic spectrum ***/
 PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidProfile& prof) {
-    const auto csq = prof.params().csq();
+    // const auto csq = prof.params().csq();
     const auto beta = prof.params().beta();
     const auto Rs = prof.params().Rs();
     const auto nuc_type = prof.params().nuc_type();
@@ -535,14 +536,14 @@ PowerSpec Ekin(const std::vector<double>& kRs_vals, const Hydrodynamics::FluidPr
         std::vector<double>& integrand = integrands[tid]; // local thread copy of integrand
 
         #pragma omp for
-        for (int kk = 0; kk < nk; kk++) {
+        for (size_t kk = 0; kk < nk; kk++) {
             const auto kRs = kRs_vals[kk];
             const auto kRs_inv = 1.0 / kRs;
 
             const auto fac2 = fac1 * power(kRs_inv, 5);
             const auto fac3 = beta * Rs * kRs_inv;
 
-            for (int i = 0; i < n; i++) {
+            for (size_t i = 0; i < n; i++) {
                 const auto chi = chi_vals[i];
                 integrand[i] = fac2 * lt_dist(fac3 * chi) * power(chi, 6) * Apsq[i];
             }
@@ -585,7 +586,7 @@ double prefac(double csq, double T0, double H0, double g0, double gs) {
     const auto TGW = 1.0; // Transfer function (eq 13)
     const auto OmegaK_KK = 1e-4; // Omega_K / KK (eq 42)
 
-    return 3 * std::pow(Gamma,2) * TGW * std::pow(OmegaK_KK,2);
+    return 3 * std::pow(Gamma,2) * TGW * std::pow(OmegaK_KK,2) + 0*(T0 + H0 + g0 + gs); // 0*() to avoid unused variable warning
 }
 
 double prefac(double csq, const PhaseTransition::Universe &u) {

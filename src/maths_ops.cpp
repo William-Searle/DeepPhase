@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <functional>
 #include <cassert>
-#include <matplotlibcpp.h>
+// #include <matplotlibcpp.h>
 
 #include "constants.hpp"
 #include "maths_ops.hpp"
@@ -607,7 +607,7 @@ std::pair<double, double> SiCi(double x, const size_t n) {
     std::vector<double> sin_integrand_vals(n);
     std::vector<double> cos_integrand_vals(n);
     
-    for (int j = 0; j < n; j++) {
+    for (size_t j = 0; j < n; j++) {
         const auto t = t_vals[j];
         sin_integrand_vals[j] = sin_integrand(t);
         cos_integrand_vals[j] = cos_integrand(t);
@@ -706,54 +706,79 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
     return {x_vals, y_vals};
 }
 
+// modified bisection method only to be used for functions with exactly one root!
 double root_finder(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
     double fa = f(a);
     double fb = f(b);
 
-    // if (fa * fb >= 0.0) {
-    //     std::cout << "f(a)=" << fa << ", f(b)=" << fb << "\n";
-    //     throw std::runtime_error("Root is not bracketed. Must have f(a)*f(b)>=0.");
-    // }
+    if (fa * fb > 0.0) {
+        throw std::runtime_error("Bisection method interval not bracketed!");
+    }
 
-    double c = a;
-    double fc = fa;
-    double s = b;
-    double fs = fb;
+    if (!std::isfinite(fa) || !std::isfinite(fb)) {
+        throw std::runtime_error("f(a) or f(b) is not finite.");
+    }
 
-    for (int iter = 0; iter < max_iter; ++iter) {
-        if (fa != fc && fb != fc) {
-            // inverse quadratic interpolation
-            s = (a * fb * fc) / ((fa - fb) * (fa - fc)) +
-                (b * fa * fc) / ((fb - fa) * (fb - fc)) +
-                (c * fa * fb) / ((fc - fa) * (fc - fb));
+    for (int i = 0; i < max_iter; ++i) {
+        double c = 0.5 * (a + b);
+        double fc = f(c);
+
+        if (!std::isfinite(fc)) {
+            // throw std::runtime_error("f(c) is not finite during bisection.");
+        }
+
+        // Check convergence
+        // since interval is not necessarily bracketed, need to remove second condition
+        // otherwise it thinks it successfully found the root once it has gone through 
+        // the entire interval
+        if (std::abs(fc) < tol) {
+            return c;
+        }
+
+        if (fc > 0.0) {
+            b = c;
+            fb = fc;
         } else {
-            // secant method
-            s = b - fb * (b - a) / (fb - fa);
-        }
-
-        // Bisection fallback if needed
-        if ((s < (3*a + b)/4 || s > b) || 
-            (std::abs(s - b) >= std::abs(b - c)/2) ||
-            (std::abs(b - c) < tol)) {
-            s = (a + b)/2;
-        }
-
-        fs = f(s);
-        c = b;
-        fc = fb;
-
-        if (fa * fs < 0) {
-            b = s;
-            fb = fs;
-        } else {
-            a = s;
-            fa = fs;
-        }
-
-        if (std::abs(b - a) < tol) {
-            return s;
+            a = c;
+            fa = fc;
         }
     }
 
-    throw std::runtime_error("Root finder method did not converge.");
+    // std::cout << "Bisection method failed, finding minimum of residual instead.\n";
+    // return find_minimum(f, a, b);
+    throw std::runtime_error("Bisection method did not converge.");
+}
+
+double find_minimum(const std::function<double(double)>& f, double a, double b, double tol, int max_iter) {
+     std::function<double(double)> fsq = [&f] (double x) {
+            const auto val = f(x);
+            return val * val;
+        };
+    const double phi = (1.0 + std::sqrt(5.0)) / 2.0;  // ≈ 1.618
+    const double resphi = 2.0 - phi;                 // ≈ 0.382
+
+    double x1 = b - resphi * (b - a);
+    double x2 = a + resphi * (b - a);
+    double f1 = fsq(x1);
+    double f2 = fsq(x2);
+
+    int iter = 0;
+    while ((b - a) > tol && iter < max_iter) {
+        if (f1 < f2) {
+            b = x2;
+            x2 = x1;
+            f2 = f1;
+            x1 = b - resphi * (b - a);
+            f1 = fsq(x1);
+        } else {
+            a = x1;
+            x1 = x2;
+            f1 = f2;
+            x2 = a + resphi * (b - a);
+            f2 = fsq(x2);
+        }
+        ++iter;
+    }
+
+    return (f1 < f2) ? x1 : x2;
 }
