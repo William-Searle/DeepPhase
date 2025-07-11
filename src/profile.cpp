@@ -314,11 +314,19 @@ double FluidProfile::calc_w1wN(double xi_sh) const { // w1/wN
     return (9.0 * xi_sh_sq - 1.0) / (3.0 * (1.0 - xi_sh_sq));
 }
 
+// bag model only
 double FluidProfile::xi_shock(double v1UF) const {
-    // if (model_ == "bag") { // add one for mu nu model too?
-        const auto fac = v1UF / 3.0;
-        return fac + std::sqrt(fac * fac + 1.0 / 3.0);
+    
+    // const auto fac0 = 0.5 * (1.0 - cpsq_) * v1UF;
+    // return fac0 + std::sqrt(fac0 * fac0 + cpsq_);
 
+    const auto fac = v1UF / 3.0;
+    const auto xi_sh = fac + std::sqrt(fac * fac + 1.0 / 3.0);
+    if (xi_sh <= std::sqrt(cpsq_)) throw std::runtime_error("shock failed (xi_sh <= c+)");
+
+    return xi_sh;
+
+    // if (model_ == "bag") { // add one for mu nu model too?
     // } else { // generic EoS
     //     throw std::runtime_error("Veff support not fully implemented yet");
 
@@ -335,12 +343,22 @@ double FluidProfile::xi_shock(double v1UF) const {
     // }
 }
 
+double FluidProfile::v1UF_from_shock(double xi_sh) const {
+    if (xi_sh < std::sqrt(cpsq_) || xi_sh > 1.0) {
+        // condition relaxed in if statement since for some vw & alN, xi_shock VERY close to bounds
+        // so root-finder takes xi_sh_min = cp, xi_sh_max = 1
+        throw std::invalid_argument("shock must be supersonic and less than speed of light (cp < xi_sh < 1)");
+    }
+    return (3.0 * xi_sh * xi_sh - 1.0) / (2.0 * xi_sh);
+}
+
 // generic for Veff
-std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq, double cmsq) const {
+// might need to fix al_min = 0 if numerical precision causes it to be slightly negative
+std::vector<double> FluidProfile::get_alp_minmax(double vw, double cpsq) const {
     // same as get_alp_wall but using vp, vm
     const auto cp = std::sqrt(cpsq);
 
-    const auto vm = (mode_ == 0) ? vw : std::sqrt(cpsq); // |vm|=vw (deflag), cp (hybrid)
+    const auto vm = (mode_ == 0) ? vw : cp; // |vm|=vw (deflag), cp (hybrid)
     const auto vp_min = 0.0;
     const auto vp_max = std::min(cp, vw); // vw for deflag (vw < cp), cp for hybrid (cp < vw)
     
@@ -362,53 +380,103 @@ double FluidProfile::get_alp_wall(double vpUF, double vw) const {
 }
 
 // alpha_+ from shock condition
+// i think small numerical errors in vpUF and v1UF add up a lot here (taking exp probably does this)
+// which is why get_alp_wall slightly different to get_alp_shock - best not to use this
 double FluidProfile::get_alp_shock(double vpUF, double v1UF, double alN) const {
     const auto xi_sh = xi_shock(v1UF);
     const auto alpha1 = alN * 3.0 * (1.0 - xi_sh * xi_sh) / (9.0 * xi_sh * xi_sh - 1.0);
     // const auto alpha1 = alN * gammaSq(v1UF) * (3.0 + 5.0 * v1UF - 4.0 * v1UF * std::sqrt(3.0 + v1UF * v1UF)) / 3.0;
     
-    auto integrand_func = [] (double xi, double v) {
-        return 4.0 * gammaSq(v) * mu(xi, v);
+    auto integrand_func = [] (double xi, double v, double cpsq) {
+        return (1.0 / cpsq + 1.0) * gammaSq(v) * mu(xi, v);
     };
 
-    const int n = 1000;
+    const int n = 5000;
     const auto v_vals = linspace(vpUF, v1UF, n);
     std::vector<double> integrand_vals(n);
-    for (int i = 0; i < integrand_vals.size(); i++) {
+    for (size_t i = 0; i < integrand_vals.size(); i++) {
         const auto v = v_vals[i];
-        integrand_vals[i] = integrand_func(xi_sh, v);
+        integrand_vals[i] = integrand_func(xi_sh, v, cpsq_);
     }
     const auto w1wp_rat = std::exp(simpson_integrate(v_vals, integrand_vals)); // w1/wp
 
     return w1wp_rat * alpha1;
 }
 
-double FluidProfile::v1UF_residual_func(double v1UF, const deriv_func& dydxi) {
-    try {
-        const auto xi_sh = xi_shock(v1UF);
+// unused - too numerically unstable & doesn't always converge
+double FluidProfile::alp_residual_func(double xi_sh, const deriv_func& dydxi) const {
+    // initial conditions
+    const auto xi0 = xi_sh - 0.001;
+    const auto v1UF = v1UF_from_shock(xi_sh);
+    const auto w1wN = calc_w1wN(xi_sh);
 
-        // initial conditions
-        const auto xi0 = xi_sh - 0.001;
-        const std::vector<double> y0 = {v1UF}; // v0 = v(xi_sh) = v1UF
+    const std::vector<double> y0 = {v1UF, w1wN}; // v0 = v(xi_sh) = v1UF
 
-        // solve fluid EoM to get vpUF
-        const auto [xi_sol, y_sol] = rk4_solver(dydxi, xi0, xif_, y0, 1000);
-        const auto vpUF = y_sol.back()[0]; // vpUF = v(xi_w) (endpoint of integration)
-        
-        // calc alpha_+ from wall & shock constraints
-        const auto alp_wall = get_alp_wall(vpUF, vw_);
-        const auto alp_shock = get_alp_shock(vpUF, v1UF, alN_);
-        
-        return alp_wall - alp_shock;
-    } catch (...) {
-        return std::numeric_limits<double>::infinity();
-    }
+    // solve fluid EoM to get vpUF
+    // WARNING: choosing num steps too small gives bad result!
+    const auto [xi_sol, y_sol] = rk4_solver(dydxi, xi0, xif_, y0, 10000);
+    const auto vpUF = y_sol.back()[0]; // vpUF = v(xi_w) (endpoint of integration)
+    const auto wpwN = y_sol.back()[1];
+
+    // std::cout << "v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
+    
+    // calc alpha_+ from wall & shock constraints
+    const auto alp_wall = get_alp_wall(vpUF, vw_);
+    // const auto alp_shock = get_alp_shock(vpUF, v1UF, alN_);
+    // const auto alp_shock = (w1wN / wpwN) * alN * 3.0 * (1.0 - xi_sh * xi_sh) / (9.0 * xi_sh * xi_sh - 1.0);
+    const auto alp_shock = alN_ / wpwN;
+
+    // std::cout << "alp_wall=" << alp_wall << ", alp_sh=" << alp_shock << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
+    
+    // try taking log(alp_wall / alp_shock)? has well defined zero for root and is monotonic
+    return alp_wall - alp_shock;
+    // return std::log(std::abs(alp_wall / alp_shock));
 }
+
+double FluidProfile::alN_residual_func(double xi_sh, const deriv_func& dydxi) const {
+    // initial conditions
+    const auto xi0 = xi_sh - 0.001;
+    const auto v1UF = v1UF_from_shock(xi_sh);
+    const auto w1wN = calc_w1wN(xi_sh);
+
+    const std::vector<double> y0 = {v1UF, w1wN}; // v0 = v(xi_sh) = v1UF
+
+    // solve fluid EoM to get vpUF
+    // WARNING: choosing num steps too small gives bad result!
+    const auto [xi_sol, y_sol] = rk4_solver(dydxi, xi0, xif_, y0, 10000);
+    const auto vpUF = y_sol.back()[0]; // vpUF = v(xi_w) (endpoint of integration)
+    const auto wpwN = y_sol.back()[1];
+    
+    // calc alpha_N from wall constraint
+    const auto alN_wall = wpwN * get_alp_wall(vpUF, vw_);
+
+    // std::cout << "alN_rat=" << alN_wall / alN_ << ", v1UF=" << v1UF << ", xi_sh=" << xi_sh << ", vpUF = " << vpUF << "\n";
+    
+    // these seem to both work equally as well (still doesn't work for some small vw)
+    // return alN_wall - alN_;
+    return std::log(std::abs(alN_wall / alN_));
+}
+
 
 // generic for Veff
 double FluidProfile::get_la_behind_wall(double w) const {
     // la(xi) behind bubble wall (detonations)
     return 0.75 * (w - 1.0 - alN_);
+}
+
+double FluidProfile::find_shock(const deriv_func& dydxi) const {
+    // Root-finding algorithm for initial condition v0 = v(xi_sh) = v1UF
+
+    // residual function f(xi_sh) = alN_calc - alN_actual
+    std::function<double(double)> residual = [this, &dydxi] (double xi_sh) {
+        return alN_residual_func(xi_sh, dydxi);
+    };
+
+    // cp < xi_sh < 1 (shock must be supersonic and less than speed of light)
+    const double xi_sh_min = std::sqrt(cpsq_);
+    const double xi_sh_max = 1.0 - 1e-5; // need to make this closer to 1 for extreme case of hybrids with xi_sh very close to 1
+
+    return root_finder(residual, xi_sh_min, xi_sh_max);
 }
 
 // generic for Veff
@@ -417,7 +485,7 @@ double FluidProfile::get_la_front_wall(double w) const {
     return 0.75 * (w - 1.0);
 }
 
-std::vector<state_type> FluidProfile::solve_profile(int n) {    
+std::vector<state_type> FluidProfile::solve_profile(int n) {
     std::cout << "Solving fluid profile for hydrodynamic mode=";
     if (mode_ == 0) {
         std::cout << "deflagration";
@@ -456,18 +524,9 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         // hybrid and deflagration ICs the same for xi_w < xi < xi_sh
         xif_ = vw_ + dlt;
 
-        /***** Root-finding algorithm for initial condition v0 = v(xi_sh) = v1UF *****/
-        // residual function f(v1UF) = alp_wall - alp_shock
-        std::function<double(double)> residual = [this, &dvdxi_vec] (double v1UF) {
-            return v1UF_residual_func(v1UF, dvdxi_vec);
-        };
-
-        const double v1UF_min = 0.01;
-        const double v1UF_max = 0.9;
-
-        const double v1UF = root_finder(residual, v1UF_min, v1UF_max);
+        const auto xi_sh = find_shock(dydxi);
+        const auto v1UF = v1UF_from_shock(xi_sh);
         y0_.push_back(v1UF);
-        /*****************************************************************************/
 
         xi0_ = xi_shock(v1UF) - dlt;
 
@@ -481,25 +540,30 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         y_sol_tmp = sol.second;
 
         // fill v, w vectors
-        for (int i = 0; i < xi_sol_tmp.size(); i++) {
+        for (size_t i = 0; i < xi_sol_tmp.size(); i++) {
             v_sol_tmp.push_back(y_sol_tmp[i][0]);
             w_sol_tmp.push_back(y_sol_tmp[i][1]);
             la_sol_tmp.push_back(get_la_front_wall(w_sol_tmp[i]));
         }
 
         const auto vpUF = v_sol_tmp.back();
-        if (vpUF >= vw_) throw std::invalid_argument("vpUF must be < vw");
+        // if (vpUF >= vw_) throw std::invalid_argument("vpUF must be < vw");
 
         const auto wpwN = w_sol_tmp.back();
         
         // check alp okay
         // Note: need alp for this so must do root-finding BEFORE determining if alp is good/bad
         const auto alp = get_alp_wall(vpUF, vw_);
-        const auto alp_minmax = get_alp_minmax(vw_, cpsq_, cmsq_);
-
+        const auto alp_minmax = get_alp_minmax(vw_, cpsq_);
+        
         if (alp >= alN_) throw std::invalid_argument("alpha_+ must be < alpha_N");
         if (alp < alp_minmax[0]) throw std::invalid_argument("alpha_+ too small for shock");
         if (alp > alp_minmax[1]) throw std::invalid_argument("alpha_+ too large for shock");
+
+        // fail safe for root-finding method
+        // const auto alp_sh = get_alp_shock(vpUF, v1UF, alN_);
+        // std::cout << "alp_wall=" << alp << ", alp_sh=" << alp_sh << "\n";
+        // if (std::abs(alp - alp_sh) > 1e-6) throw std::runtime_error("alp_wall != alp_shock");
 
         if (mode_ == 0) {
             // fix end-value for enthalpy
@@ -531,7 +595,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
             const auto [xi_sol_rf_tmp, y_sol_rf_tmp] = rk4_solver(dydxi, xi0_rf, xif_rf, y0_rf, n);
 
             // combine rarefaction wave with shockwave part of solution
-            for (int i = 0; i < xi_sol_rf_tmp.size(); i++) {
+            for (size_t i = 0; i < xi_sol_rf_tmp.size(); i++) {
                 xi_sol_tmp.push_back(xi_sol_rf_tmp[i]);
                 v_sol_tmp.push_back(y_sol_rf_tmp[i][0]);
                 w_sol_tmp.push_back(y_sol_rf_tmp[i][1]);
@@ -568,7 +632,7 @@ std::vector<state_type> FluidProfile::solve_profile(int n) {
         y_sol_tmp = sol.second;
 
         // fill v, w vectors
-        for (int i = 0; i < xi_sol_tmp.size(); i++) {
+        for (size_t i = 0; i < xi_sol_tmp.size(); i++) {
             v_sol_tmp.push_back(y_sol_tmp[i][0]);
             w_sol_tmp.push_back(y_sol_tmp[i][1]);
             la_sol_tmp.push_back(get_la_behind_wall(w_sol_tmp[i]));

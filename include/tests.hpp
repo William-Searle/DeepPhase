@@ -50,16 +50,16 @@ void test_gsl_integration();
 */
 void test_interpolator();
 
-void test_prof_ints(bool plot=false);
-void test_Apsq(bool plot=false);
+void test_prof_ints();
+void test_Apsq();
 
-void test_Ekin(bool plot=false);
+void test_Ekin();
 
-void test_GWSpec(bool plot=false);
+void test_GWSpec();
 
 void test_SiCi();
 
-void test_dlt_SSM();
+// void test_dlt_SSM();
 
 void test_simpson_integrate();
 

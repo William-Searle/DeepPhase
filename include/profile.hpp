@@ -113,14 +113,18 @@ class FluidProfile {
     double calc_w1wN(double xi_sh) const;
 
     double xi_shock(double v1UF) const; // position of shock front
-    std::vector<double> get_alp_minmax(double vw, double cpsq, double cmsq) const;
+    double v1UF_from_shock(double xi_sh) const;
+    std::vector<double> get_alp_minmax(double vw, double cpsq) const;
     double get_alp_wall(double vpUF, double vw) const;
     double get_alp_shock(double vpUF, double v1UF, double alphaN) const;
-    double v1UF_residual_func(double v1UF, const deriv_func& dydxi);
+
+    double alp_residual_func(double xi_sh, const deriv_func& dydxi) const;
+    double alN_residual_func(double xi_sh, const deriv_func& dydxi) const;
 
     double get_la_behind_wall(double w) const;
     double get_la_front_wall(double w) const;
 
+    double find_shock(const deriv_func& dydxi) const;
     // put number of integration points in input file? seems bad to hardcode
     std::vector<state_type> solve_profile(int n=100);
     // state_type calc_lambda_vals(state_type w_vals) const;
