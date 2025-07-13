@@ -1,5 +1,5 @@
-# DeepPhase-cpp-port
-C++ port of DeepPhase-main
+# DeepPhase
+Calculates gravitational wave spectrum from a first-order phase transition using either the Bag model or a specific effective potential
 
 ## Dependencies
     matplotlib-cpp (https://github.com/lava/matplotlib-cpp/tree/master)
