@@ -45,3 +45,6 @@
 # Python
 /.ipynb_checkpoints/
 *.ipynb
+
+# alglib-cpp
+/alglib-cpp/
