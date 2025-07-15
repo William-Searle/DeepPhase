@@ -66,7 +66,7 @@ void generate_streamplot_data(const PhaseTransition::PTParams& params, int xi_pt
     std::cout << "Generating streamplot data for fluid profile... ";
     std::cout << "(warning: does not work for w(xi) profile yet!) ";
     
-    std::ofstream file("../" + filename);
+    std::ofstream file(filename);
     file << "xi,v,w,dxidtau,dvdtau,dwdtau\n";
     file << std::fixed << std::setprecision(8); // needed for compatibility with python streamplot
 
@@ -160,8 +160,8 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
         }
 
         // calculate fluid profiles v(xi), w(xi), la(xi)
-        // const auto prof = solve_profile(n);
-        const auto prof = read("../input_profile_def.csv");
+        const auto prof = solve_profile(n);
+        // const auto prof = read("../input_profile_def.csv");
 
         xi_vals_ = prof[0];
         v_vals_ = prof[1];

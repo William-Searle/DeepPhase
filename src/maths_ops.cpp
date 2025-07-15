@@ -7,7 +7,9 @@
 #include <stdexcept>
 #include <functional>
 #include <cassert>
+
 #include <matplotlibcpp.h>
+#include "ap.h"
 
 #include "constants.hpp"
 #include "maths_ops.hpp"
@@ -881,4 +883,18 @@ double find_smallest_root(
     if (roots.empty())
         throw std::runtime_error("No roots found.");
     return *std::min_element(roots.begin(), roots.end());
+}
+
+alglib::real_1d_array vector_to_real_1d_array(const std::vector<double>& vec) {
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        oss << vec[i];
+        if (i != vec.size() - 1) oss << ",";
+    }
+    oss << "]";
+    
+    alglib::real_1d_array result;
+    result = oss.str().c_str();  // real_1d_array supports string assignment
+    return result;
 }

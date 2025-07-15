@@ -9,7 +9,8 @@
 
 #include <vector>
 #include <string>
-#include <matplotlibcpp.h>
+
+#include "matplotlibcpp.h"
 
 /// @brief Runs all tests
 void test_all();
@@ -18,6 +19,8 @@ void test_PowerSpec();
 
 void example_Kin_Spec(const std::string& filename="example_kin_spectrum");
 void example_GW_Spec(const std::string& filename="example_GW_spectrum");
+
+void test_cubic_spline();
 
 void test_SiCi_spline();
 

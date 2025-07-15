@@ -12,9 +12,9 @@
 
 
 #include "matplotlibcpp.h"
-#include "alglib/ap.h"
-#include "alglib/interpolation.h"
-#include "alglib/specialfunctions.h"
+#include "ap.h"
+#include "interpolation.h"
+#include "specialfunctions.h"
 
 #include "maths_ops.hpp"
 #include "PhaseTransition.hpp"

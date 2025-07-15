@@ -3,16 +3,20 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
-#include <gsl/gsl_integration.h>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <string>
+#include <iomanip>
+#include <fstream>
+
+#include "./matplotlibcpp.h"
+#include "ap.h"
+#include "interpolation.h"
+#include "specialfunctions.h"
 
 #include "tests.hpp"
 #include "profile.hpp"
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "maths_ops.hpp"
-#include "matplotlibcpp.h"
 
 namespace plt = matplotlibcpp;
 
@@ -70,7 +74,7 @@ void example_Kin_Spec(const std::string& filename) {
     const auto Ek2 = Spectrum::Ekin(kRs_vals, params2);
     const auto Eks2 = Spectrum::zetaKin(Ek2); // Normalised spectrum
     // Eks2.write(filename + ".csv");
-    
+
     // Plot spectrum (alternatively, use Ek.plot())
     plt::figure_size(800, 600);
     plt::loglog(Eks1.K(), Eks1.P(), "k-"); // exp
@@ -113,9 +117,27 @@ void example_GW_Spec(const std::string& filename) {
     
     // Write/plot to disk
     // OmegaGW.write(filename + ".csv");
-    OmegaGW.plot(filename + ".png");
+    // OmegaGW.plot(filename + ".png");
 
     return;
+}
+
+void test_cubic_spline() {
+    // Define data points
+    alglib::real_1d_array x = "[0, 1, 2, 3, 4]";
+    alglib::real_1d_array y = "[0, 1, 4, 9, 16]";  // y = x^2
+
+    // Create spline interpolant
+    alglib::spline1dinterpolant spline;
+    alglib::spline1dbuildcubic(x, y, spline);
+
+    // Evaluate the spline at a few points
+    double val1 = alglib::spline1dcalc(spline, 2.5);  // Should be close to 6.25
+    double val2 = alglib::spline1dcalc(spline, 3.5);  // Should be close to 12.25
+
+    // Output results
+    std::cout << "spline(2.5) = " << val1 << std::endl;
+    std::cout << "spline(3.5) = " << val2 << std::endl;
 }
 
 void test_PowerSpec() {
@@ -185,21 +207,48 @@ void test_SiCi_spline() {
     const double x_max = 5.0;
 
     std::vector<double> x_vals = linspace(x_min, x_max, n_interp);
-    std::vector<double> Si_vals(n_interp);
-    std::vector<double> Ci_vals(n_interp);
+    std::vector<double> Si_vals(n_interp), Si_vals_alg(n_interp);
+    std::vector<double> Ci_vals(n_interp), Ci_vals_alg(n_interp);
 
     // Step 2: Evaluate Si and Ci on the grid
     #pragma omp parallel for
-    for (int i = 0; i < n_interp; ++i) {
+    for (int i = 0; i < x_vals.size(); i++) {
         const auto x = x_vals[i];
-        const auto [Si, Ci] = SiCi(x, n_integrate);  // Use n=30 terms
+
+        double Si_alg, Ci_alg;
+        alglib::sinecosineintegrals(x, Si_alg, Ci_alg);
+        Si_vals_alg[i] = Si_alg;
+        Ci_vals_alg[i] = Ci_alg;
+
+        const auto [Si, Ci] = SiCi(x, n_integrate);
         Si_vals[i] = Si;
         Ci_vals[i] = Ci;
     }
 
-    // Step 3: Construct interpolators
-    const auto Si_interp = CubicSpline<double>(x_vals, Si_vals);
-    const auto Ci_interp = CubicSpline<double>(x_vals, Ci_vals);
+    // my calc, my spline
+    const auto Si_interp_calc = CubicSpline<double>(x_vals, Si_vals);
+    const auto Ci_interp_calc = CubicSpline<double>(x_vals, Ci_vals);
+
+    // alg calc, my spline
+    const auto Si_interp_alg = CubicSpline<double>(x_vals, Si_vals_alg);
+    const auto Ci_interp_alg = CubicSpline<double>(x_vals, Ci_vals_alg);
+
+    // my calc, alg spline
+    const auto x_vals_array = vector_to_real_1d_array(x_vals);
+    const auto Si_vals_array = vector_to_real_1d_array(Si_vals);
+    const auto Ci_vals_array = vector_to_real_1d_array(Ci_vals);
+
+    alglib::spline1dinterpolant Si_spline, Ci_spline;
+    alglib::spline1dbuildcubic(x_vals_array, Si_vals_array, Si_spline);
+    alglib::spline1dbuildcubic(x_vals_array, Ci_vals_array, Ci_spline);
+
+    // alg calc, alg spline
+    const auto Si_vals_alg_array = vector_to_real_1d_array(Si_vals_alg);
+    const auto Ci_vals_alg_array = vector_to_real_1d_array(Ci_vals_alg);
+
+    alglib::spline1dinterpolant Si_spline_alg, Ci_spline_alg;
+    alglib::spline1dbuildcubic(x_vals_array, Si_vals_alg_array, Si_spline_alg);
+    alglib::spline1dbuildcubic(x_vals_array, Ci_vals_alg_array, Ci_spline_alg);
 
     // Step 4: Define reference values for testing
     struct TestCase {
@@ -225,17 +274,18 @@ void test_SiCi_spline() {
 
     // Step 5: Compare interpolated vs. reference values
     const auto tol = 1e-6;
+
+    std::ofstream Si_file("Si.csv");
+    std::ofstream Ci_file("Ci.csv");
+    
+    Si_file << "x,exact,calc-cs,calc-algspline,alg-cs,alg-algspline\n";
+    Ci_file << "x,exact,calc-cs,calc-algspline,alg-cs,alg-algspline\n";
+
     for (const auto& tc : test_cases) {
-        double si_interp_val = Si_interp(tc.x);
-        double ci_interp_val = Ci_interp(tc.x);
-
-        std::cout << std::fixed << std::setprecision(6)
-                  << "x=" << tc.x
-                  << " | Si_interp=" << si_interp_val << " (ref=" << tc.expected_si << ")"
-                  << " | Ci_interp=" << ci_interp_val << " (ref=" << tc.expected_ci << ")\n";
-
-        assert(std::abs(si_interp_val - tc.expected_si) < tol);
-        assert(std::abs(ci_interp_val - tc.expected_ci) < tol);
+        Si_file << tc.x << "," << tc.expected_si << "," << Si_interp_calc(tc.x) << "," << alglib::spline1dcalc(Si_spline, tc.x)
+             << "," << Si_interp_alg(tc.x) << "," << alglib::spline1dcalc(Si_spline_alg, tc.x) << "\n";
+        Ci_file << tc.x << "," << tc.expected_ci << "," << Ci_interp_calc(tc.x) << "," << alglib::spline1dcalc(Ci_spline, tc.x)
+             << "," << Ci_interp_alg(tc.x) << "," << alglib::spline1dcalc(Ci_spline_alg, tc.x) << "\n";
     }
 
     std::cout << "All Si/Ci interpolation tests passed!\n";

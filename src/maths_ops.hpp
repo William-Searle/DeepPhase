@@ -15,6 +15,9 @@
 #include <cmath>
 #include <stdexcept>
 #include <initializer_list>
+#include <functional>
+
+#include "ap.h"
 
 // get rid of this
 /**
@@ -225,3 +228,5 @@ double find_smallest_root(
     double a,
     double b,
     int N = 1000);
+
+alglib::real_1d_array vector_to_real_1d_array(const std::vector<double>& vec);
