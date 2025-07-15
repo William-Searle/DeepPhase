@@ -46,5 +46,8 @@
 /.ipynb_checkpoints/
 *.ipynb
 
-# alglib-cpp
-/alglib-cpp/
+# includes
+/include/
+
+# main.cpp
+/src/main.cpp
