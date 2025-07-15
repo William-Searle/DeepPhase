@@ -14,6 +14,7 @@
 #include "matplotlibcpp.h"
 #include "alglib/ap.h"
 #include "alglib/interpolation.h"
+#include "alglib/specialfunctions.h"
 
 #include "maths_ops.hpp"
 #include "PhaseTransition.hpp"
@@ -135,10 +136,10 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     const auto Rs = params.Rs();
     const auto Rs_inv = 1.0 / Rs;
 
-    const auto z_vals = linspace(-1.0, 1.0, 200); // logspace gives nan over this domain
+    const auto z_vals = linspace(-1.0, 1.0, 1000); // logspace gives nan over this domain
     const auto nz = z_vals.size();
 
-    const auto pRs_vals = logspace(1e-2, 1e+3, 200); // P = p*Rs
+    const auto pRs_vals = logspace(1e-2, 1e+3, 1000); // P = p*Rs
     const auto np = pRs_vals.size();
 
     std::vector<double> pRs2_vals; // keep here otherwise have to calculate for each k
@@ -213,13 +214,9 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
                 const auto z_fac = 1.0 - z;
                 const auto z_fac2 = z_fac * z_fac;
 
-                const auto zk_ptRs = (ptRs != 0.0) ? zk_ptRs_interp(ptRs) : 0.0;
-
-                // neccessary to store these? only called once so maybe not
-                // const auto zk_ptRs = zk_ptRs_interp(ptRs); // see ptRs_min/max if domain issues arise
-                const auto dlta = delta[m][i][j];
-
-                integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs * dlta;
+                // prevents out of bounds spline
+                // careful! need to check this converges properly for pt=0!
+                integrand[i][j] = (ptRs != 0.0) ? z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs_interp(ptRs) * delta[m][i][j] : 0.0;
             }
         }
 
