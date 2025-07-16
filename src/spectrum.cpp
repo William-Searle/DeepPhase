@@ -10,7 +10,6 @@
 #include <omp.h>
 #include <chrono>
 
-
 #include "ap.h"
 #include "interpolation.h"
 #include "specialfunctions.h"
