@@ -3,9 +3,14 @@
 #include <vector>
 #include <cassert>
 #include <chrono>
-#include <gsl/gsl_integration.h>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <string>
+#include <iomanip>
+#include <fstream>
+
+// #include "./matplotlibcpp.h"
+#include "ap.h"
+#include "interpolation.h"
+#include "specialfunctions.h"
 
 #include "tests.hpp"
 #include "profile.hpp"
@@ -43,7 +48,10 @@ void test_all() {
 }
 
 // Kinetic power spectrum
-void example_Kin_Spec() {
+void example_Kin_Spec(const std::string& filename) {
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
+    const PhaseTransition::Universe un;
+
     // define PT parameters
     const auto vw = PhaseTransition::dflt_PTParams::vw;
     const auto alN = PhaseTransition::dflt_PTParams::alpha;
@@ -51,50 +59,86 @@ void example_Kin_Spec() {
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
     const auto model = PhaseTransition::dflt_PTParams::model;
-    const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
-    const PhaseTransition::Universe un;
+    const PhaseTransition::PTParams params1(vw, alN, beta, dtau, wN, model, "exp", un);
+    const PhaseTransition::PTParams params2(vw, alN, beta, dtau, wN, model, "sim", un);
 
     // Momentum values
     const auto kRs_vals = logspace(1e-1, 1e+3, 500);
 
-    // Create hydrodynamic profile of bubble
-    const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
+    // Kinetic spectrum (exponential bubble nucleation)
+    const auto Ek1 = Spectrum::Ekin(kRs_vals, params1);
+    const auto Eks1 = Spectrum::zetaKin(Ek1); // Normalised spectrum
+    // Eks1.write(filename + ".csv");
 
-    // Kinetic spectrum
-    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
-    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
-    
-    // Save spectrum to disk
-    Eks.write("example_kin_spectrum.csv");
-    // Eks.plot("example_kin_spectrum.png");
+    // Kinetic spectrum (simultaneous bubble nucleation)
+    const auto Ek2 = Spectrum::Ekin(kRs_vals, params2);
+    const auto Eks2 = Spectrum::zetaKin(Ek2); // Normalised spectrum
+    // Eks2.write(filename + ".csv");
+
+    // Plot spectrum (alternatively, use Ek.plot())
+    // plt::figure_size(800, 600);
+    // plt::loglog(Eks1.K(), Eks1.P(), "k-"); // exp
+    // plt::loglog(Eks2.K(), Eks2.P(), "r-"); // sim
+    // plt::suptitle("vw = " + to_string_with_precision(vw) + ", alN = " + to_string_with_precision(alN));
+    // plt::xlabel("K=kRs");
+    // plt::ylabel("Ekin(K)");
+    // plt::xlim(kRs_vals.front(), kRs_vals.back());
+    // plt::ylim(1e-5, 1e+0);
+    // plt::grid(true);
+    // plt::save(filename + ".png");
 
     return;
 }
 
 // Gravitational wave power spectrum
-void example_GW_Spec() {
-    const auto vw = PhaseTransition::dflt_PTParams::vw;
-    const auto alN = PhaseTransition::dflt_PTParams::alpha;
+void example_GW_Spec(const std::string& filename) {
+    // Create default universe parameters (temperature, Hubble and DoF today and at PT)
+    const PhaseTransition::Universe un;
+
+    // define PT parameters
+    const auto vw = 0.5;
+    const auto alN = 0.1;
+    // const auto vw = PhaseTransition::dflt_PTParams::vw;
+    // const auto alN = PhaseTransition::dflt_PTParams::alpha;
     const auto beta = PhaseTransition::dflt_PTParams::beta;
     const auto dtau = PhaseTransition::dflt_PTParams::dtau;
     const auto wN = PhaseTransition::dflt_PTParams::wN;
     const auto model = PhaseTransition::dflt_PTParams::model;
     const auto nuc_type = PhaseTransition::dflt_PTParams::nuc_type;
 
-    const PhaseTransition::Universe un;
     const PhaseTransition::PTParams params(vw, alN, beta, dtau, wN, model, nuc_type, un);
-    const Hydrodynamics::FluidProfile profile(params);
 
+    un.print();
+    params.print();
+
+    // Define GW spectrum
     const auto kRs_vals = logspace(1e-3, 1e+3, 100);
     const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
     
-    OmegaGW.write("example_GW_spectrum.csv");
-    // OmegaGW.plot("example_GW_spectrum.png");
+    // Write/plot to disk
+    // OmegaGW.write(filename + ".csv");
+    // OmegaGW.plot(filename + ".png");
 
     return;
+}
+
+void test_cubic_spline() {
+    // Define data points
+    alglib::real_1d_array x = "[0, 1, 2, 3, 4]";
+    alglib::real_1d_array y = "[0, 1, 4, 9, 16]";  // y = x^2
+
+    // Create spline interpolant
+    alglib::spline1dinterpolant spline;
+    alglib::spline1dbuildcubic(x, y, spline);
+
+    // Evaluate the spline at a few points
+    double val1 = alglib::spline1dcalc(spline, 2.5);  // Should be close to 6.25
+    double val2 = alglib::spline1dcalc(spline, 3.5);  // Should be close to 12.25
+
+    // Output results
+    std::cout << "spline(2.5) = " << val1 << std::endl;
+    std::cout << "spline(3.5) = " << val2 << std::endl;
 }
 
 void test_PowerSpec() {
@@ -154,8 +198,99 @@ void test_PowerSpec() {
     return;
 }
 
+void test_SiCi_spline() {
+    std::cout << "==== Running Si/Ci Spline Interpolator Test ====\n";
 
+    // Step 1: Generate interpolation grid
+    const int n_interp = 1000;
+    const int n_integrate = 1000;
+    const double x_min = -5.0;
+    const double x_max = 5.0;
 
+    std::vector<double> x_vals = linspace(x_min, x_max, n_interp);
+    std::vector<double> Si_vals(n_interp), Si_vals_alg(n_interp);
+    std::vector<double> Ci_vals(n_interp), Ci_vals_alg(n_interp);
+
+    // Step 2: Evaluate Si and Ci on the grid
+    #pragma omp parallel for
+    for (int i = 0; i < x_vals.size(); i++) {
+        const auto x = x_vals[i];
+
+        double Si_alg, Ci_alg;
+        alglib::sinecosineintegrals(x, Si_alg, Ci_alg);
+        Si_vals_alg[i] = Si_alg;
+        Ci_vals_alg[i] = Ci_alg;
+
+        const auto [Si, Ci] = SiCi(x, n_integrate);
+        Si_vals[i] = Si;
+        Ci_vals[i] = Ci;
+    }
+
+    // my calc, my spline
+    const auto Si_interp_calc = CubicSpline<double>(x_vals, Si_vals);
+    const auto Ci_interp_calc = CubicSpline<double>(x_vals, Ci_vals);
+
+    // alg calc, my spline
+    const auto Si_interp_alg = CubicSpline<double>(x_vals, Si_vals_alg);
+    const auto Ci_interp_alg = CubicSpline<double>(x_vals, Ci_vals_alg);
+
+    // my calc, alg spline
+    const auto x_vals_array = vector_to_real_1d_array(x_vals);
+    const auto Si_vals_array = vector_to_real_1d_array(Si_vals);
+    const auto Ci_vals_array = vector_to_real_1d_array(Ci_vals);
+
+    alglib::spline1dinterpolant Si_spline, Ci_spline;
+    alglib::spline1dbuildcubic(x_vals_array, Si_vals_array, Si_spline);
+    alglib::spline1dbuildcubic(x_vals_array, Ci_vals_array, Ci_spline);
+
+    // alg calc, alg spline
+    const auto Si_vals_alg_array = vector_to_real_1d_array(Si_vals_alg);
+    const auto Ci_vals_alg_array = vector_to_real_1d_array(Ci_vals_alg);
+
+    alglib::spline1dinterpolant Si_spline_alg, Ci_spline_alg;
+    alglib::spline1dbuildcubic(x_vals_array, Si_vals_alg_array, Si_spline_alg);
+    alglib::spline1dbuildcubic(x_vals_array, Ci_vals_alg_array, Ci_spline_alg);
+
+    // Step 4: Define reference values for testing
+    struct TestCase {
+        double x;
+        double expected_si;
+        double expected_ci;
+    };
+
+    std::vector<TestCase> test_cases = {
+        {-5.0, -1.5499312449, -0.19003},
+        {-4.0, -1.7582031389, -0.140982},
+        {-3.0, -1.8486525274, 0.11963},
+        {-2.0, -1.6054129768, 0.422981},
+        {-1.0, -0.9460830704, 0.337404 },
+        {-0.5, -0.4931074180, -0.177784},
+        { 0.5,  0.4931074180, -0.177784},
+        { 1.0,  0.9460830704, 0.337404},
+        { 2.0,  1.6054129768,  0.422981},
+        { 3.0,  1.8486525274,  0.11963},
+        { 4.0,  1.7582031389,  -0.140982},
+        { 5.0,  1.5499312449,  -0.19003}
+    };
+
+    // Step 5: Compare interpolated vs. reference values
+    const auto tol = 1e-6;
+
+    std::ofstream Si_file("Si.csv");
+    std::ofstream Ci_file("Ci.csv");
+    
+    Si_file << "x,exact,calc-cs,calc-algspline,alg-cs,alg-algspline\n";
+    Ci_file << "x,exact,calc-cs,calc-algspline,alg-cs,alg-algspline\n";
+
+    for (const auto& tc : test_cases) {
+        Si_file << tc.x << "," << tc.expected_si << "," << Si_interp_calc(tc.x) << "," << alglib::spline1dcalc(Si_spline, tc.x)
+             << "," << Si_interp_alg(tc.x) << "," << alglib::spline1dcalc(Si_spline_alg, tc.x) << "\n";
+        Ci_file << tc.x << "," << tc.expected_ci << "," << Ci_interp_calc(tc.x) << "," << alglib::spline1dcalc(Ci_spline, tc.x)
+             << "," << Ci_interp_alg(tc.x) << "," << alglib::spline1dcalc(Ci_spline_alg, tc.x) << "\n";
+    }
+
+    std::cout << "All Si/Ci interpolation tests passed!\n";
+}
 
 // tests program across a large parameter space
 void test_FluidProfile_params() {

@@ -1,6 +1,7 @@
 // maths_ops.cpp
 #include <vector>
 #include <iostream>
+#include <fstream>
 #include <iomanip>
 #include <cmath>
 #include <stdexcept>
@@ -619,6 +620,45 @@ std::pair<double, double> SiCi(double x, const size_t n) {
     return {sin_int, cos_int};
 }
 
+void read_sici_csv(const std::string& filename,
+                   std::vector<double>& x_vals,
+                   std::vector<double>& Si_vals,
+                   std::vector<double>& Ci_vals)
+{
+    std::ifstream file(filename);
+    if (!file.is_open()) {
+        throw std::runtime_error("Could not open file: " + filename);
+    }
+
+    std::string line;
+    
+    // Skip header
+    std::getline(file, line);
+
+    while (std::getline(file, line)) {
+        std::istringstream ss(line);
+        std::string x_str, si_str, ci_str;
+
+        if (!std::getline(ss, x_str, ',')) continue;
+        if (!std::getline(ss, si_str, ',')) continue;
+        if (!std::getline(ss, ci_str, ',')) continue;
+
+        try {
+            double x = std::stod(x_str);
+            double si = std::stod(si_str);
+            double ci = std::stod(ci_str);
+
+            x_vals.push_back(x);
+            Si_vals.push_back(si);
+            Ci_vals.push_back(ci);
+        } catch (const std::exception& e) {
+            std::cerr << "Warning: skipped invalid line: " << line << "\n";
+        }
+    }
+
+    file.close();
+    std::cout << "Read " << x_vals.size() << " rows from " << filename << "\n";
+}
 
 // std::pair<std::vector<double>, std::vector<double>> runge_kutta_ODE_solver(ODE_System system, const double t0, const double tf, const double y0, const size_t n) {
 //     // write check for if tf < t0 -> do something to integrate backwards
@@ -735,7 +775,8 @@ double root_finder(std::function<double(double)> f, double a, double b, double t
             return c;
         }
 
-        if (fc > 0.0) {
+        if (fa * fc < 0.0) {
+        // if (fc > 0.0) {
             b = c;
             fb = fc;
         } else {
@@ -749,36 +790,109 @@ double root_finder(std::function<double(double)> f, double a, double b, double t
     throw std::runtime_error("Bisection method did not converge.");
 }
 
-double find_minimum(const std::function<double(double)>& f, double a, double b, double tol, int max_iter) {
-     std::function<double(double)> fsq = [&f] (double x) {
-            const auto val = f(x);
-            return val * val;
-        };
-    const double phi = (1.0 + std::sqrt(5.0)) / 2.0;  // ≈ 1.618
-    const double resphi = 2.0 - phi;                 // ≈ 0.382
+double root_finder2(std::function<double(double)> f, double a, double b, double tol, int max_iter) {
+    double fa = f(a);
+    double fb = f(b);
 
-    double x1 = b - resphi * (b - a);
-    double x2 = a + resphi * (b - a);
-    double f1 = fsq(x1);
-    double f2 = fsq(x2);
-
-    int iter = 0;
-    while ((b - a) > tol && iter < max_iter) {
-        if (f1 < f2) {
-            b = x2;
-            x2 = x1;
-            f2 = f1;
-            x1 = b - resphi * (b - a);
-            f1 = fsq(x1);
-        } else {
-            a = x1;
-            x1 = x2;
-            f1 = f2;
-            x2 = a + resphi * (b - a);
-            f2 = fsq(x2);
-        }
-        ++iter;
+    if (fa * fb > 0.0) {
+        throw std::runtime_error("Bisection method interval not bracketed!");
     }
 
-    return (f1 < f2) ? x1 : x2;
+    if (!std::isfinite(fa) || !std::isfinite(fb)) {
+        throw std::runtime_error("f(a) or f(b) is not finite.");
+    }
+
+    for (int i = 0; i < max_iter; ++i) {
+        double c = 0.5 * (a + b);
+        double fc = f(c);
+
+        if (!std::isfinite(fc)) {
+            // throw std::runtime_error("f(c) is not finite during bisection.");
+        }
+
+        // Check convergence
+        // since interval is not necessarily bracketed, need to remove second condition
+        // otherwise it thinks it successfully found the root once it has gone through 
+        // the entire interval
+        if (std::abs(fc) < tol) {
+            return c;
+        }
+
+        if (fa * fc < 0.0) {
+        // if (fc > 0.0) {
+            b = c;
+            fb = fc;
+        } else {
+            a = c;
+            fa = fc;
+        }
+    }
+
+    // std::cout << "Bisection method failed, finding minimum of residual instead.\n";
+    // return find_minimum(f, a, b);
+    throw std::runtime_error("Bisection method did not converge.");
+}
+
+std::vector<std::pair<double, double>> find_brackets(const std::function<double(double)>& f, double a, double b, int N) {
+    std::vector<std::pair<double, double>> brackets;
+    double dx = (b - a) / N;
+    double x0 = a;
+    double f0 = f(x0);
+
+    for (int i = 1; i <= N; ++i) {
+        double x1 = a + i * dx;
+        double f1 = f(x1);
+        if (f0 * f1 < 0) {
+            brackets.emplace_back(x0, x1);
+        }
+        x0 = x1;
+        f0 = f1;
+    }
+
+    return brackets;
+}
+
+std::vector<double> find_all_roots(
+    const std::function<double(double)>& f,
+    double a,
+    double b,
+    int N)
+{
+    auto brackets = find_brackets(f, a, b, N);
+    std::vector<double> roots;
+    for (const auto& [x0, x1] : brackets) {
+        try {
+            double root = root_finder(f, x0, x1);
+            roots.push_back(root);
+        } catch (...) {
+            // skip if bisection fails
+        }
+    }
+    return roots;
+}
+
+double find_smallest_root(
+    const std::function<double(double)>& f,
+    double a,
+    double b,
+    int N)
+{
+    auto roots = find_all_roots(f, a, b, N);
+    if (roots.empty())
+        throw std::runtime_error("No roots found.");
+    return *std::min_element(roots.begin(), roots.end());
+}
+
+alglib::real_1d_array vector_to_real_1d_array(const std::vector<double>& vec) {
+    std::ostringstream oss;
+    oss << "[";
+    for (size_t i = 0; i < vec.size(); ++i) {
+        oss << vec[i];
+        if (i != vec.size() - 1) oss << ",";
+    }
+    oss << "]";
+    
+    alglib::real_1d_array result;
+    result = oss.str().c_str();  // real_1d_array supports string assignment
+    return result;
 }
