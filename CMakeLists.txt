@@ -47,7 +47,7 @@ endif()
 # --------------------------
 # Other compile options
 # --------------------------
-option(BUILD_WITH_UNIT_TESTS "Enable unit tests" OFF)
+option(BUILD_WITH_UNIT_TESTS "Enable unit tests" ON)
 option(BUILD_WITH_EXAMPLES "Enable examples" ON)
 
 
