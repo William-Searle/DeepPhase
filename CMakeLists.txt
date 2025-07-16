@@ -38,8 +38,11 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 # --------------------------
 option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" ON)
 if(ENABLE_COMPILER_WARNINGS)
-  add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
-endif(ENABLE_COMPILER_WARNINGS)
+  include(CompilerWarnings)
+  set(_deepphase_warning_flags "${WARNING_FLAGS_TO_ADD}")
+  # Propagate warning flags to subdirectories
+  set(_deepphase_warning_flags "${_deepphase_warning_flags}" CACHE INTERNAL "DeepPhase compiler warning flags")
+endif()
 
 # --------------------------
 # Other compile options
@@ -87,8 +90,13 @@ endif()
 # --------------------------
 # Library target
 # --------------------------
+
 add_library(DeepPhaseLib STATIC ${SOURCES} ${HEADERS})
 add_library(DeepPhase::DeepPhaseLib ALIAS DeepPhaseLib)
+
+if(ENABLE_COMPILER_WARNINGS AND _deepphase_warning_flags)
+  target_compile_options(DeepPhaseLib PRIVATE ${_deepphase_warning_flags})
+endif()
 
 target_include_directories(DeepPhaseLib
   PUBLIC
