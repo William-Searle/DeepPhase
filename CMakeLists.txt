@@ -34,12 +34,19 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)
 
 # --------------------------
-# Compiler Warnings
+# Compiler warnings
 # --------------------------
-option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" ON) # Default to OFF to avoid warnings in production builds
+option(ENABLE_COMPILER_WARNINGS "Enable compiler warnings" ON)
 if(ENABLE_COMPILER_WARNINGS)
   add_compile_options(-O2 -march=native -Wall -Wextra -Wpedantic)
 endif(ENABLE_COMPILER_WARNINGS)
+
+# --------------------------
+# Other compile options
+# --------------------------
+option(BUILD_WITH_UNIT_TESTS "Enable unit tests" ON)
+option(BUILD_WITH_EXAMPLES "Enable examples" ON)
+
 
 # --------------------------
 # Dependencies
@@ -177,6 +184,11 @@ install(FILES
 )
 
 # --------------------------
-# unit tests
+# Other subdirectories
 # --------------------------
-add_subdirectory(unit_tests)
+if(BUILD_WITH_EXAMPLES)
+  add_subdirectory(example)
+endif()
+if(BUILD_WITH_UNIT_TESTS)
+  add_subdirectory(unit_tests)
+endif()
