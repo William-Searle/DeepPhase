@@ -1,6 +1,6 @@
 #include "deepphase.hpp"
 
-int main(int argc, char** argv) {
+int main() {
 
     // define PT parameters
     const auto vw = PhaseTransition::dflt_PTParams::vw;
@@ -22,10 +22,14 @@ int main(int argc, char** argv) {
     const Hydrodynamics::FluidProfile profile(params);
 
     // Kinetic spectrum
-    const auto Ek = Spectrum::Ekin(kRs_vals, profile);
-    const auto Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
+    Spectrum::PowerSpec Ek = Spectrum::Ekin(kRs_vals, profile);
+    Spectrum::PowerSpec Eks = Spectrum::zetaKin(Ek); // Normalised spectrum
 
-    Eks.write("DeepPhase/kinetic_spectrum.csv");
+    Eks.write("kinetic_spectrum.csv");
+
+    #ifdef ENABLE_MATPLOTLIB
+    Eks.plot("kinetic_spectrum.png");
+    #endif
 
     return 0;
 }

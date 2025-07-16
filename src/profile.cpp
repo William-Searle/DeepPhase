@@ -170,7 +170,7 @@ FluidProfile::FluidProfile(const PhaseTransition::PTParams& params, const size_t
 void FluidProfile::write(const std::string& filename) const {
     std::cout << "Writing fluid profile to disk... ";
 
-    std::ofstream file("../" + filename);
+    std::ofstream file(filename);
     file << "xi,v,w,la\n";
 
     for (size_t i = 0; i < xi_vals_.size(); ++i) {
@@ -214,7 +214,7 @@ void FluidProfile::plot(const std::string& filename) const {
     plt::grid(true);
 
     plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-    plt::save("../" + filename);
+    plt::save(filename);
 
     std::cout << "Bubble profile plot saved to '" << filename << "'." << std::endl;
 
@@ -227,7 +227,7 @@ void FluidProfile::plot(const std::string& filename) const {
 std::vector<state_type> FluidProfile::read(const std::string& filename) const {
     std::cout << "Warning: Read fluid profile does not check PT parameters of input file. Manual entry of PT parameters required!\n";
 
-    std::ifstream file("../" + filename);
+    std::ifstream file(filename);
     if (!file) {
         throw std::runtime_error("Could not open file " + filename);
     }

@@ -1,6 +1,6 @@
 #include "deepphase.hpp"
 
-int main(int argc, char** argv) {
+int main() {
 
     const auto vw = PhaseTransition::dflt_PTParams::vw;
     const auto alN = PhaseTransition::dflt_PTParams::alpha;
@@ -15,9 +15,13 @@ int main(int argc, char** argv) {
     const Hydrodynamics::FluidProfile profile(params);
 
     const auto kRs_vals = logspace(1e-3, 1e+3, 100);
-    const auto OmegaGW = Spectrum::GWSpec(kRs_vals, params);
+    Spectrum::PowerSpec OmegaGW = Spectrum::GWSpec(kRs_vals, params);
 
-    OmegaGW.write("DeepPhase/gw_spectrum.csv");
-    
+    OmegaGW.write("gw_spectrum.csv");
+
+    #ifdef ENABLE_MATPLOTLIB
+    OmegaGW.plot("gw_spectrum.png");
+    #endif
+
     return 0;
 }

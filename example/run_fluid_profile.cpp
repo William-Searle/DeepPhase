@@ -1,6 +1,6 @@
 #include "deepphase.hpp"
 
-int main(int argc, char** argv) {
+int main() {
 
     const PhaseTransition::Universe un;
 
@@ -8,7 +8,11 @@ int main(int argc, char** argv) {
 
     const Hydrodynamics::FluidProfile profile(params);
 
-    profile.write("DeepPhase/fluid_profile.csv");
+    profile.write("fluid_profile.csv");
+
+    #ifdef ENABLE_MATPLOTLIB
+    profile.plot("fluid_profile.png");
+    #endif
 
     return 0;
 }
