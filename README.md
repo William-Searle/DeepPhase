@@ -14,14 +14,20 @@ You need a C++17 compliant compiler, together with the following dependencies:
 * CMake, version x.x.x or higher
 * OpenMP, version x.x.x or higher
 * GSL, version x.x or higher
+* ALGLIB, version x.x or higher
 
-On *Ubuntu/Debian*-based distributions, `GSL` can be installed by running:
+On *Ubuntu/Debian*-based distributions, `ALGLIB` and `GSL` can be installed by running:
 
-    sudo apt install libgsl-dev
+    sudo apt install libalglib-dev libgsl-dev
 
 On *Fedora*-based distributions, instead use:
 
-    sudo dnf install gsl-devel
+    sudo dnf install alglib-devel gsl-devel
+
+Finally on *Mac*:
+
+    brew install gsl alglib
+
 
 Optionally, we support plotting using `matplotlib-cpp`. To enable this functionality, please install the `matplotlibcpp.h` header into `DeepPhase/includes` directory. This is then automatically detection during compilation and relevant plotting functionality is enabled.
 
