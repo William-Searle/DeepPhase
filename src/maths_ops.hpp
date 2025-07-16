@@ -15,14 +15,11 @@
 #include <cmath>
 #include <stdexcept>
 #include <initializer_list>
+#include <functional>
 
-/*
-TO DO:
-- write logspace function (logarithmic version of linspace)
-- change cublicspline private vars to include '_' at end for consistency
-- add build() for spline so if you initialise it without defining it, it just ocmputes the coefficients rather than having to call ctor again
-*/
+#include "ap.h"
 
+// get rid of this
 /**
  * @brief A custom vector class supporting arithmetic operations and linear algebra utilities.
  * 
@@ -200,7 +197,12 @@ double adaptive_simpson_2d(const std::function<double(double, double)>& f2d,
 
 double Si(double x);
 double Ci(double x);
-std::pair<double, double> SiCi(double x, const size_t n=200);
+std::pair<double, double> SiCi(double x, const size_t n=1000);
+
+void read_sici_csv(const std::string& filename,
+                   std::vector<double>& x_vals,
+                   std::vector<double>& Si_vals,
+                   std::vector<double>& Ci_vals);
 
 using state_type = std::vector<double>;
 using deriv_func = std::function<state_type(double, const state_type&)>;
@@ -214,3 +216,17 @@ std::pair<std::vector<double>, std::vector<state_type>> rk4_solver(
 );
 
 double root_finder(std::function<double(double)> f, double a, double b, double tol = 1e-8, int max_iter = 100);
+
+std::vector<std::pair<double, double>> find_brackets(const std::function<double(double)>& f, double a, double b, int N = 1000);
+std::vector<double> find_all_roots(
+    const std::function<double(double)>& f,
+    double a,
+    double b,
+    int N = 1000);
+double find_smallest_root(
+    const std::function<double(double)>& f,
+    double a,
+    double b,
+    int N = 1000);
+
+alglib::real_1d_array vector_to_real_1d_array(const std::vector<double>& vec);

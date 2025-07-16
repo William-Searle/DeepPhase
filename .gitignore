@@ -45,3 +45,9 @@
 # Python
 /.ipynb_checkpoints/
 *.ipynb
+
+# includes
+/include/
+
+# main.cpp
+/src/main.cpp

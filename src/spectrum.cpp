@@ -7,19 +7,22 @@
 #include <algorithm>
 #include <iostream>
 #include <fstream>
-#include <boost/math/quadrature/gauss_kronrod.hpp>
 #include <omp.h>
 #include <chrono>
-// #include <Eigen/Dense>
+
 
 #include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
+#include "ap.h"
+#include "interpolation.h"
+#include "specialfunctions.h"
 
 #include "maths_ops.hpp"
 #include "PhaseTransition.hpp"
 #include "hydrodynamics.hpp"
 #include "spectrum.hpp"
 #include "physics.hpp"
+
+namespace plt = matplotlibcpp;
 
 /*
 TO DO:
@@ -29,7 +32,6 @@ TO DO:
 - change throw exception for P() and K() so that it uses P() and K() when wrong one is called
 - update Ekin to pass in Profile class (or maybe just PTParams?)
 - implement adaptive step-size in Ekin integration (and dlt later too)
-- add write/plot for GWSpec
 */
 
 namespace Spectrum {
@@ -134,10 +136,10 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
     const auto Rs = params.Rs();
     const auto Rs_inv = 1.0 / Rs;
 
-    const auto z_vals = linspace(-1.0, 1.0, 200); // logspace gives nan over this domain
+    const auto z_vals = linspace(-1.0, 1.0, 1000); // logspace gives nan over this domain
     const auto nz = z_vals.size();
 
-    const auto pRs_vals = logspace(1e-2, 1e+3, 200); // P = p*Rs
+    const auto pRs_vals = logspace(1e-2, 1e+3, 1000); // P = p*Rs
     const auto np = pRs_vals.size();
 
     std::vector<double> pRs2_vals; // keep here otherwise have to calculate for each k
@@ -212,13 +214,9 @@ PowerSpec GWSpec(const std::vector<double>& kRs_vals, const PhaseTransition::PTP
                 const auto z_fac = 1.0 - z;
                 const auto z_fac2 = z_fac * z_fac;
 
-                const auto zk_ptRs = (ptRs != 0.0) ? zk_ptRs_interp(ptRs) : 0.0;
-
-                // neccessary to store these? only called once so maybe not
-                // const auto zk_ptRs = zk_ptRs_interp(ptRs); // see ptRs_min/max if domain issues arise
-                const auto dlta = delta[m][i][j];
-
-                integrand[i][j] = z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs * dlta;
+                // prevents out of bounds spline
+                // careful! need to check this converges properly for pt=0!
+                integrand[i][j] = (ptRs != 0.0) ? z_fac2 * ptRs4_inv * zk_pRs_fac * zk_ptRs_interp(ptRs) * delta[m][i][j] : 0.0;
             }
         }
 
@@ -364,7 +362,6 @@ std::vector<std::vector<std::vector<double>>> dlt(const int nt, const std::vecto
     return result;
 }
 
-// change call to Ci(), Si() to interpolating functions for these integrals (avoids calculating them on the fly and can just use function call)
 std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>& k_vals, const std::vector<double>& p_vals, const std::vector<double>& z_vals, const PhaseTransition::PTParams& params) {
     /***************************** CLOCK ******************************/
     const auto ti = std::chrono::high_resolution_clock::now();
@@ -380,22 +377,24 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
     const auto nz = z_vals.size();
 
     // interpolation function for Si, Ci
-    const auto nx = 500;
-    const auto n = 1000;
-    const auto x_vals = linspace(-1e+5, 1e+5, nx);
-    std::vector<double> Si_vals(nx), Ci_vals(nx);
+    // const auto n = 10000;
+    // const auto x_vals = linspace(-5e+4, 5e+4, n); // better way for choosing bounds here
+    // std::vector<double> Si_vals(n), Ci_vals(n);
 
-    // could make this bit faster by moving spline interp and Si(x), Ci(x) 
-    // calculation into one function (collapse loops)
-    #pragma omp parallel for
-    for (int i = 0; i < x_vals.size(); i++) {
-        const auto x = x_vals[i];
-        const auto [Si, Ci] = SiCi(x, n);
-        Si_vals[i] = Si;
-        Ci_vals[i] = Ci;
-    }
-    const auto Si_interp = CubicSpline(x_vals, Si_vals);
-    const auto Ci_interp = CubicSpline(x_vals, Ci_vals);
+    // // // could make this bit faster by moving spline interp and Si(x), Ci(x) 
+    // // // calculation into one function (collapse loops)
+    // #pragma omp parallel for
+    // for (int i = 0; i < x_vals.size(); i++) {
+    //     const auto x = x_vals[i];
+
+    //     const auto [Si, Ci] = SiCi(x, n);
+    //     Si_vals[i] = Si;
+    //     Ci_vals[i] = Ci;
+    // }
+
+    // const auto Si_interp = CubicSpline(x_vals, Si_vals);
+    // const auto Ci_interp = CubicSpline(x_vals, Ci_vals);
+
 
     // reserve memory for integration
     std::vector<std::vector<std::vector<double>>> result(nk, std::vector<std::vector<double>>(np, std::vector<double>(nz)));
@@ -406,7 +405,7 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
         const auto num_threads = omp_get_num_threads();
         const auto thread_id = omp_get_thread_num();
 
-        // std::vector<double> dlt_temp(num_threads, 0.0);
+        std::vector<double> dlt_temp(num_threads, 0.0);
 
         #pragma omp for collapse(3) schedule(dynamic)
         for (int kk = 0; kk < nk; kk++)
@@ -429,16 +428,17 @@ std::vector<std::vector<std::vector<double>>> dlt_SSM(const std::vector<double>&
                     // Im(Si(x))=0 for real x
                     // Im(Ci(x))=pi (x<0), 0 (x>0)
                     // Taking difference dCi -> imaginary part cancels since sign of x1, x2 always the same
+                    // const auto dSi = Si_interp(x1) - Si_interp(x2);
+                    // const auto dCi = Ci_interp(x1) - Ci_interp(x2);
 
-                    // const auto [Si_x1, Ci_x1] = SiCi(x1, 200);
-                    // const auto [Si_x2, Ci_x2] = SiCi(x2, 200);
-                    // const auto dSi = Si_x1 - Si_x2;
-                    // const auto dCi = Ci_x1 - Ci_x2;
+                    // tmp fix for SiCi calculation
+                    double Si_x1, Ci_x1, Si_x2, Ci_x2;
+                    alglib::sinecosineintegrals(x1, Si_x1, Ci_x1);
+                    alglib::sinecosineintegrals(x2, Si_x2, Ci_x2);
 
-                    const auto dSi = Si_interp(x1) - Si_interp(x2);
-                    const auto dCi = Ci_interp(x1) - Ci_interp(x2);
+                    const auto dSi = Si_x1 - Si_x2;
+                    const auto dCi = Ci_x1 - Ci_x2;
 
-                    // dlt_temp[thread_id] += 0.25 * (dCi * dCi + dSi * dSi);
                     dlt_temp += 0.25 * (dCi * dCi + dSi * dSi);
                 }
             }
