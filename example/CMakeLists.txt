@@ -27,4 +27,6 @@ endmacro()
 # --------------------------
 # Example executables
 # --------------------------
-add_example_executable(run_profile run_profile.cpp)
+add_example_executable(run_fluid_profile run_fluid_profile.cpp)
+add_example_executable(run_kinetic_spectrum run_kinetic_spectrum.cpp)
+add_example_executable(run_gw_spectrum run_gw_spectrum.cpp)

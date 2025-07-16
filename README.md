@@ -15,7 +15,7 @@ You need a C++17 compliant compiler, together with the following dependencies:
 * OpenMP, version x.x.x or higher
 * GSL, version x.x or higher
 
-On *Ubuntu/Debian*-based distributions, these can be installed by running:
+On *Ubuntu/Debian*-based distributions, `GSL` can be installed by running:
 
     sudo apt install libgsl-dev
 
@@ -38,8 +38,9 @@ To build the shared library and examples, use: *URL subject to change*
 ## Running
 If the library and examples were successfully built, the examples and tests are available to run using the following executables: *subject to change*
 
-    ./bin/run_profile
-    ./bin/run_gwspectrum
+    ./bin/run_fluid_profile
+    ./bin/run_kinetic_spectrum
+    ./bin/run_gw_spectrum
     ./bin/unit_tests
 
 ## Notes
