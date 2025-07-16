@@ -23,7 +23,7 @@ TO DO:
 - update prefac to allow for non-bag model
 - update prefac to do actual calculation of TGW, OmegaK_KK
 - remove instances of std::pow when possible - it is slow
-- change throw exception for P() and k() so that it uses P() and k() when wrong one is called
+- change throw exception for P() and K() so that it uses P() and K() when wrong one is called
 - update Ekin to pass in Profile class (or maybe just PTParams?)
 - implement adaptive step-size in Ekin integration (and dlt later too)
 - add write/plot for GWSpec
