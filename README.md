@@ -80,7 +80,8 @@ To set an option, pass it to CMake with `-D`, for example:
 
 This indicates that all optional plotting methods have been successfully compiled.
 
-> **Note:** The current version of `matplotlib-cpp` requires `numpy` version **less than 2.0.0** (`v<2.x.x`).
+**Note:**
+- The current version of `matplotlib-cpp` requires `numpy` version **less than 2.0.0** (`v<2.x.x`).
 
 </details>
 
