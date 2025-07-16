@@ -1,5 +1,7 @@
 #include "catch/catch.hpp"
 #include <random>
+#include <chrono>
+#include <interpolation.h> //ALGLIB
 #include "maths_ops.hpp"
 
 TEST_CASE("Test rk4 Coupled ODEs", "[rk4]") {
@@ -80,7 +82,7 @@ TEST_CASE("Test rk4 Solver", "[rk4]") {
 
 TEST_CASE("Test cubic spline interpolation", "[cubicSpline]") {
 
-    auto f = [](double x) { return x * x * x; };
+    auto f = [](double x) { return x*x*x - 2*x*x + x - 5; };
 
     std::vector<double> x_vals = linspace(-2.0, 2.0, 50);
     std::vector<double> y_vals;
@@ -88,7 +90,17 @@ TEST_CASE("Test cubic spline interpolation", "[cubicSpline]") {
         y_vals.push_back(f(x));
     }
 
+    auto start = std::chrono::high_resolution_clock::now();
     CubicSpline<double> spline(x_vals, y_vals);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "CubicSpline build time: " << duration.count() << " s\n";
+
+    auto start_eval = std::chrono::high_resolution_clock::now();
+    spline(1.0);
+    auto end_eval = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_eval = end_eval - start_eval;
+    std::cout << "CubicSpline run_time: " << duration_eval.count() << " s\n";
 
     std::vector<double> test_points;
     std::mt19937 gen(0);
@@ -134,4 +146,53 @@ TEST_CASE("Test si(x) and ci(x)", "[trigInt]") {
         CHECK(si == Approx(t.expected_si).epsilon(1e-5));
         CHECK(ci == Approx(t.expected_ci).epsilon(1e-5));
     }
+}
+
+TEST_CASE("ALGLIB function", "[alglib]") {
+
+    auto f = [](double x) { return x*x*x - 2*x*x + x - 5; };
+
+    alglib::real_1d_array x_vals, y_vals;
+    const int n = 50;
+    std::vector<double> x_vec(n), y_vec(n);
+
+    for (int i = 0; i < n; i++) {
+        double x = -2.0 + i * 0.08; // -2 to 2 in 50 steps
+        double y = f(x);
+        x_vec[i] = x;
+        y_vec[i] = y;
+    }
+
+    x_vals.setcontent(n, x_vec.data());
+    y_vals.setcontent(n, y_vec.data());
+
+    alglib::spline1dinterpolant spline;
+
+    auto start = std::chrono::high_resolution_clock::now();
+    alglib::spline1dbuildcubic(x_vals, y_vals, spline);
+    auto end = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration = end - start;
+    std::cout << "AlgLib build time: " << duration.count() << " s\n";
+
+    auto start_eval = std::chrono::high_resolution_clock::now();
+    alglib::spline1dcalc(spline, 1.0);
+    auto end_eval = std::chrono::high_resolution_clock::now();
+    std::chrono::duration<double> duration_eval = end_eval - start_eval;
+    std::cout << "AlgLib run_time: " << duration_eval.count() << " s\n";
+
+    std::vector<double> test_points;
+    std::mt19937 gen(0);
+    std::uniform_real_distribution<> dis(-2.0, 2.0);
+    for (int i = 0; i < 50; ++i) {test_points.push_back(dis(gen));}
+
+    double tol = 1e-4;
+    for (double xi : test_points) {
+
+        double yi_exact = f(xi);
+        double yi_interp = alglib::spline1dcalc(spline, xi);
+        double error = std::abs(yi_interp - yi_exact);
+        
+        CHECK(error < tol);
+    }
+
 }
