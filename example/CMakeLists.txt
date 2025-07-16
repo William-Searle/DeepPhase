@@ -11,7 +11,7 @@ set(CMAKE_RUNTIME_OUTPUT_DIRECTORY ${PROJECT_SOURCE_DIR}/bin)
 # Link libraries
 # --------------------------
 link_libraries(
-    DeepPhaseLib
+  DeepPhaseLib
 )
 
 # --------------------------

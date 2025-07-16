@@ -14,6 +14,10 @@
 #include "physics.hpp"
 #include "maths_ops.hpp"
 
+#ifdef ENABLE_MATPLOTLIB
+#include "matplotlibcpp.h"
+#endif
+
 /*
 TO DO:
 - update generate_streamplot_data() to include points of interest (fixed pts, detonation/deflag/hybrid regions)
@@ -180,8 +184,6 @@ void FluidProfile::write(const std::string& filename) const {
 }
 
 #ifdef ENABLE_MATPLOTLIB
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
 void FluidProfile::plot(const std::string& filename) const {
     namespace plt = matplotlibcpp;
 

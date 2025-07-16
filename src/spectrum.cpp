@@ -18,6 +18,10 @@
 #include "spectrum.hpp"
 #include "physics.hpp"
 
+#ifdef ENABLE_MATPLOTLIB
+#include "matplotlibcpp.h"
+#endif
+
 /*
 TO DO:
 - update prefac to allow for non-bag model
@@ -65,22 +69,17 @@ void PowerSpec::write(const std::string& filename) const {
 }
 
 #ifdef ENABLE_MATPLOTLIB
-#include "matplotlibcpp.h"
-namespace plt = matplotlibcpp;
-void FluidProfile::plot(const std::string& filename) const {
-    std::cout << "Saving power spectrum plot to disk... ";
+void PowerSpec::plot(const std::string& filename) const {
+    namespace plt = matplotlibcpp;
 
     plt::figure_size(800, 600);
-    plt::loglog(k(), P(), "k-");
-    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alN()));
+    plt::loglog(K(), P(), "k-");
+    plt::suptitle("vw = " + to_string_with_precision(params_.vw()) + ", alN = " + to_string_with_precision(params_.alphaN()));
     plt::xlabel("K=kRs");
     plt::ylabel("Omega_GW(K)");
-    plt::xlim(1e-3, 1e+3);
+    plt::xlim(K().front(), K().back());
     plt::grid(true);
-    plt::save("../GW_spectrum.png");
-
-    plt::suptitle("vw = " + to_string_with_precision(vw_) + ", alpha = " + to_string_with_precision(alN_));
-    plt::save("../" + filename);
+    plt::save(filename);
 
     std::cout << "Saved to '" << filename << "'" << std::endl;
 
