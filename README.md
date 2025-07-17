@@ -80,8 +80,18 @@ To set an option, pass it to CMake with `-D`, for example:
 
 This indicates that all optional plotting methods have been successfully compiled.
 
+
 **Note:**
-- The current version of `matplotlib-cpp` requires `numpy` version **less than 2.0.0** (`v<2.x.x`).
+The current version of `matplotlib-cpp` requires `numpy` version **less than 2.0.0** (`v<2.x.x`) and `matplotlib` to function.
+These can be installed on Ubuntu/Debian with (not recommended):
+
+    sudo apt install python3 python3-numpy python3-matplotlib
+
+Or by using (recommended):
+
+    python3 -m venv venv
+    source venv/bin/activate
+    pip install 'numpy<2.0.0' matplotlib
 
 </details>
 
